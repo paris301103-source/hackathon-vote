@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>北祥黑客松 2026 · 評審系統</title>
+<style>
+  :root{
+    --bg:#0a0a14; --bg2:#0d0d1c; --card:#14142a; --line:#ffffff14;
+    --pink:#ff3d8b; --teal:#00e0c6; --txt:#ffffff; --mut:#a7a7c2; --dim:#6f6f8c;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0; background:#05050c; color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;}
+  .wrap{max-width:430px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative; overflow:hidden;}
+  .screen{display:none; padding-bottom:40px; animation:fade .25s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+  .banner{position:fixed; top:0; left:0; right:0; z-index:99; text-align:center; font-size:12px;
+    padding:7px; background:#7a1020; color:#ffd; display:none;}
+
+  .hero{padding:56px 22px 26px; text-align:center;
+    background:radial-gradient(120% 80% at 50% 0%, #1a0f2a 0%, var(--bg) 60%);}
+  .pill{display:inline-block; font-size:11px; letter-spacing:3px; color:var(--teal);
+    border:1px solid #00e0c655; border-radius:999px; padding:5px 14px; margin-bottom:18px;}
+  .h-title{font-size:32px; font-weight:900; line-height:1.1; letter-spacing:1px;}
+  .h-title .p{color:var(--pink);}
+  .h-year{font-size:48px; font-weight:900; color:var(--teal); letter-spacing:8px; margin:2px 0 16px;}
+  .h-main{font-size:21px; font-weight:800;}
+  .h-sub{font-size:13px; color:var(--mut); font-style:italic; margin-top:8px;}
+  .h-date{font-size:12px; color:var(--dim); margin-top:16px; letter-spacing:2px;}
+
+  .pad{padding:14px 18px;}
+  .role{display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line);
+    border-radius:16px; padding:18px; margin-bottom:12px; cursor:pointer; transition:.15s;}
+  .role:active{transform:scale(.98);}
+  .role .ic{width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex:none;}
+  .role .t{font-size:16px; font-weight:700;}
+  .role .d{font-size:12px; color:var(--mut); margin-top:2px;}
+  .role .arr{margin-left:auto; color:var(--dim); font-size:20px;}
+
+  .top{position:sticky; top:0; z-index:10; background:var(--bg2); border-bottom:1px solid var(--line);
+    padding:15px 18px; display:flex; align-items:center; gap:12px;}
+  .top .back{font-size:22px; color:var(--teal); cursor:pointer; line-height:1;}
+  .top .ttl{font-size:16px; font-weight:700;}
+  .top .meta{margin-left:auto; font-size:11px; color:var(--teal);}
+
+  .tcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:10px; cursor:pointer; transition:.15s;}
+  .tcard:active{transform:scale(.99);}
+  .tcard .row{display:flex; justify-content:space-between; align-items:flex-start;}
+  .tcard .num{font-size:12px; color:var(--pink); font-weight:700;}
+  .badge{font-size:10px; border-radius:6px; padding:3px 8px; font-weight:700;}
+  .b-todo{background:var(--teal); color:#05050c;} .b-done{color:var(--teal); border:1px solid #00e0c655;}
+  .b-pick{background:var(--pink); color:#fff;}
+  .tcard .name{font-size:16px; font-weight:700; margin-top:6px;}
+  .tcard .topic{font-size:12px; color:var(--mut); margin-top:3px;}
+  .tcard .link{font-size:11px; color:var(--teal); margin-top:8px; display:inline-block; text-decoration:none;}
+
+  label.fld{display:block; font-size:13px; color:var(--mut); margin:14px 0 6px;}
+  select,input[type=password],input[type=text],textarea{width:100%; background:var(--card);
+    border:1px solid var(--line); border-radius:12px; color:var(--txt); padding:13px; font-size:15px; font-family:inherit;}
+  textarea{height:64px; resize:none;}
+  .btn{display:block; width:100%; text-align:center; font-size:16px; font-weight:800; border-radius:14px;
+    padding:15px; cursor:pointer; border:none; margin-top:18px; color:#fff; background:var(--pink);}
+  .btn:active{transform:scale(.98);}
+  .btn.gho{background:transparent; border:1px solid var(--teal); color:var(--teal);}
+  .err{color:#ff8080; font-size:13px; margin-top:10px; text-align:center; min-height:18px;}
+
+  .score-head{padding:18px; text-align:center; background:var(--bg2); border-bottom:1px solid var(--line);}
+  .score-head .n{font-size:12px; color:var(--pink); font-weight:700;}
+  .score-head .nm{font-size:20px; font-weight:800; margin-top:4px;}
+  .score-head .tp{font-size:13px; color:var(--mut); margin-top:4px;}
+  .crit{padding:18px;} .crit .item{margin-bottom:22px;}
+  .crit .lbl{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
+  .crit .lbl .nm{font-size:14px; font-weight:700;} .crit .lbl .w{font-size:11px; color:var(--dim);}
+  .crit .lbl .val{font-size:20px; font-weight:900; color:var(--teal);}
+  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px; background:#2a2a44; outline:none; margin-top:8px;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:var(--pink); border:3px solid #05050c;}
+  input[type=range]::-moz-range-thumb{width:24px; height:24px; border-radius:50%; background:var(--pink); border:3px solid #05050c;}
+  .total{margin:6px 18px 0; background:var(--card); border:1px solid var(--pink); border-radius:14px; padding:16px; display:flex; justify-content:space-between; align-items:center;}
+  .total .l{font-size:13px; color:var(--mut);} .total .v{font-size:28px; font-weight:900; color:var(--pink);}
+
+  .stat-row{display:flex; gap:10px; padding:14px 16px 0;}
+  .stat{flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center;}
+  .stat .v{font-size:22px; font-weight:900; color:var(--teal);} .stat .l{font-size:11px; color:var(--mut); margin-top:2px;}
+  .sec-h{font-size:13px; color:var(--dim); letter-spacing:1px; padding:18px 18px 6px; font-weight:700;}
+  .lrow{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 16px 8px;}
+  .lrow .rk{font-size:18px; font-weight:900; width:30px; text-align:center; color:var(--dim);}
+  .lrow.top1 .rk{color:#ffd24a;} .lrow.top2 .rk{color:#cfd3dc;} .lrow.top3 .rk{color:#e0935a;}
+  .lrow .info{flex:1;} .lrow .nm{font-size:14px; font-weight:700;} .lrow .sub{font-size:11px; color:var(--mut); margin-top:1px;}
+  .lrow .pts{font-size:20px; font-weight:900; color:var(--teal);}
+  .ctl{display:flex; gap:10px; padding:0 16px; flex-wrap:wrap;}
+  .ctl .btn{flex:1; min-width:130px; margin-top:0; font-size:14px; padding:13px;}
+
+  .vbar{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 16px 10px;}
+  .vbar .vt{display:flex; justify-content:space-between;}
+  .vbar .nm{font-size:14px; font-weight:700;} .vbar .ct{font-size:13px; color:var(--pink); font-weight:800;}
+  .track{height:8px; background:#2a2a44; border-radius:999px; margin-top:8px; overflow:hidden;}
+  .fill{height:100%; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .4s;}
+  .voteBtn{margin-top:10px; font-size:13px; font-weight:700; padding:9px 0; text-align:center; border-radius:10px; border:1px solid var(--pink); color:var(--pink); cursor:pointer;}
+  .voteBtn.voted{background:var(--pink); color:#fff;} .voteBtn.disabled{opacity:.4; pointer-events:none; border-color:var(--dim); color:var(--dim);}
+  .closed{text-align:center; color:var(--dim); padding:40px 24px; font-size:14px;}
+
+  @media (min-width:680px){
+    .wrap{max-width:960px; min-height:auto;}
+    .pad{max-width:560px; margin:0 auto;}
+    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px;}
+    .grid .tcard,.grid .vbar{margin:0;}
+    .score-head,.crit,.total{max-width:600px; margin-left:auto; margin-right:auto;}
+  }
+</style>
+</head>
+<body>
+<div class="banner" id="banner"></div>
+<div class="wrap">
+
+  <!-- HOME -->
+  <section id="s-home" class="screen active">
+    <div class="hero">
+      <div class="pill">2026 · DEMO DAY · 7/3</div>
+      <div class="h-title">北祥<span class="p">黑客松</span></div>
+      <div class="h-year">2026</div>
+      <div class="h-main">敢想，就能 Run</div>
+      <div class="h-sub">你的點子，值得被執行。</div>
+      <div class="h-date">7 / 3　·　24 組　·　即時計分</div>
+    </div>
+    <div class="pad">
+      <div class="role" onclick="go('s-jlogin')">
+        <div class="ic" style="background:#00e0c622;color:var(--teal)">⚖️</div>
+        <div><div class="t">評審登入</div><div class="d">盲評打分，看不到其他評審分數</div></div>
+        <div class="arr">›</div>
+      </div>
+      <div class="role" onclick="go('s-vote'); initVote()">
+        <div class="ic" style="background:#ffd24a22;color:#ffd24a">🔥</div>
+        <div><div class="t">人氣投票</div><div class="d">輸入員編，一人一票</div></div>
+        <div class="arr">›</div>
+      </div>
+      <div class="role" onclick="go('s-alogin')">
+        <div class="ic" style="background:#ff3d8b22;color:var(--pink)">📊</div>
+        <div><div class="t">主辦後台</div><div class="d">加權總表、進度、開關投票</div></div>
+        <div class="arr">›</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- JUDGE LOGIN -->
+  <section id="s-jlogin" class="screen">
+    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">評審登入</span></div>
+    <div class="pad">
+      <label class="fld">選擇你的身分</label>
+      <select id="jSel"></select>
+      <label class="fld">輸入專屬密碼</label>
+      <input type="password" id="jPin" inputmode="numeric" placeholder="••••">
+      <button class="btn" onclick="judgeLogin()">登入評分</button>
+      <div class="err" id="jErr"></div>
+    </div>
+  </section>
+
+  <!-- JUDGE TEAM LIST -->
+  <section id="s-jlist" class="screen">
+    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta">盲評 ●</span></div>
+    <div class="pad grid" id="jList"></div>
+  </section>
+
+  <!-- SCORING -->
+  <section id="s-score" class="screen">
+    <div class="top"><span class="back" onclick="go('s-jlist')">‹</span><span class="ttl">評分</span></div>
+    <div class="score-head"><div class="n" id="scNum"></div><div class="nm" id="scName"></div><div class="tp" id="scTopic"></div></div>
+    <div class="crit" id="critBox"></div>
+    <div class="total"><span class="l">加權總分</span><span class="v" id="totalVal">0 / 100</span></div>
+    <div style="padding:14px 18px"><textarea id="cmt" placeholder="評語（選填）…"></textarea></div>
+    <div style="padding:0 18px"><button class="btn" onclick="submitScore()">送出評分</button><div class="err" id="scErr"></div></div>
+  </section>
+
+  <!-- SPECIAL JUDGE PICK -->
+  <section id="s-spick" class="screen">
+    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl" id="spTtl">特殊評審</span></div>
+    <div style="padding:18px 18px 0; color:var(--mut); font-size:13px;">選出一組頒給你的特殊大獎（備用，可不選）。再點一次可取消。</div>
+    <div class="pad grid" id="spList"></div>
+  </section>
+
+  <!-- ADMIN LOGIN -->
+  <section id="s-alogin" class="screen">
+    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">主辦後台</span></div>
+    <div class="pad">
+      <label class="fld">主辦密碼</label>
+      <input type="password" id="aPin" inputmode="numeric" placeholder="••••">
+      <button class="btn" onclick="adminLogin()">進入後台</button>
+      <div class="err" id="aErr"></div>
+    </div>
+  </section>
+
+  <!-- ADMIN DASHBOARD -->
+  <section id="s-dash" class="screen">
+    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">主辦後台</span><span class="meta">即時 ●</span></div>
+    <div class="stat-row">
+      <div class="stat"><div class="v">24</div><div class="l">參賽組</div></div>
+      <div class="stat"><div class="v" id="stProg">0%</div><div class="l">評分進度</div></div>
+      <div class="stat"><div class="v" id="stVotes">0</div><div class="l">人氣總票</div></div>
+    </div>
+    <div class="ctl" style="padding-top:14px">
+      <button class="btn" id="btnScore" onclick="toggleCtl('scoringOpen')">評分：—</button>
+      <button class="btn gho" id="btnVote" onclick="toggleCtl('votingOpen')">投票：—</button>
+    </div>
+    <div class="sec-h">綜合排行（3 位正式評審平均）</div>
+    <div id="leadBox"></div>
+    <div class="sec-h">🏅 特殊評審大獎（備用 · 由特殊評審選定）</div>
+    <div id="awardBox"></div>
+    <div class="sec-h">🔥 人氣獎 Top 5</div>
+    <div id="popBox"></div>
+    <div class="ctl" style="padding:18px 16px 8px"><button class="btn gho" onclick="exportCSV()">匯出成績 CSV</button></div>
+  </section>
+
+  <!-- VOTE -->
+  <section id="s-vote" class="screen">
+    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">🔥 人氣投票</span></div>
+    <div id="voteWrap"><div class="closed" id="voteMsg">載入中…</div></div>
+    <div class="pad" id="voteIdBox" style="display:none">
+      <label class="fld">輸入你的員編（一個員編只能投一次）</label>
+      <input type="text" id="empId" placeholder="例如 A1234" autocomplete="off">
+      <button class="btn gho" onclick="setVoter()">確認員編</button>
+      <div class="err" id="voteErr"></div>
+      <div id="voterStatus" style="text-align:center;font-size:13px;color:var(--teal);margin-top:8px"></div>
+    </div>
+    <div class="pad grid" id="voteList"></div>
+  </section>
+
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+/* ============================================================
+   ① 設定區 —— 上線前請依教學填好這一段
+   ============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBKTx8ZiEx-GihLhoSQjFNCsoGQiAEylEE",
+  authDomain: "beixiang-hackathon.firebaseapp.com",
+  projectId: "beixiang-hackathon",
+  storageBucket: "beixiang-hackathon.firebasestorage.app",
+  messagingSenderId: "502853267890",
+  appId: "1:502853267890:web:c5d421c3cf3791f5d0f4ab"
+};
+
+// 評審名單與密碼（type:'main'=正式評審計入排行；'special'=特殊評審只選大獎）
+const JUDGES = [
+  {id:'j1', name:'評審一', pin:'1111', type:'main'},
+  {id:'j2', name:'評審二', pin:'2222', type:'main'},
+  {id:'j3', name:'評審三', pin:'3333', type:'main'},
+  {id:'s1', name:'特殊評審一', pin:'5551', type:'special'},
+  {id:'s2', name:'特殊評審二', pin:'5552', type:'special'},
+];
+const ADMIN_PIN = '0000';
+
+// 可投票的員編名單（之後把公司員編貼進來，一個員編只能投一次）
+// 留空陣列 [] 代表不檢查、任何員編都可投；填入後只有名單內的員編能投
+const VALID_EMP_IDS = [
+  // "A1234", "A1235", "B0001",  ← 範例，換成真實員編
+];
+
+// 評分項目（每項上限＝權重，加總滿分 100）
+const CRITERIA = [
+  {k:"痛點解決與實用性", max:40, d:"切中真實工作痛點？效率提升顯著且實用？"},
+  {k:"技術實現",        max:30, d:"善用指定 AI 工具？架構完整可行且穩定？"},
+  {k:"創新與創意",      max:20, d:"具新穎性、突破傳統？應用場景令人耳目一新？"},
+  {k:"簡報表達與展示",  max:10, d:"簡報清晰易懂？Demo 流暢展現核心價值？"},
+];
+
+// 24 組（抽籤順序）。topic 與 link 之後補上即可
+const TEAMS = [
+  {n:"讓子彈飛", cat:"業務拓展"}, {n:"A²PE", cat:"業務拓展"}, {n:"我是助理凱粒", cat:"日常工作"},
+  {n:"三色豆風味巧克酥", cat:"日常工作"}, {n:"出納實驗室", cat:"日常工作"}, {n:"我要10萬", cat:"日常工作"},
+  {n:"好事成雙", cat:"業務拓展"}, {n:"票交覺醒者", cat:"營運效率"}, {n:"CorpMind", cat:"業務拓展"},
+  {n:"招兵買馬", cat:"營運效率"}, {n:"10萬碳長", cat:"日常工作"}, {n:"DIUDIU", cat:"業務拓展"},
+  {n:"PDC木奉木奉小隊", cat:"日常工作"}, {n:"AI-Powered Personal Knowledge Hub", cat:"日常工作"},
+  {n:"四娘教子", cat:"日常工作"}, {n:"DIU.gain(100000)", cat:"日常工作"}, {n:"快報開麥拉", cat:"日常工作"},
+  {n:"三薪二億", cat:"日常工作"}, {n:"工人智慧小尖兵", cat:"營運效率"}, {n:"挖伊井", cat:"日常工作"},
+  {n:"Felina", cat:"日常工作"}, {n:"Log分析助理", cat:"日常工作"}, {n:"我帶著工程師的頭銜回來了", cat:"日常工作"},
+  {n:"智庫守護者", cat:"日常工作"},
+].map((t,i)=>({id:i+1, name:t.n, cat:t.cat, topic:t.topic||(t.cat+"　·　題目待補"), link:t.link||""}));
+
+/* ============================================================
+   ② 程式區 —— 一般不需更動
+   ============================================================ */
+let db=null, auth=null, uid=null, curJudge=null, control={scoringOpen:true,votingOpen:false};
+let myScores={};
+let allScores=[];
+let voteCounts={};
+let voterId=null, voterVoted=null;
+let myAward=null;
+let cur=null;
+
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active'); window.scrollTo(0,0);
+}
+function banner(msg){const b=document.getElementById('banner'); if(msg){b.textContent=msg; b.style.display='block';} else b.style.display='none';}
+
+function initFirebase(){
+  if(FIREBASE_CONFIG.projectId==="你的專案ID"){
+    banner("⚠ 尚未填入 Firebase 設定，目前無法即時同步（請看教學）"); return false;
+  }
+  try{
+    firebase.initializeApp(FIREBASE_CONFIG);
+    auth=firebase.auth(); db=firebase.firestore();
+    auth.signInAnonymously().catch(e=>banner("登入失敗："+e.message));
+    auth.onAuthStateChanged(u=>{ if(u){uid=u.uid; onReady();} });
+    return true;
+  }catch(e){ banner("Firebase 初始化失敗："+e.message); return false; }
+}
+function onReady(){
+  db.collection('control').doc('state').onSnapshot(d=>{
+    control = d.exists ? d.data() : {scoringOpen:true,votingOpen:false};
+    refreshControlUI();
+  }, ()=>{});
+  db.collection('votes').onSnapshot(s=>{
+    voteCounts={}; let total=0;
+    s.forEach(doc=>{ const v=doc.data(); voteCounts[v.teamId]=(voteCounts[v.teamId]||0)+1; total++; });
+    if(voterId){ const m=s.docs.find(d=>d.id===voterId); voterVoted=m?m.data().teamId:null; }
+    const sv=document.getElementById('stVotes'); if(sv) sv.textContent=total;
+    renderVote(); renderPop();
+  }, ()=>{});
+}
+
+/* ---------- 評審登入 ---------- */
+function fillJudgeSelect(){
+  document.getElementById('jSel').innerHTML=JUDGES.map(j=>`<option value="${j.id}">${j.name}（${j.type==='special'?'特殊評審':'正式評審'}）</option>`).join('');
+}
+function judgeLogin(){
+  const jid=document.getElementById('jSel').value, pin=document.getElementById('jPin').value.trim();
+  const j=JUDGES.find(x=>x.id===jid);
+  if(!j || pin!==j.pin){ document.getElementById('jErr').textContent="密碼錯誤，請再試一次"; return; }
+  curJudge=j; document.getElementById('jPin').value=''; document.getElementById('jErr').textContent='';
+  if(j.type==='special'){ openSpecial(); } else { openJudgeList(); }
+}
+function openJudgeList(){
+  document.getElementById('jTtl').textContent=curJudge.name;
+  if(db){
+    db.collection('scores').where('judgeId','==',curJudge.id).onSnapshot(s=>{
+      myScores={}; s.forEach(d=>{const v=d.data(); myScores[v.teamId]=v;}); renderJudgeList();
+    },()=>renderJudgeList());
+  }
+  renderJudgeList(); go('s-jlist');
+}
+function renderJudgeList(){
+  if(!control.scoringOpen){ document.getElementById('jList').innerHTML='<div class="closed">評分尚未開放，請等主辦開啟。</div>'; return; }
+  document.getElementById('jList').innerHTML=TEAMS.map(t=>{
+    const done=myScores[t.id]; return `
+    <div class="tcard" onclick="openScore(${t.id})">
+      <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
+        <span class="badge ${done?'b-done':'b-todo'}">${done?('已評 '+done.total):'待評分'}</span></div>
+      <div class="name">${t.name}</div><div class="topic">${t.topic}</div>
+      ${t.link?`<a class="link" href="${t.link}" target="_blank" rel="noopener" onclick="event.stopPropagation()">▸ 查看作品連結</a>`:''}
+    </div>`;}).join('');
+}
+
+/* ---------- 打分 ---------- */
+function openScore(id){
+  cur=TEAMS.find(t=>t.id===id); const prev=myScores[id];
+  document.getElementById('scNum').textContent='#'+String(cur.id).padStart(2,'0')+' · '+cur.cat;
+  document.getElementById('scName').textContent=cur.name;
+  document.getElementById('scTopic').textContent=cur.topic;
+  document.getElementById('cmt').value=prev?prev.comment||'':'';
+  document.getElementById('scErr').textContent='';
+  document.getElementById('critBox').innerHTML=CRITERIA.map((c,i)=>{
+    const v=prev?prev.scores[i]:Math.round(c.max*0.7);
+    return `<div class="item"><div class="lbl"><span class="nm">${c.k}</span><span class="w">滿分 ${c.max}</span>
+      <span class="val" id="v${i}">${v} / ${c.max}</span></div>
+      <div style="font-size:11px;color:var(--dim);line-height:1.5">${c.d}</div>
+      <input type="range" min="0" max="${c.max}" step="1" value="${v}" oninput="upd(${i})"></div>`;}).join('');
+  calc(); go('s-score');
+}
+function upd(i){ const r=document.querySelectorAll('#critBox input')[i];
+  document.getElementById('v'+i).textContent=parseInt(r.value)+' / '+CRITERIA[i].max; calc(); }
+function calc(){ let t=0; document.querySelectorAll('#critBox input').forEach(r=>t+=parseInt(r.value));
+  document.getElementById('totalVal').textContent=t+' / 100'; return t; }
+function submitScore(){
+  const scores=[...document.querySelectorAll('#critBox input')].map(r=>parseInt(r.value));
+  const total=scores.reduce((a,b)=>a+b,0);
+  const rec={judgeId:curJudge.id, judgeName:curJudge.name, teamId:cur.id, teamName:cur.name,
+    scores, total, comment:document.getElementById('cmt').value.trim(), updatedAt:Date.now()};
+  if(!db){ myScores[cur.id]=rec; renderJudgeList(); go('s-jlist'); banner("⚠ 離線：分數未同步（請設定 Firebase）"); return; }
+  db.collection('scores').doc(curJudge.id+'__'+cur.id).set(rec)
+    .then(()=>{ go('s-jlist'); })
+    .catch(e=>{ document.getElementById('scErr').textContent="送出失敗："+e.message; });
+}
+
+/* ---------- 特殊評審選大獎 ---------- */
+function openSpecial(){
+  document.getElementById('spTtl').textContent=curJudge.name+' · 選大獎';
+  if(db) db.collection('awards').doc(curJudge.id).onSnapshot(d=>{ myAward=d.exists?d.data().teamId:null; renderSpecial(); },()=>renderSpecial());
+  renderSpecial(); go('s-spick');
+}
+function renderSpecial(){
+  document.getElementById('spList').innerHTML=TEAMS.map(t=>{
+    const picked=myAward===t.id; return `
+    <div class="tcard" onclick="pickAward(${t.id})">
+      <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
+        ${picked?'<span class="badge b-pick">★ 已選</span>':''}</div>
+      <div class="name">${t.name}</div><div class="topic">${t.topic}</div>
+    </div>`;}).join('');
+}
+function pickAward(id){
+  const ref=db?db.collection('awards').doc(curJudge.id):null;
+  if(myAward===id){ myAward=null; if(ref) ref.delete(); }
+  else { myAward=id; if(ref) ref.set({judgeId:curJudge.id, judgeName:curJudge.name, teamId:id, teamName:TEAMS.find(t=>t.id===id).name}); }
+  renderSpecial();
+}
+
+/* ---------- 主辦後台 ---------- */
+function adminLogin(){
+  if(document.getElementById('aPin').value.trim()!==ADMIN_PIN){ document.getElementById('aErr').textContent="密碼錯誤"; return; }
+  document.getElementById('aPin').value=''; document.getElementById('aErr').textContent='';
+  if(db){
+    db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); },()=>{});
+    db.collection('awards').onSnapshot(s=>{ const a=[]; s.forEach(d=>a.push(d.data())); renderAward(a); },()=>{});
+  }
+  renderLead(); renderPop(); refreshControlUI(); go('s-dash');
+}
+function renderLead(){
+  const mains=JUDGES.filter(j=>j.type==='main').map(j=>j.id);
+  const rows=TEAMS.map(t=>{
+    const ss=allScores.filter(s=>s.teamId===t.id && mains.includes(s.judgeId));
+    const avg=ss.length?ss.reduce((a,b)=>a+b.total,0)/ss.length:0;
+    return {name:t.name, cat:t.cat, n:ss.length, avg};
+  }).sort((a,b)=>b.avg-a.avg);
+  const totalCells=TEAMS.length*mains.length;
+  const filled=allScores.filter(s=>mains.includes(s.judgeId)).length;
+  document.getElementById('stProg').textContent=Math.round(filled/totalCells*100)+'%';
+  document.getElementById('leadBox').innerHTML=rows.map((t,i)=>`
+    <div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
+      <div class="info"><div class="nm">${t.name}</div><div class="sub">${t.cat} · ${t.n}/3 位評審</div></div>
+      <div class="pts">${t.avg.toFixed(1)}</div></div>`).join('');
+}
+function renderAward(list){
+  const box=document.getElementById('awardBox'); if(!box) return;
+  const specials=JUDGES.filter(j=>j.type==='special');
+  box.innerHTML=specials.map(j=>{
+    const a=list.find(x=>x.judgeId===j.id);
+    return `<div class="lrow" style="${a?'':'border-style:dashed'}"><div class="rk" style="color:${a?'#ffd24a':'var(--dim)'}">★</div>
+      <div class="info"><div class="nm" style="color:${a?'var(--txt)':'var(--mut)'}">${a?a.teamName:'保留名額'}</div>
+      <div class="sub">${j.name}${a?'':' · 尚未選定'}</div></div></div>`;}).join('');
+}
+function refreshControlUI(){
+  const bs=document.getElementById('btnScore'), bv=document.getElementById('btnVote');
+  if(bs) bs.textContent='評分：'+(control.scoringOpen?'開放中（點擊關閉）':'已關閉（點擊開放）');
+  if(bv) bv.textContent='投票：'+(control.votingOpen?'開放中（點擊關閉）':'已關閉（點擊開放）');
+  renderVote();
+}
+function toggleCtl(key){
+  control[key]=!control[key];
+  if(db) db.collection('control').doc('state').set(control,{merge:true});
+  refreshControlUI();
+}
+function exportCSV(){
+  const mains=JUDGES.filter(j=>j.type==='main');
+  let csv="編號,組名,分類";
+  mains.forEach(j=>csv+=','+j.name);
+  csv+=",正式評審平均,人氣票數\n";
+  TEAMS.forEach(t=>{
+    const row=["#"+t.id, '"'+t.name+'"', t.cat];
+    let sum=0,c=0;
+    mains.forEach(j=>{ const s=allScores.find(x=>x.judgeId===j.id&&x.teamId===t.id);
+      row.push(s?s.total:''); if(s){sum+=s.total;c++;} });
+    row.push(c?(sum/c).toFixed(1):''); row.push(voteCounts[t.id]||0);
+    csv+=row.join(',')+"\n";
+  });
+  const blob=new Blob(["﻿"+csv],{type:'text/csv'}); const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='北祥黑客松2026_成績.csv'; a.click();
+}
+
+/* ---------- 人氣投票（員編） ---------- */
+function initVote(){ renderVote(); }
+function setVoter(){
+  const v=document.getElementById('empId').value.trim().toUpperCase();
+  const err=document.getElementById('voteErr'); err.textContent='';
+  if(!v){ err.textContent='請輸入員編'; voterId=null; renderVote(); return; }
+  if(VALID_EMP_IDS.length && !VALID_EMP_IDS.includes(v)){ err.textContent='查無此員編'; voterId=null; renderVote(); return; }
+  voterId=v;
+  if(db){ db.collection('votes').doc(v).get().then(d=>{ voterVoted=d.exists?d.data().teamId:null; renderVote(); }).catch(()=>renderVote()); }
+  renderVote();
+}
+function renderVote(){
+  const msg=document.getElementById('voteMsg'), list=document.getElementById('voteList'), idBox=document.getElementById('voteIdBox');
+  if(!list) return;
+  if(!db){ msg.style.display='block'; msg.textContent='⚠ 尚未設定 Firebase，無法投票。'; idBox.style.display='none'; list.innerHTML=''; return; }
+  if(!control.votingOpen){ msg.style.display='block'; msg.textContent='投票尚未開放，敬請期待 🔥'; idBox.style.display='none'; list.innerHTML=''; return; }
+  msg.style.display='none'; idBox.style.display='block';
+  const st=document.getElementById('voterStatus');
+  if(st){
+    if(!voterId) st.textContent='';
+    else if(voterVoted) st.textContent='員編 '+voterId+' 已投票';
+    else st.textContent='員編 '+voterId+' 可投票';
+  }
+  const max=Math.max(1,...Object.values(voteCounts));
+  list.innerHTML=TEAMS.map(t=>{
+    const c=voteCounts[t.id]||0, pct=Math.round(c/max*100), isV=voterVoted===t.id;
+    const cls=voterVoted?(isV?'voteBtn voted':'voteBtn disabled'):'voteBtn';
+    return `<div class="vbar"><div class="vt"><span class="nm">#${String(t.id).padStart(2,'0')} ${t.name}</span><span class="ct">${c} 票</span></div>
+      <div class="track"><div class="fill" style="width:${pct}%"></div></div>
+      <div class="${cls}" onclick="castVote(${t.id})">${isV?'✓ 已投這組':'投這組'}</div></div>`;}).join('');
+}
+function castVote(id){
+  if(!control.votingOpen||!db) return;
+  const err=document.getElementById('voteErr'); err.textContent='';
+  if(!voterId){ err.textContent='請先在上方輸入員編並按「確認員編」'; window.scrollTo(0,0); return; }
+  if(voterVoted){ err.textContent='此員編已投過票，無法再投'; return; }
+  db.collection('votes').doc(voterId).set({empId:voterId, teamId:id, at:Date.now()})
+    .then(()=>{ voterVoted=id; renderVote(); })
+    .catch(e=>{ err.textContent = (e.code==='permission-denied') ? '此員編已投過或不在名單內' : '投票失敗：'+e.message; });
+}
+function renderPop(){
+  const box=document.getElementById('popBox'); if(!box) return;
+  const top=TEAMS.map(t=>({name:t.name,v:voteCounts[t.id]||0})).sort((a,b)=>b.v-a.v).slice(0,5);
+  box.innerHTML=top.map((t,i)=>`<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
+    <div class="info"><div class="nm">${t.name}</div></div><div class="pts">${t.v}</div></div>`).join('');
+}
+
+fillJudgeSelect();
+initFirebase();
+renderVote();
+</script>
+</body>
+</html>
