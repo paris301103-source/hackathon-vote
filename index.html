@@ -437,7 +437,10 @@ function openScore(id){
   cur=TEAMS.find(t=>t.id===id); const prev=myScores[id];
   document.getElementById('scNum').textContent='#'+String(cur.id).padStart(2,'0')+' · '+cur.cat;
   document.getElementById('scName').textContent=cur.name;
-  document.getElementById('scTopic').textContent=cur.topic;
+  document.getElementById('scTopic').textContent=cur.tag;
+  const bf=document.getElementById('scBrief');
+  bf.innerHTML='<div class="bft">隊長 '+cur.lead+'·'+cur.dept+' ｜ '+cur.ppl+' ｜ AI：'+cur.tool+'</div>';
+  const pre=document.createElement('div'); pre.className='bftext'; pre.textContent=cur.brief||'（無簡介）'; bf.appendChild(pre);
   document.getElementById('cmt').value=prev?prev.comment||'':'';
   document.getElementById('scErr').textContent='';
   document.getElementById('critBox').innerHTML=CRITERIA.map((c,i)=>{
