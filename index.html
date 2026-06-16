@@ -152,18 +152,22 @@
   .crown{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:17px;}
   .nmt{font-size:14px; font-weight:700; text-align:center; margin-bottom:10px;}
   #themeBtn{position:fixed; top:10px; right:10px; z-index:300; font-size:13px; font-weight:700; padding:8px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--txt); cursor:pointer; box-shadow:0 4px 14px -6px #00000055;}
-  [data-theme="light"] .brief .bftext{font-size:18px; line-height:1.85;}
-  [data-theme="light"] .brief .bft{font-size:15px;}
-  [data-theme="light"] .crit .lbl .nm{font-size:18px;}
-  [data-theme="light"] .crit .lbl .val{font-size:30px;}
-  [data-theme="light"] .tcard .name{font-size:21px;}
-  [data-theme="light"] .tcard .topic{font-size:16px;}
-  [data-theme="light"] .tcard .meta2{font-size:14px;}
-  [data-theme="light"] .btn{font-size:20px;}
-  [data-theme="light"] .vbar .nm{font-size:19px;}
-  [data-theme="light"] .score-head .nm{font-size:28px;}
-  [data-theme="light"] .lrow .nm{font-size:18px;} [data-theme="light"] .lrow .pts{font-size:28px;}
-  [data-theme="light"] .h-main{font-size:24px;}
+  [data-theme="light"] .brief .bftext{font-size:20px; line-height:1.9;}
+  [data-theme="light"] .brief .bft{font-size:16px;}
+  [data-theme="light"] .crit .lbl .nm{font-size:21px;} [data-theme="light"] .crit .lbl .w{font-size:15px;}
+  [data-theme="light"] .crit .lbl .val{font-size:34px;}
+  [data-theme="light"] .tcard .name{font-size:25px;}
+  [data-theme="light"] .tcard .topic{font-size:18px;}
+  [data-theme="light"] .tcard .meta2{font-size:15px;}
+  [data-theme="light"] .tcard .num{font-size:15px;} [data-theme="light"] .badge{font-size:13px;}
+  [data-theme="light"] .btn{font-size:23px; padding:18px;}
+  [data-theme="light"] .vbar .nm{font-size:22px;} [data-theme="light"] .voteBtn{font-size:18px; padding:13px 0;}
+  [data-theme="light"] .score-head .nm{font-size:34px;} [data-theme="light"] .score-head .tp{font-size:17px;}
+  [data-theme="light"] .lrow .nm{font-size:21px;} [data-theme="light"] .lrow .sub{font-size:15px;} [data-theme="light"] .lrow .pts{font-size:32px;}
+  [data-theme="light"] .sec-h{font-size:15px;} [data-theme="light"] label.fld{font-size:17px;}
+  [data-theme="light"] select,[data-theme="light"] input,[data-theme="light"] textarea{font-size:19px;}
+  [data-theme="light"] .h-main{font-size:28px;} [data-theme="light"] .jname{font-size:22px;} [data-theme="light"] .jrole{font-size:15px;}
+  [data-theme="light"] .stat .v{font-size:26px;}
 </style>
 </head>
 <body>
@@ -285,6 +289,8 @@
     </div>
     <div class="sec-h">綜合排行（具名評審 Sting／Mark／Janet 平均）</div>
     <div id="leadBox"></div>
+    <div class="sec-h">📋 各具名評審個人 Top 3</div>
+    <div id="jtopBox"></div>
     <div class="sec-h">🕵️ 神秘評審獨立計分</div>
     <div id="mysteryBox"></div>
     <div class="sec-h">🏅 神秘評審頒獎</div>
@@ -534,6 +540,15 @@ function renderMystery(){
       <div class="sub">${top||'尚未評分'}</div></div></div>`;
   }).join('');
 }
+function renderJudgeTops(){
+  const box=document.getElementById('jtopBox'); if(!box) return;
+  const mains=JUDGES.filter(j=>j.type==='main');
+  box.innerHTML=mains.map(j=>{
+    const ss=allScores.filter(s=>s.judgeId===j.id).sort((a,b)=>b.total-a.total).slice(0,3);
+    const t=ss.map((s,i)=>`${i+1}. ${s.teamName}（${s.total}）`).join('　');
+    return `<div class="lrow"><div class="rk">🏅</div><div class="info"><div class="nm">${j.name}</div><div class="sub">${t||'尚未評分'}</div></div></div>`;
+  }).join('');
+}
 function renderAwards(list){
   const box=document.getElementById('awardBox'); if(!box) return;
   const ms=JUDGES.filter(j=>j.type==='mystery');
@@ -549,16 +564,16 @@ function adminLogin(){
   if(document.getElementById('aPin').value.trim()!==PINS.admin){ document.getElementById('aErr').textContent="密碼錯誤"; return; }
   document.getElementById('aPin').value=''; document.getElementById('aErr').textContent='';
   if(db){
-    db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderMystery(); },()=>{});
+    db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderJudgeTops(); renderMystery(); },()=>{});
     db.collection('awards').onSnapshot(s=>{ const a=[]; s.forEach(d=>a.push(d.data())); renderAwards(a); },()=>{});
   }
-  renderLead(); renderMystery(); renderAwards([]); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
+  renderLead(); renderJudgeTops(); renderMystery(); renderAwards([]); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
 }
 function renderLead(){
   const mains=JUDGES.filter(j=>j.type==='main');
   const ids=mains.map(j=>j.id);
   const rows=TEAMS.map(t=>{
-    const per=mains.map(j=>{ const s=allScores.find(x=>x.judgeId===j.id&&x.teamId===t.id); return {ini:j.ini, v:s?s.total:null}; });
+    const per=mains.map(j=>{ const s=allScores.find(x=>x.judgeId===j.id&&x.teamId===t.id); return {nm:j.short.split(' ')[0], v:s?s.total:null}; });
     const got=per.filter(p=>p.v!=null);
     const sum=got.reduce((a,p)=>a+p.v,0);
     const avg=got.length?sum/got.length:0;
@@ -568,7 +583,7 @@ function renderLead(){
   const filled=allScores.filter(s=>ids.includes(s.judgeId)).length;
   document.getElementById('stProg').textContent=Math.round(filled/totalCells*100)+'%';
   document.getElementById('leadBox').innerHTML=rows.map((t,i)=>{
-    const detail=t.per.map(p=>`${p.ini} ${p.v!=null?p.v:'—'}`).join('　');
+    const detail=t.per.map(p=>`${p.nm} ${p.v!=null?p.v:'—'}`).join('　');
     return `<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
       <div class="info"><div class="nm">${t.name}</div><div class="sub">${detail}　·　總分 ${t.sum}</div></div>
       <div class="pts">${t.avg.toFixed(1)}</div></div>`;}).join('');
