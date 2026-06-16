@@ -208,7 +208,7 @@
       </div>
       <div class="role" onclick="go('s-vote'); initVote()">
         <div class="ic" style="background:#ffd24a22;color:#ffd24a">🔥</div>
-        <div><div class="t">人氣投票</div><div class="d">輸入員編，一人一票</div></div>
+        <div><div class="t">人氣投票</div><div class="d">姓名＋工號登入，一人一票</div></div>
         <div class="arr">›</div>
       </div>
       <div class="role" onclick="go('s-alogin')">
@@ -335,11 +335,13 @@
     <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">🔥 人氣投票</span></div>
     <div id="voteWrap"><div class="closed" id="voteMsg">載入中…</div></div>
     <div class="pad" id="voteIdBox" style="display:none">
-      <label class="fld">輸入你的員編（一個員編只能投一次）</label>
-      <input type="text" id="empId" placeholder="例如 A1234" autocomplete="off">
-      <button class="btn gho" onclick="setVoter()">確認員編</button>
+      <label class="fld">帳號（你的英文姓名）</label>
+      <input type="text" id="empAcc" placeholder="例如 Vita Tung（大小寫、空白皆可）" autocomplete="off">
+      <label class="fld">密碼（員工工號）</label>
+      <input type="text" id="empPw" placeholder="例如 A11407003" autocomplete="off">
+      <button class="btn gho" onclick="setVoter()">登入投票</button>
       <div class="err" id="voteErr"></div>
-      <div id="voterStatus" style="text-align:center;font-size:13px;color:var(--teal);margin-top:8px"></div>
+      <div id="voterStatus" style="text-align:center;font-size:14px;color:var(--teal);margin-top:8px"></div>
     </div>
     <div class="pad grid" id="voteList"></div>
   </section>
@@ -372,11 +374,8 @@ const JUDGES = [
 ];
 const ADMIN_PIN = '0000';
 
-// 可投票的員編名單（之後把公司員編貼進來，一個員編只能投一次）
-// 留空陣列 [] 代表不檢查、任何員編都可投；填入後只有名單內的員編能投
-const VALID_EMP_IDS = [
-  // "A1234", "A1235", "B0001",  ← 範例，換成真實員編
-];
+// 可投票名單：帳號=英文姓名（不分大小寫、空白可省略），密碼=員工工號。最後 10 筆為備用帳號
+const EMPLOYEES = [{"n": "Vita Tung", "p": "A11407003"}, {"n": "Frank Chen", "p": "07101001"}, {"n": "Vicki Ku", "p": "09510004"}, {"n": "Sean Chen", "p": "10002002"}, {"n": "Julia Yang", "p": "07907001"}, {"n": "Janet Hsueh", "p": "A11411003"}, {"n": "Andy Huang", "p": "08802001"}, {"n": "Teresa Hung", "p": "10308001"}, {"n": "Sera Hung", "p": "11002001"}, {"n": "Alex Wang", "p": "10911001"}, {"n": "Vivian Huang", "p": "A11407002"}, {"n": "Summer Wu", "p": "A11506003"}, {"n": "Lynn Chang", "p": "09006002"}, {"n": "Jason Hsueh", "p": "09208001"}, {"n": "Will Wang", "p": "09706002"}, {"n": "Maxx Hsu", "p": "09802001"}, {"n": "Nova Shih", "p": "09809002"}, {"n": "Gordon Hsieh", "p": "10102001"}, {"n": "Purin Chang", "p": "10105003"}, {"n": "Jason Chiu", "p": "10810004"}, {"n": "Louis Chen", "p": "11004002"}, {"n": "Steven Liao", "p": "11105008"}, {"n": "Dylan Chien", "p": "11108004"}, {"n": "Carson Hsiao", "p": "10411002"}, {"n": "Andy Wu", "p": "10411003"}, {"n": "C.H. Chou", "p": "10501002"}, {"n": "Audrey Lin", "p": "10807005"}, {"n": "Webber Li", "p": "10803001"}, {"n": "Savanna Chuang", "p": "11107005"}, {"n": "Marcos Huang", "p": "11107011"}, {"n": "Jeff Yang", "p": "11108003"}, {"n": "Kevin Huang", "p": "11108007"}, {"n": "Tsaifu Liu", "p": "11109001"}, {"n": "Sam Lin", "p": "11211004"}, {"n": "Jay Chen", "p": "A11401005"}, {"n": "Jessica Wu", "p": "A11403002"}, {"n": "Luca Lu", "p": "08906001"}, {"n": "Angel Wu", "p": "09009001"}, {"n": "Yihsin Lin", "p": "10906003"}, {"n": "Kurtis Chen", "p": "A11409003"}, {"n": "Yuno Zhong", "p": "A11501001"}, {"n": "Chester Young", "p": "A11501002"}, {"n": "Cathy Mao", "p": "10404002"}, {"n": "Jason Chen", "p": "10505006"}, {"n": "Maggie Fu", "p": "10910001"}, {"n": "Alynn Chen", "p": "10912001"}, {"n": "Nono Lin", "p": "09708001"}, {"n": "John Weng", "p": "10510002"}, {"n": "Mechell Wu", "p": "10511003"}, {"n": "Benson Hsieh", "p": "10704010"}, {"n": "Jeter Chiu", "p": "10801001"}, {"n": "Eason Liu", "p": "10906004"}, {"n": "Eric Kao", "p": "A11403001"}, {"n": "ChiaoHsun Yang", "p": "A11403007"}, {"n": "Steven Liu", "p": "A11411001"}, {"n": "Ringo Huang", "p": "A11505002"}, {"n": "Kiki Chiu", "p": "11105001"}, {"n": "Justin Wei", "p": "09603001"}, {"n": "Tommy Chen", "p": "09611003"}, {"n": "Flora Hsieh", "p": "11206002"}, {"n": "Dustin Wang", "p": "11209006"}, {"n": "Faye Hsieh", "p": "11304007"}, {"n": "Kelly Wu", "p": "11110003"}, {"n": "Yasir Chen", "p": "11112002"}, {"n": "Olivia Chu", "p": "09503004"}, {"n": "T.Y. Yang", "p": "09507004"}, {"n": "Clark Chen", "p": "11110002"}, {"n": "Upon Hsu", "p": "10202007"}, {"n": "Beatrice Cheng", "p": "10202008"}, {"n": "Robin Lee", "p": "10204010"}, {"n": "Wenfei Shie", "p": "10305001"}, {"n": "Sereya Huang", "p": "10404005"}, {"n": "Ken Lin", "p": "10412005"}, {"n": "Pierce Yao", "p": "10504006"}, {"n": "Sam Hsieh", "p": "10905002"}, {"n": "Jamie Yang", "p": "10907002"}, {"n": "Cindy Wen", "p": "11009004"}, {"n": "Christina Chen", "p": "11107004"}, {"n": "Carol Tsai", "p": "11304005"}, {"n": "Kelly Ke", "p": "10207012"}, {"n": "Steven Huang", "p": "11005012"}, {"n": "Elsa Hsu", "p": "11106001"}, {"n": "Jimmy Chang", "p": "10211001"}, {"n": "Emily Lin", "p": "10407002"}, {"n": "Carlos Chang", "p": "10412003"}, {"n": "Irene Cheng", "p": "10502004"}, {"n": "Tzu Yu Chen", "p": "11109004"}, {"n": "Kat Huang", "p": "11207005"}, {"n": "Galileo Chen", "p": "10205002"}, {"n": "Henry Lin", "p": "10104001"}, {"n": "Ian Chien", "p": "10506005"}, {"n": "Taco Zhang", "p": "10701002"}, {"n": "Charly Yueh", "p": "11005001"}, {"n": "Rita Lu", "p": "11107010"}, {"n": "Terry Chen", "p": "11206006"}, {"n": "Eddie Wang", "p": "11209005"}, {"n": "Kent Tang", "p": "10110001"}, {"n": "Jason Tsao", "p": "10404007"}, {"n": "Euger Wu", "p": "10412004"}, {"n": "Leo Yulin", "p": "10509001"}, {"n": "Peter Guo", "p": "10807002"}, {"n": "Sam Po", "p": "11008004"}, {"n": "Eddy Chen", "p": "11211010"}, {"n": "Eason Yang", "p": "10011001"}, {"n": "John Lin", "p": "10412006"}, {"n": "Sophie Chou", "p": "11107008"}, {"n": "BillChen", "p": "11203006"}, {"n": "Chris Hsieh", "p": "11304002"}, {"n": "EJ TANG", "p": "11305001"}, {"n": "Jaguar Lin", "p": "11009001"}, {"n": "William Tu", "p": "11105007"}, {"n": "Tina Guo", "p": "11107002"}, {"n": "Jerry Chien", "p": "11108001"}, {"n": "Edwin Hsieh", "p": "11110001"}, {"n": "Shelly Hsieh", "p": "11208004"}, {"n": "Joe Li", "p": "11208006"}, {"n": "Felix Lin", "p": "11210002"}, {"n": "Gloria Chang", "p": "11301001"}, {"n": "Jack Lo", "p": "11301003"}, {"n": "Lleyton Lin", "p": "11301005"}, {"n": "Shipon Zhuang", "p": "11303007"}, {"n": "Samuel Hsu", "p": "A11410003"}, {"n": "Panny Chen", "p": "09205001"}, {"n": "Joy Cheng", "p": "A11408004"}, {"n": "Bryan Lin", "p": "11111001"}, {"n": "Tristan Chou", "p": "A11408001"}, {"n": "Jack Lu", "p": "A11412004"}, {"n": "Brian Chang", "p": "10704004"}, {"n": "Sherry Lee", "p": "11206003"}, {"n": "Bella Huang", "p": "11209003"}, {"n": "Cindy yang", "p": "11308005"}, {"n": "Wind Huang", "p": "10412001"}, {"n": "Meta Liu", "p": "10406001"}, {"n": "Feby Chen", "p": "11001002"}, {"n": "Galladon Lin", "p": "11004009"}, {"n": "Flora Huang", "p": "11012002"}, {"n": "Rae Jheng", "p": "11105005"}, {"n": "James Yu", "p": "11312001"}, {"n": "James Hsu", "p": "11005002"}, {"n": "Karnan Gopalakrishnan", "p": "11212007"}, {"n": "Allen Yang", "p": "11304004"}, {"n": "Jennifer Huang", "p": "11305004"}, {"n": "Amanda Lee", "p": "11305007"}, {"n": "Myles Lin", "p": "11307004"}, {"n": "Billy Xu", "p": "A11405004"}, {"n": "Alvin Luo", "p": "A11410004"}, {"n": "Punk Chien", "p": "09411001"}, {"n": "Michael Fang", "p": "10506006"}, {"n": "Anita Hu", "p": "A11403008"}, {"n": "Eugene Huang", "p": "A11409001"}, {"n": "Alley Tsai", "p": "A11504001"}, {"n": "YuHao Mai", "p": "11209001"}, {"n": "CoCo Wu", "p": "08711001"}, {"n": "Angel Chen", "p": "10411004"}, {"n": "Lynn Chiu", "p": "11208008"}, {"n": "Sally Shen", "p": "A11404001"}, {"n": "weifeng Wang", "p": "A11401003"}, {"n": "Passion Yo", "p": "A11405003"}, {"n": "Nagi Chang", "p": "A11506001"}, {"n": "Bonnie Cheng", "p": "10106003"}, {"n": "Ruby Lai", "p": "11204004"}, {"n": "Yolanda Peng", "p": "11208003"}, {"n": "Jay Chiu", "p": "11303001"}, {"n": "Grace Lee", "p": "A11404007"}, {"n": "Andy Liu", "p": "08206001"}, {"n": "Michael Mai", "p": "08412001"}, {"n": "Helen Sung", "p": "10608003"}, {"n": "Joyce Hsieh", "p": "11305005"}, {"n": "Max Wang", "p": "B11410002"}, {"n": "Chiyen Huang", "p": "B11412001"}, {"n": "James Lee", "p": "10407008"}, {"n": "Vivian Yang", "p": "10901002"}, {"n": "Angus Chuang", "p": "11304006"}, {"n": "Anna liu", "p": "B11506002"}, {"n": "Jane Wu", "p": "10008001"}, {"n": "Ranee Wu", "p": "B11408002"}, {"n": "Johnny Wang", "p": "B11504002"}, {"n": "Jay Chiang", "p": "B11504003"}, {"n": "Alex Huang", "p": "10907005"}, {"n": "Evan Liu", "p": "11307008"}, {"n": "KK Liu", "p": "B11412003"}, {"n": "Morgan Lee", "p": "09203001"}, {"n": "Judy Chen", "p": "10007001"}, {"n": "Lydia Tsai", "p": "10704011"}, {"n": "Carrie Wu", "p": "11304008"}, {"n": "Dora Wang", "p": "11104003"}, {"n": "Jessie Chen", "p": "11306002"}, {"n": "Yan", "p": "B11506006"}, {"n": "Sara Chang", "p": "10601001"}, {"n": "Wayne Chang", "p": "10708006"}, {"n": "Joanna Lee", "p": "11306006"}, {"n": "Cindy Chang", "p": "11307006"}, {"n": "Coder Kao", "p": "11308002"}, {"n": "YuWei Chen", "p": "B11407001"}, {"n": "Ally chen", "p": "11305008"}, {"n": "John Yei", "p": "11307007"}, {"n": "Leo Liang", "p": "11306003"}, {"n": "Audrey Chang", "p": "10707003"}, {"n": "CJ hsu", "p": "11305006"}, {"n": "Apple Zhu", "p": "11305010"}, {"n": "Gina Wei", "p": "11308003"}, {"n": "Jessie Yu", "p": "11308004"}, {"n": "Cara Chang", "p": "11107006"}, {"n": "Ian Chen", "p": "11003003"}, {"n": "Gibby Li", "p": "11005006"}, {"n": "Ben Ku", "p": "11105006"}, {"n": "Richard Lin", "p": "11109005"}, {"n": "Howard Tsai", "p": "11210004"}, {"n": "Pika Lin", "p": "B11410001"}, {"n": "Johnny Jiang", "p": "B11412002"}, {"n": "Allen Lee", "p": "B11503001"}, {"n": "Melody Chen", "p": "B11404002"}, {"n": "Guest01", "p": "VOTE01"}, {"n": "Guest02", "p": "VOTE02"}, {"n": "Guest03", "p": "VOTE03"}, {"n": "Guest04", "p": "VOTE04"}, {"n": "Guest05", "p": "VOTE05"}, {"n": "Guest06", "p": "VOTE06"}, {"n": "Guest07", "p": "VOTE07"}, {"n": "Guest08", "p": "VOTE08"}, {"n": "Guest09", "p": "VOTE09"}, {"n": "Guest10", "p": "VOTE10"}];
 
 // 評分項目（每項上限＝權重，加總滿分 100）
 const CRITERIA = [
@@ -396,7 +395,7 @@ let db=null, auth=null, uid=null, curJudge=null, control={scoringOpen:true,votin
 let myScores={};
 let allScores=[];
 let voteCounts={};
-let voterId=null, voterVoted=null, voteOrder=null;
+let voterId=null, voterVoted=null, voteOrder=null, voterName=null;
 let cur=null;
 let awardsList=[];
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
@@ -665,13 +664,16 @@ function exportCSV(){
 /* ---------- 人氣投票（員編） ---------- */
 function initVote(){ renderVote(); }
 function voteOrderList(){ if(!voteOrder){ voteOrder=[...TEAMS]; for(let i=voteOrder.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=voteOrder[i]; voteOrder[i]=voteOrder[j]; voteOrder[j]=t; } } return voteOrder; }
+function normAcc(s){ return (s||'').replace(/\s+/g,'').toLowerCase(); }
 function setVoter(){
-  const v=document.getElementById('empId').value.trim().toUpperCase();
+  const acc=normAcc(document.getElementById('empAcc').value);
+  const pw=(document.getElementById('empPw').value||'').trim().toUpperCase();
   const err=document.getElementById('voteErr'); err.textContent='';
-  if(!v){ err.textContent='請輸入員編'; voterId=null; renderVote(); return; }
-  if(VALID_EMP_IDS.length && !VALID_EMP_IDS.includes(v)){ err.textContent='查無此員編'; voterId=null; renderVote(); return; }
-  voterId=v;
-  if(db){ db.collection('votes').doc(v).get().then(d=>{ voterVoted=d.exists?d.data().teamId:null; renderVote(); }).catch(()=>renderVote()); }
+  if(!acc||!pw){ err.textContent='請輸入帳號與密碼'; voterId=null; renderVote(); return; }
+  const emp=EMPLOYEES.find(e=>normAcc(e.n)===acc && e.p.toUpperCase()===pw);
+  if(!emp){ err.textContent='帳號或密碼錯誤，請再試一次'; voterId=null; renderVote(); return; }
+  voterId=emp.p; voterName=emp.n;
+  if(db){ db.collection('votes').doc(voterId).get().then(d=>{ voterVoted=d.exists?d.data().teamId:null; renderVote(); }).catch(()=>renderVote()); }
   renderVote();
 }
 function renderVote(){
@@ -683,8 +685,8 @@ function renderVote(){
   const st=document.getElementById('voterStatus');
   if(st){
     if(!voterId) st.textContent='';
-    else if(voterVoted) st.textContent='員編 '+voterId+' 已投票';
-    else st.textContent='員編 '+voterId+' 可投票';
+    else if(voterVoted) st.textContent='✓ '+(voterName||voterId)+' 已投票，謝謝你！';
+    else st.textContent='哈囉 '+(voterName||voterId)+'，請選一組投票';
   }
   list.innerHTML=voteOrderList().map(t=>{
     const isV=voterVoted===t.id;
@@ -698,7 +700,7 @@ function castVote(id){
   const err=document.getElementById('voteErr'); err.textContent='';
   if(!voterId){ err.textContent='請先在上方輸入員編並按「確認員編」'; window.scrollTo(0,0); return; }
   if(voterVoted){ err.textContent='此員編已投過票，無法再投'; return; }
-  db.collection('votes').doc(voterId).set({empId:voterId, teamId:id, at:Date.now()})
+  db.collection('votes').doc(voterId).set({empId:voterId, name:voterName||'', teamId:id, at:Date.now()})
     .then(()=>{ voterVoted=id; renderVote(); voteCelebrate(TEAMS.find(t=>t.id===id).name); })
     .catch(e=>{ err.textContent = (e.code==='permission-denied') ? '此員編已投過或不在名單內' : '投票失敗：'+e.message; });
 }
