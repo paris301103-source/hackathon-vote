@@ -191,7 +191,15 @@
   <section id="s-jlist" class="screen">
     <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta">盲評 ●</span></div>
     <div style="padding:12px 18px 0"><button class="btn gho" onclick="openMyRank()">📊 看我目前的評分排名</button></div>
+    <div id="jAwardWrap" style="padding:8px 18px 0; display:none"><button class="btn" onclick="openAward()">🏅 選出我的獎得主</button></div>
     <div class="pad grid" id="jList"></div>
+  </section>
+
+  <!-- AWARD PICK (mystery judges) -->
+  <section id="s-award" class="screen">
+    <div class="top"><span class="back" onclick="go('s-jlist')">‹</span><span class="ttl" id="awTtl">選出得獎組別</span></div>
+    <div style="padding:14px 18px 4px;color:var(--mut);font-size:12px;text-align:center">點一組頒給你的獎，再點一次可取消（也可以不選）</div>
+    <div class="pad grid" id="awList"></div>
   </section>
 
   <!-- MY RANK -->
@@ -245,6 +253,8 @@
     <div id="leadBox"></div>
     <div class="sec-h">🕵️ 神秘評審獨立計分</div>
     <div id="mysteryBox"></div>
+    <div class="sec-h">🏅 神秘評審頒獎</div>
+    <div id="awardBox"></div>
     <div class="sec-h">🔥 人氣獎 Top 5</div>
     <div id="popBox"></div>
     <div class="sec-h">🔑 修改密碼（改完立即生效）</div>
@@ -290,8 +300,8 @@ const JUDGES = [
   {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'外部評審',   ini:'S', pin:'1111', type:'main',    pos:'tl'},
   {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'外部評審',   ini:'M', pin:'2222', type:'main',    pos:'tr'},
   {id:'janet', name:'薛淑菁 Janet Hsueh', short:'Janet Hsueh', role:'北祥總經理', ini:'J', pin:'3333', type:'main',    pos:'mid'},
-  {id:'m1', name:'神秘評審一', short:'神秘評審', role:'神秘評審 · 身分保密', ini:'?', pin:'5551', type:'mystery', pos:'bl'},
-  {id:'m2', name:'神秘評審二', short:'神秘評審', role:'神秘評審 · 身分保密', ini:'?', pin:'5552', type:'mystery', pos:'br'},
+  {id:'m1', name:'神秘評審一', short:'神秘評審', role:'神秘評審 · 身分保密', ini:'?', pin:'5551', type:'mystery', pos:'bl', award:'遺珠獎'},
+  {id:'m2', name:'神秘評審二', short:'神秘評審', role:'神秘評審 · 身分保密', ini:'?', pin:'5552', type:'mystery', pos:'br', award:'務實落地獎'},
 ];
 const ADMIN_PIN = '0000';
 
@@ -330,7 +340,6 @@ let myScores={};
 let allScores=[];
 let voteCounts={};
 let voterId=null, voterVoted=null, voteOrder=null;
-let myAward=null;
 let cur=null;
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
 
@@ -404,6 +413,8 @@ function judgeLogin(){
 }
 function openJudgeList(){
   document.getElementById('jTtl').textContent=curJudge.name;
+  const aw=document.getElementById('jAwardWrap');
+  if(curJudge.type==='mystery'){ aw.style.display='block'; aw.querySelector('button').textContent='🏅 選出我的'+curJudge.award+'得主'; } else { aw.style.display='none'; }
   if(db){
     db.collection('scores').where('judgeId','==',curJudge.id).onSnapshot(s=>{
       myScores={}; s.forEach(d=>{const v=d.data(); myScores[v.teamId]=v;}); renderJudgeList();
@@ -430,6 +441,26 @@ function openMyRank(){
     <div class="info"><div class="nm">${s.teamName}</div><div class="sub">你給的總分</div></div>
     <div class="pts">${s.total}</div></div>`).join('');
   go('s-myrank');
+}
+let myAward=null;
+function openAward(){
+  document.getElementById('awTtl').textContent=curJudge.award+' · 選得主';
+  if(db) db.collection('awards').doc(curJudge.id).onSnapshot(d=>{ myAward=d.exists?d.data().teamId:null; renderAwardPick(); },()=>renderAwardPick());
+  renderAwardPick(); go('s-award');
+}
+function renderAwardPick(){
+  document.getElementById('awList').innerHTML=TEAMS.map(t=>{
+    const picked=myAward===t.id;
+    return `<div class="tcard" onclick="pickAward(${t.id})">
+      <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
+        ${picked?`<span class="badge b-pick">★ ${curJudge.award}</span>`:''}</div>
+      <div class="name">${t.name}</div><div class="topic">${t.tag}</div></div>`;}).join('');
+}
+function pickAward(id){
+  const ref=db?db.collection('awards').doc(curJudge.id):null;
+  if(myAward===id){ myAward=null; if(ref) ref.delete(); }
+  else { myAward=id; if(ref) ref.set({judgeId:curJudge.id, judgeName:curJudge.name, award:curJudge.award, teamId:id, teamName:TEAMS.find(t=>t.id===id).name}); }
+  renderAwardPick();
 }
 
 /* ---------- 打分 ---------- */
@@ -478,6 +509,15 @@ function renderMystery(){
       <div class="sub">${top||'尚未評分'}</div></div></div>`;
   }).join('');
 }
+function renderAwards(list){
+  const box=document.getElementById('awardBox'); if(!box) return;
+  const ms=JUDGES.filter(j=>j.type==='mystery');
+  box.innerHTML=ms.map(j=>{
+    const a=list.find(x=>x.judgeId===j.id);
+    return `<div class="lrow" style="${a?'':'border-style:dashed'}"><div class="rk" style="color:${a?'#ffd24a':'var(--dim)'}">🏅</div>
+      <div class="info"><div class="nm" style="color:${a?'var(--txt)':'var(--mut)'}">${j.award}：${a?a.teamName:'尚未選定'}</div>
+      <div class="sub">由 ${j.name} 頒發</div></div></div>`;}).join('');
+}
 
 /* ---------- 主辦後台 ---------- */
 function adminLogin(){
@@ -485,8 +525,9 @@ function adminLogin(){
   document.getElementById('aPin').value=''; document.getElementById('aErr').textContent='';
   if(db){
     db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderMystery(); },()=>{});
+    db.collection('awards').onSnapshot(s=>{ const a=[]; s.forEach(d=>a.push(d.data())); renderAwards(a); },()=>{});
   }
-  renderLead(); renderMystery(); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
+  renderLead(); renderMystery(); renderAwards([]); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
 }
 function renderLead(){
   const mains=JUDGES.filter(j=>j.type==='main');
