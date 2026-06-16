@@ -168,6 +168,21 @@
   [data-theme="light"] select,[data-theme="light"] input,[data-theme="light"] textarea{font-size:19px;}
   [data-theme="light"] .h-main{font-size:28px;} [data-theme="light"] .jname{font-size:22px;} [data-theme="light"] .jrole{font-size:15px;}
   [data-theme="light"] .stat .v{font-size:26px;}
+  .pbar{height:10px; background:var(--track); border-radius:999px; overflow:hidden;}
+  .pbar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .5s;}
+  .pbar.mini{height:7px; margin-top:7px;}
+  .bigwrap{display:grid; grid-template-columns:1fr; gap:16px; padding:18px;}
+  .bigcol{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 18px 8px;}
+  .bigcol h2{font-size:21px; font-weight:900; margin:0 0 14px;}
+  .bigrow{margin-bottom:14px;}
+  .bigrow .h{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+  .bigrow .nm{font-size:18px; font-weight:800;}
+  .bigrow .v{font-size:20px; font-weight:900; color:var(--teal);}
+  .bigrow .bar{height:12px; background:var(--track); border-radius:999px; margin-top:7px; overflow:hidden;}
+  .bigrow .bar i{display:block; height:100%; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .5s;}
+  .bigaward{text-align:center; padding:16px; border:1px dashed var(--line); border-radius:14px; margin-bottom:12px;}
+  .bigaward .aw{font-size:14px; color:var(--mut);} .bigaward .tm{font-size:26px; font-weight:900; margin-top:6px; color:var(--pink);}
+  @media(min-width:680px){ .bigwrap{grid-template-columns:1fr 1fr 1fr;} .bigcol h2{font-size:24px;} .bigrow .nm{font-size:20px;} .bigaward .tm{font-size:30px;} }
 </style>
 </head>
 <body>
@@ -283,10 +298,12 @@
       <div class="stat"><div class="v" id="stProg">0%</div><div class="l">評分進度</div></div>
       <div class="stat"><div class="v" id="stVotes">0</div><div class="l">人氣總票</div></div>
     </div>
+    <div style="padding:10px 16px 0"><div class="pbar"><i id="progFill"></i></div></div>
     <div class="ctl" style="padding-top:14px">
       <button class="btn" id="btnScore" onclick="toggleCtl('scoringOpen')">評分：—</button>
       <button class="btn gho" id="btnVote" onclick="toggleCtl('votingOpen')">投票：—</button>
     </div>
+    <div class="ctl" style="padding-top:10px"><button class="btn gho" onclick="openBig()">🖥 開啟大螢幕成果板</button></div>
     <div class="sec-h">綜合排行（具名評審 Sting／Mark／Janet 平均）</div>
     <div id="leadBox"></div>
     <div class="sec-h">📋 各具名評審個人 Top 3</div>
@@ -301,6 +318,16 @@
     <div class="pad" id="pwBox"></div>
     <div class="ctl" style="padding:18px 16px 8px"><button class="btn gho" onclick="exportCSV()">匯出成績 CSV</button></div>
     <div class="ctl" style="padding:4px 16px 24px"><button class="btn" style="background:#7a1020" onclick="resetAll()">⚠ 清除所有資料（歸零）</button></div>
+  </section>
+
+  <!-- BIG SCREEN -->
+  <section id="s-bigscreen" class="screen">
+    <div class="top"><span class="back" onclick="go('s-dash')">‹</span><span class="ttl">🖥 大螢幕成果板</span><span class="meta">即時 ●</span></div>
+    <div class="bigwrap">
+      <div class="bigcol"><h2>🏆 綜合排行</h2><div id="bigLead"></div></div>
+      <div class="bigcol"><h2>🔥 人氣榜</h2><div id="bigPop"></div></div>
+      <div class="bigcol"><h2>🎖 得獎揭曉</h2><div id="bigAward"></div></div>
+    </div>
   </section>
 
   <!-- VOTE -->
@@ -371,6 +398,7 @@ let allScores=[];
 let voteCounts={};
 let voterId=null, voterVoted=null, voteOrder=null;
 let cur=null;
+let awardsList=[];
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
 
 function go(id){
@@ -405,7 +433,7 @@ function onReady(){
     s.forEach(doc=>{ const v=doc.data(); voteCounts[v.teamId]=(voteCounts[v.teamId]||0)+1; total++; });
     if(voterId){ const m=s.docs.find(d=>d.id===voterId); voterVoted=m?m.data().teamId:null; }
     const sv=document.getElementById('stVotes'); if(sv) sv.textContent=total;
-    renderVote(); renderPop();
+    renderVote(); renderPop(); renderBigscreen();
   }, ()=>{});
 }
 
@@ -540,6 +568,23 @@ function renderMystery(){
       <div class="sub">${top||'尚未評分'}</div></div></div>`;
   }).join('');
 }
+function openBig(){ renderBigscreen(); go('s-bigscreen'); }
+function renderBigscreen(){
+  const lb=document.getElementById('bigLead'); if(!lb) return;
+  const mains=JUDGES.filter(j=>j.type==='main');
+  const rows=TEAMS.map(t=>{ const ss=allScores.filter(s=>s.teamId===t.id&&mains.some(j=>j.id===s.judgeId)); const avg=ss.length?ss.reduce((a,b)=>a+b.total,0)/ss.length:0; return {name:t.name,avg};}).sort((a,b)=>b.avg-a.avg).slice(0,8);
+  lb.innerHTML=rows.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${i+1}. ${t.name}</span><span class="v">${t.avg.toFixed(1)}</span></div><div class="bar"><i style="width:${Math.round(t.avg)}%"></i></div></div>`).join('');
+  const pop=TEAMS.map(t=>({name:t.name,v:voteCounts[t.id]||0})).sort((a,b)=>b.v-a.v).slice(0,8);
+  const mx=Math.max(1,...pop.map(x=>x.v));
+  const pb=document.getElementById('bigPop'); if(pb) pb.innerHTML=pop.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${i+1}. ${t.name}</span><span class="v">${t.v}</span></div><div class="bar"><i style="width:${Math.round(t.v/mx*100)}%"></i></div></div>`).join('');
+  const ab=document.getElementById('bigAward');
+  if(ab){
+    const champ=rows[0];
+    let html=`<div class="bigaward"><div class="aw">🥇 冠軍（評審綜合）</div><div class="tm">${champ&&champ.avg>0?champ.name:'—'}</div></div>`;
+    JUDGES.filter(j=>j.type==='mystery').forEach(j=>{ const a=awardsList.find(x=>x.judgeId===j.id); html+=`<div class="bigaward"><div class="aw">🎖 ${j.award}</div><div class="tm">${a?a.teamName:'未選'}</div></div>`; });
+    ab.innerHTML=html;
+  }
+}
 function renderJudgeTops(){
   const box=document.getElementById('jtopBox'); if(!box) return;
   const mains=JUDGES.filter(j=>j.type==='main');
@@ -564,8 +609,8 @@ function adminLogin(){
   if(document.getElementById('aPin').value.trim()!==PINS.admin){ document.getElementById('aErr').textContent="密碼錯誤"; return; }
   document.getElementById('aPin').value=''; document.getElementById('aErr').textContent='';
   if(db){
-    db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderJudgeTops(); renderMystery(); },()=>{});
-    db.collection('awards').onSnapshot(s=>{ const a=[]; s.forEach(d=>a.push(d.data())); renderAwards(a); },()=>{});
+    db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderJudgeTops(); renderMystery(); renderBigscreen(); },()=>{});
+    db.collection('awards').onSnapshot(s=>{ awardsList=[]; s.forEach(d=>awardsList.push(d.data())); renderAwards(awardsList); renderBigscreen(); },()=>{});
   }
   renderLead(); renderJudgeTops(); renderMystery(); renderAwards([]); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
 }
@@ -585,8 +630,9 @@ function renderLead(){
   document.getElementById('leadBox').innerHTML=rows.map((t,i)=>{
     const detail=t.per.map(p=>`${p.nm} ${p.v!=null?p.v:'—'}`).join('　');
     return `<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
-      <div class="info"><div class="nm">${t.name}</div><div class="sub">${detail}　·　總分 ${t.sum}</div></div>
+      <div class="info"><div class="nm">${t.name}</div><div class="sub">${detail}　·　總分 ${t.sum}</div><div class="pbar mini"><i style="width:${Math.round(t.avg)}%"></i></div></div>
       <div class="pts">${t.avg.toFixed(1)}</div></div>`;}).join('');
+  const pf=document.getElementById('progFill'); if(pf) pf.style.width=Math.round(filled/totalCells*100)+'%';
 }
 function refreshControlUI(){
   const bs=document.getElementById('btnScore'), bv=document.getElementById('btnVote');
