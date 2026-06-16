@@ -630,7 +630,7 @@ function renderLead(){
   document.getElementById('leadBox').innerHTML=rows.map((t,i)=>{
     const detail=t.per.map(p=>`${p.nm} ${p.v!=null?p.v:'—'}`).join('　');
     return `<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
-      <div class="info"><div class="nm">${t.name}</div><div class="sub">${detail}　·　總分 ${t.sum}</div><div class="pbar mini"><i style="width:${Math.round(t.avg)}%"></i></div></div>
+      <div class="info"><div class="nm">${t.name}</div><div class="sub">${detail}　·　總分 ${t.sum}</div></div>
       <div class="pts">${t.avg.toFixed(1)}</div></div>`;}).join('');
   const pf=document.getElementById('progFill'); if(pf) pf.style.width=Math.round(filled/totalCells*100)+'%';
 }
