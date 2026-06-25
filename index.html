@@ -195,6 +195,7 @@
   .cpy{font-size:13px; font-weight:700; border:1px solid var(--teal); color:var(--teal); background:transparent; border-radius:8px; padding:6px 12px; cursor:pointer; flex:none;}
   .mnote{font-size:13px; color:var(--mut); line-height:1.7; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; white-space:pre-wrap;}
   .mhint{font-size:12px; color:var(--mut); text-align:center; margin-top:10px; line-height:1.6;}
+  .cpyall{display:block; width:100%; margin-top:12px; font-size:15px; font-weight:800; padding:12px; border-radius:12px; border:1px solid var(--teal); background:var(--bg2); color:var(--teal); cursor:pointer;}
   #dmPw{color:var(--pink);}
 </style>
 </head>
@@ -367,6 +368,7 @@
     <div class="mh"><span id="dmName"></span><span class="mx" onclick="closeDemo()">✕</span></div>
     <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyVal('dmAcct')">複製</button></div></div>
     <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyVal('dmPw')">複製</button></div></div>
+    <button id="dmBothBtn" class="cpyall" onclick="copyBoth(this)">📋 複製帳號＋密碼</button>
     <div class="mrow" id="dmNoteRow"><div class="ml">備註</div><div class="mnote" id="dmNote"></div></div>
     <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品（另開分頁）↗</a>
     <div class="mhint">開啟後這個視窗不會關，登入時切回本分頁就能複製帳號、密碼。</div>
@@ -780,8 +782,9 @@ async function resetAll(){
     alert('✓ 已清除所有資料，可以開始正式計分了');
   }catch(e){ alert('清除失敗：'+e.message); }
 }
+let curDemo=null;
 function openDemo(id){
-  const t=TEAMS.find(x=>x.id===id); if(!t) return;
+  const t=TEAMS.find(x=>x.id===id); if(!t) return; curDemo=t;
   document.getElementById('dmName').textContent='#'+String(t.id).padStart(2,'0')+' '+t.name;
   const lk=document.getElementById('dmLink');
   if(t.link){ lk.style.display='block'; lk.href=t.link; } else { lk.style.display='none'; }
@@ -789,7 +792,14 @@ function openDemo(id){
   setr('dmAcctRow','dmAcct',t.acct);
   setr('dmPwRow','dmPw',t.pw);
   setr('dmNoteRow','dmNote',t.note);
+  document.getElementById('dmBothBtn').style.display=(t.acct||t.pw)?'block':'none';
   document.getElementById('demoModal').style.display='flex';
+}
+function copyBoth(btn){
+  if(!curDemo) return;
+  let s=''; if(curDemo.acct) s+='帳號：'+curDemo.acct+'\n'; if(curDemo.pw) s+='密碼：'+curDemo.pw;
+  if(navigator.clipboard) navigator.clipboard.writeText(s).catch(()=>{});
+  const old=btn.textContent; btn.textContent='✓ 已複製，貼到記事本'; setTimeout(()=>btn.textContent=old,1400);
 }
 function closeDemo(){ document.getElementById('demoModal').style.display='none'; }
 function copyVal(id){
