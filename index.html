@@ -188,12 +188,14 @@
   .mbox{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:20px; width:100%; max-width:420px; box-shadow:0 20px 60px -16px #000a;}
   .mh{display:flex; justify-content:space-between; align-items:center; font-size:18px; font-weight:800; margin-bottom:14px;}
   .mh .mx{cursor:pointer; color:var(--mut); font-size:18px;}
-  .mopen{display:block; text-align:center; background:var(--pink); color:#fff; font-weight:800; font-size:16px; padding:14px; border-radius:12px; text-decoration:none; margin-bottom:14px;}
+  .mopen{display:block; text-align:center; background:var(--pink); color:#fff; font-weight:800; font-size:16px; padding:14px; border-radius:12px; text-decoration:none; margin-top:16px;}
   .mrow{margin-top:12px;} .mrow .ml{font-size:13px; color:var(--mut); margin-bottom:5px;}
   .mrow .mv{display:flex; gap:8px; align-items:center; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
   .mrow .mv span{flex:1; font-size:16px; font-weight:700; word-break:break-all; white-space:pre-wrap;}
   .cpy{font-size:13px; font-weight:700; border:1px solid var(--teal); color:var(--teal); background:transparent; border-radius:8px; padding:6px 12px; cursor:pointer; flex:none;}
   .mnote{font-size:13px; color:var(--mut); line-height:1.7; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; white-space:pre-wrap;}
+  .mhint{font-size:12px; color:var(--mut); text-align:center; margin-top:10px; line-height:1.6;}
+  #dmPw{color:var(--pink);}
 </style>
 </head>
 <body>
@@ -363,10 +365,11 @@
 <div id="demoModal" class="modal" style="display:none" onclick="if(event.target===this)closeDemo()">
   <div class="mbox">
     <div class="mh"><span id="dmName"></span><span class="mx" onclick="closeDemo()">✕</span></div>
-    <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品 ↗</a>
     <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyVal('dmAcct')">複製</button></div></div>
     <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyVal('dmPw')">複製</button></div></div>
     <div class="mrow" id="dmNoteRow"><div class="ml">備註</div><div class="mnote" id="dmNote"></div></div>
+    <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品（另開分頁）↗</a>
+    <div class="mhint">開啟後這個視窗不會關，登入時切回本分頁就能複製帳號、密碼。</div>
   </div>
 </div>
 
