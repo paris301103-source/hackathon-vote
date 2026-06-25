@@ -427,13 +427,6 @@ function onReady(){
     if(d.exists && d.data().pins){ const pp=d.data().pins; JUDGES.forEach(j=>{ if(pp[j.id]) PINS[j.id]=pp[j.id]; }); if(pp.admin) PINS.admin=pp.admin; }
     const pb=document.getElementById('pwBox'); if(pb && pb.innerHTML) renderPwForm();
   }, ()=>{});
-  db.collection('votes').onSnapshot(s=>{
-    voteCounts={}; let total=0;
-    s.forEach(doc=>{ const v=doc.data(); voteCounts[v.teamId]=(voteCounts[v.teamId]||0)+1; total++; });
-    if(voterId){ const m=s.docs.find(d=>d.id===voterId); voterVoted=m?m.data().teamId:null; }
-    const sv=document.getElementById('stVotes'); if(sv) sv.textContent=total;
-    renderVote(); renderPop(); renderBigscreen();
-  }, ()=>{});
 }
 
 /* ---------- 評審登入（5 格選擇） ---------- */
@@ -610,6 +603,12 @@ function adminLogin(){
   if(db){
     db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderJudgeTops(); renderMystery(); renderBigscreen(); },()=>{});
     db.collection('awards').onSnapshot(s=>{ awardsList=[]; s.forEach(d=>awardsList.push(d.data())); renderAwards(awardsList); renderBigscreen(); },()=>{});
+    db.collection('votes').onSnapshot(s=>{
+      voteCounts={}; let total=0;
+      s.forEach(doc=>{ const v=doc.data(); voteCounts[v.teamId]=(voteCounts[v.teamId]||0)+1; total++; });
+      const sv=document.getElementById('stVotes'); if(sv) sv.textContent=total;
+      renderPop(); renderBigscreen();
+    },()=>{});
   }
   renderLead(); renderJudgeTops(); renderMystery(); renderAwards([]); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
 }
@@ -663,7 +662,7 @@ function exportCSV(){
 
 /* ---------- 人氣投票（員編） ---------- */
 function initVote(){ renderVote(); }
-function voteOrderList(){ if(!voteOrder){ voteOrder=[...TEAMS]; for(let i=voteOrder.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=voteOrder[i]; voteOrder[i]=voteOrder[j]; voteOrder[j]=t; } } return voteOrder; }
+function voteOrderList(){ return TEAMS; }
 function normAcc(s){ return (s||'').replace(/\s+/g,'').toLowerCase(); }
 function setVoter(){
   const acc=normAcc(document.getElementById('empAcc').value);
