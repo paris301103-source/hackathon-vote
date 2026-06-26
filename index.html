@@ -150,12 +150,11 @@
   .jchip{display:inline-block; font-size:10px; padding:3px 11px; border-radius:999px; margin-top:9px; font-weight:700; background:#00e0c61a; color:var(--teal);}
   .jchip.gold{background:#fbe6b0; color:#8a6400;}
   .crown{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:17px;}
-  .clap{position:absolute; top:6px; left:0; right:0; text-align:center; font-size:15px; letter-spacing:3px;}
-  .jcard.honored{padding-top:30px; border:1px solid #ffd24a99; background:linear-gradient(160deg,var(--jm1),var(--jm2)); animation:hglow 2.2s ease-in-out infinite;}
+  .clap{position:absolute; top:6px; left:0; right:0; text-align:center; font-size:22px;}
+  .jcard.honored{padding-top:30px; border:2px solid #ffd24a; background:linear-gradient(160deg,var(--jc1),var(--jc2)); animation:hglow 2.2s ease-in-out infinite;}
   @keyframes hglow{0%,100%{box-shadow:0 0 0 0 rgba(255,210,74,0);}50%{box-shadow:0 0 24px -4px rgba(255,210,74,.55), 0 0 24px -6px rgba(255,61,139,.45);}}
   .jcard.honored:hover{transform:translateY(-3px);}
   .jcard.honored .javatar.myst{animation:none; box-shadow:0 0 0 4px rgba(255,210,74,.35); color:#ffd24a;}
-  .jcard.honored .jname{color:#ffd24a;}
   .vipchip{background:linear-gradient(90deg,#ffd24a33,#ff3d8b33); color:#ffd24a; font-weight:800; border:1px solid #ffd24a55;}
   .hsub{font-size:12px; color:#ffd24a; margin-top:7px; font-weight:700;}
   .nmt{font-size:14px; font-weight:700; text-align:center; margin-bottom:10px;}
@@ -410,8 +409,8 @@ const JUDGES = [
   {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'外部評審',   ini:'S', pin:'8888', type:'main',    pos:'tl'},
   {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'外部評審',   ini:'M', pin:'8888', type:'main',    pos:'tr'},
   {id:'janet', name:'薛淑菁 Janet Hsueh', short:'Janet Hsueh', role:'北祥總經理', ini:'J', pin:'8888', type:'main',    pos:'mid'},
-  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'bl', award:'遺珠獎'},
-  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'br', award:'務實落地獎'},
+  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'bl', award:'遺珠獎', icon:'🎉'},
+  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'br', award:'務實落地獎', icon:'👏'},
 ];
 const ADMIN_PIN = '0000';
 
@@ -494,7 +493,7 @@ function fillJudgeGrid(){
     const named=myst && def && j.short!==def.short && j.short.trim()!=='';
     const av=myst?`<div class="javatar myst">${JSIL}</div>`:`<div class="javatar">${j.ini}</div>`;
     const crown=(j.role==='外部評審')?'<div class="crown">👑</div>':'';
-    const claprow=named?'<div class="clap">🎉 👏 ✨ 🌟 👍</div>':'';
+    const claprow=named?'<div class="clap">'+(j.icon||'🎉')+'</div>':'';
     const chip=myst
       ? (named?'<div class="jchip vipchip">✨ 特邀神秘嘉賓 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>')
       : `<div class="jchip ${j.id==='janet'?'gold':''}">${j.role}</div>`;
