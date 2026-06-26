@@ -936,4 +936,16 @@ function copyVal(id){
   if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(()=>{}); }
   const b=event.target, old=b.textContent; b.textContent='已複製✓'; setTimeout(()=>b.textContent=old,1200);
 }
-fu
+function applyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try{ localStorage.setItem('bxTheme', t); }catch(e){}
+  const b=document.getElementById('themeBtn'); if(b) b.textContent = (t==='light') ? '☀️ 大字版' : '🌙 科技版';
+}
+function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||'dark'; applyTheme(cur==='light'?'dark':'light'); }
+(function(){ let t='dark'; try{ t=localStorage.getItem('bxTheme')||'dark'; }catch(e){} applyTheme(t); })();
+fillJudgeGrid();
+initFirebase();
+renderVote();
+</script>
+</body>
+</html>
