@@ -240,7 +240,7 @@
 
   <!-- JUDGE LOGIN -->
   <section id="s-jlogin" class="screen">
-    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">評審登入</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">評審登入</span></div>
     <div class="jhero">
       <div class="jt">北祥黑客松 2026</div>
       <div class="jb">評審團登入</div>
@@ -260,7 +260,7 @@
 
   <!-- JUDGE TEAM LIST -->
   <section id="s-jlist" class="screen">
-    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta">盲評 ●</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta">盲評 ●</span></div>
     <div style="padding:12px 18px 0"><button class="btn gho" onclick="openMyRank()">📊 看我目前的評分排名</button></div>
     <div id="jAwardWrap" style="padding:8px 18px 0; display:none"><button class="btn" onclick="openAward()">🏅 選出我的獎得主</button></div>
     <div class="pad grid" id="jList"></div>
@@ -268,21 +268,21 @@
 
   <!-- AWARD PICK (mystery judges) -->
   <section id="s-award" class="screen">
-    <div class="top"><span class="back" onclick="go('s-jlist')">‹</span><span class="ttl" id="awTtl">選出得獎組別</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="awTtl">選出得獎組別</span></div>
     <div style="padding:14px 18px 4px;color:var(--mut);font-size:12px;text-align:center">點一組頒給你的獎，再點一次可取消（也可以不選）</div>
     <div class="pad grid" id="awList"></div>
   </section>
 
   <!-- MY RANK -->
   <section id="s-myrank" class="screen">
-    <div class="top"><span class="back" onclick="go('s-jlist')">‹</span><span class="ttl">我的評分排名</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">我的評分排名</span></div>
     <div style="padding:14px 18px 4px; color:var(--mut); font-size:12px; text-align:center">只顯示你已評分的組別，依你給的總分高低排序（其他評審看不到）</div>
     <div id="myRankBox"></div>
   </section>
 
   <!-- SCORING -->
   <section id="s-score" class="screen">
-    <div class="top"><span class="back" onclick="go('s-jlist')">‹</span><span class="ttl">評分</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">評分</span></div>
     <div class="score-head"><div class="n" id="scNum"></div><div class="nm" id="scName"></div><div class="tp" id="scTopic"></div></div>
     <div class="brief" id="scBrief"></div>
     <div style="padding:12px 18px 0"><button class="btn gho" onclick="if(cur)openDemo(cur.id)">🔗 查看作品＋登入帳密</button></div>
@@ -294,14 +294,14 @@
 
   <!-- SPECIAL JUDGE PICK -->
   <section id="s-spick" class="screen">
-    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl" id="spTtl">特殊評審</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="spTtl">特殊評審</span></div>
     <div style="padding:18px 18px 0; color:var(--mut); font-size:13px;">選出一組頒給你的特殊大獎（備用，可不選）。再點一次可取消。</div>
     <div class="pad grid" id="spList"></div>
   </section>
 
   <!-- ADMIN LOGIN -->
   <section id="s-alogin" class="screen">
-    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">主辦後台</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">主辦後台</span></div>
     <div class="pad">
       <label class="fld">主辦密碼</label>
       <input type="password" id="aPin" inputmode="numeric" placeholder="••••">
@@ -312,7 +312,7 @@
 
   <!-- ADMIN DASHBOARD -->
   <section id="s-dash" class="screen">
-    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">主辦後台</span><span class="meta">即時 ●</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">主辦後台</span><span class="meta">即時 ●</span></div>
     <div class="stat-row">
       <div class="stat"><div class="v">24</div><div class="l">參賽組</div></div>
       <div class="stat"><div class="v" id="stProg">0%</div><div class="l">評分進度</div></div>
@@ -342,7 +342,7 @@
 
   <!-- BIG SCREEN -->
   <section id="s-bigscreen" class="screen">
-    <div class="top"><span class="back" onclick="go('s-dash')">‹</span><span class="ttl">🖥 大螢幕成果板</span><span class="meta">即時 ●</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">🖥 大螢幕成果板</span><span class="meta">即時 ●</span></div>
     <div class="bigwrap">
       <div class="bigcol"><h2>🏆 綜合排行</h2><div id="bigLead"></div></div>
       <div class="bigcol"><h2>🔥 人氣榜</h2><div id="bigPop"></div></div>
@@ -352,7 +352,7 @@
 
   <!-- VOTE -->
   <section id="s-vote" class="screen">
-    <div class="top"><span class="back" onclick="go('s-home')">‹</span><span class="ttl">🔥 人氣投票</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">🔥 人氣投票</span></div>
     <div id="voteWrap"><div class="closed" id="voteMsg">載入中…</div></div>
     <div class="pad" id="voteIdBox" style="display:none">
       <label class="fld">帳號（你的英文姓名）</label>
@@ -433,10 +433,16 @@ let cur=null;
 let awardsList=[];
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
 
-function go(id){
+let navStack=[];
+function go(id, isBack){
+  const c=document.querySelector('.screen.active');
+  if(c && c.id!==id && !isBack) navStack.push(c.id);
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById(id).classList.add('active'); window.scrollTo(0,0);
+  closeDemo();
+  const pr=document.getElementById('pwReminder'); if(pr) pr.style.display='none';
 }
+function goBack(){ const prev=navStack.pop(); go(prev||'s-home', true); }
 function banner(msg){const b=document.getElementById('banner'); if(msg){b.textContent=msg; b.style.display='block';} else b.style.display='none';}
 
 function initFirebase(){
