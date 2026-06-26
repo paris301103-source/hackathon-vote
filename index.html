@@ -150,6 +150,7 @@
   .jchip{display:inline-block; font-size:10px; padding:3px 11px; border-radius:999px; margin-top:9px; font-weight:700; background:#00e0c61a; color:var(--teal);}
   .jchip.gold{background:#fbe6b0; color:#8a6400;}
   .crown{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:17px;}
+  .clap{position:absolute; top:8px; right:10px; font-size:16px;}
   .nmt{font-size:14px; font-weight:700; text-align:center; margin-bottom:10px;}
   #themeBtn{position:fixed; top:10px; right:10px; z-index:300; font-size:13px; font-weight:700; padding:8px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--txt); cursor:pointer; box-shadow:0 4px 14px -6px #00000055;}
   [data-theme="light"] .brief .bftext{font-size:20px; line-height:1.9;}
@@ -289,7 +290,7 @@
     <div class="crit" id="critBox"></div>
     <div class="total"><span class="l">加權總分</span><span class="v" id="totalVal">0 / 100</span></div>
     <div style="padding:14px 18px"><textarea id="cmt" placeholder="評語（選填）…"></textarea></div>
-    <div style="padding:0 18px"><button class="btn" onclick="submitScore()">送出評分</button><div class="err" id="scErr"></div></div>
+    <div style="padding:0 18px"><button class="btn" onclick="submitScore()">送出評分</button><button class="btn gho" onclick="saveNote()" style="margin-top:10px">💾 只儲存筆記（評分關閉也能用）</button><div class="err" id="scErr"></div></div>
   </section>
 
   <!-- SPECIAL JUDGE PICK -->
@@ -399,11 +400,11 @@ const FIREBASE_CONFIG = {
 
 // 評審名單與密碼（type:'main'=具名評審計入綜合排行；'mystery'=神秘評審獨立計分）
 const JUDGES = [
-  {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'外部評審',   ini:'S', pin:'1111', type:'main',    pos:'tl'},
-  {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'外部評審',   ini:'M', pin:'2222', type:'main',    pos:'tr'},
-  {id:'janet', name:'薛淑菁 Janet Hsueh', short:'Janet Hsueh', role:'北祥總經理', ini:'J', pin:'3333', type:'main',    pos:'mid'},
-  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', ini:'?', pin:'5551', type:'mystery', pos:'bl', award:'遺珠獎'},
-  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', ini:'?', pin:'5552', type:'mystery', pos:'br', award:'務實落地獎'},
+  {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'外部評審',   ini:'S', pin:'8888', type:'main',    pos:'tl'},
+  {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'外部評審',   ini:'M', pin:'8888', type:'main',    pos:'tr'},
+  {id:'janet', name:'薛淑菁 Janet Hsueh', short:'Janet Hsueh', role:'北祥總經理', ini:'J', pin:'8888', type:'main',    pos:'mid'},
+  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'bl', award:'遺珠獎'},
+  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'br', award:'務實落地獎'},
 ];
 const ADMIN_PIN = '0000';
 
@@ -426,6 +427,7 @@ const TEAMS = [{"name": "讓子彈飛", "cat": "業務拓展", "lead": "游佩�
    ============================================================ */
 let db=null, auth=null, uid=null, curJudge=null, control={scoringOpen:true,votingOpen:false};
 let myScores={};
+let myNotes={};
 let allScores=[];
 let voteCounts={};
 let voterId=null, voterVoted=null, voteOrder=null, voterName=null;
@@ -433,6 +435,7 @@ let cur=null;
 let awardsList=[];
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
 const DEFAULT_JUDGES = JUDGES.map(j=>({id:j.id,name:j.name,short:j.short,ini:j.ini}));
+const DEFAULT_PINS = Object.assign({}, PINS);
 
 let navStack=[];
 function go(id, isBack){
@@ -480,11 +483,14 @@ let selJudge=null;
 function fillJudgeGrid(){
   const mk=j=>{
     const myst=j.type==='mystery';
+    const def=DEFAULT_JUDGES.find(d=>d.id===j.id);
+    const named=myst && def && j.short!==def.short && j.short.trim()!=='';
     const av=myst?`<div class="javatar myst">${JSIL}</div>`:`<div class="javatar">${j.ini}</div>`;
     const crown=(j.role==='外部評審')?'<div class="crown">👑</div>':'';
-    const chip=myst?'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>':`<div class="jchip ${j.id==='janet'?'gold':''}">${j.role}</div>`;
+    const clap=named?'<div class="clap">👏👍</div>':'';
+    const chip=myst?'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">'+(named?'神秘評審 ✨':'神秘評審')+'</div>':`<div class="jchip ${j.id==='janet'?'gold':''}">${j.role}</div>`;
     return `<div class="jcard ${j.pos} ${myst?'mystcard':''}" onclick="selectJudge('${j.id}')">
-      ${crown}${av}<div class="jname">${j.short}</div>${chip}</div>`;
+      ${crown}${clap}${av}<div class="jname">${j.short}</div>${chip}</div>`;
   };
   document.getElementById('jGridMain').innerHTML=JUDGES.filter(j=>j.type==='main').map(mk).join('');
   document.getElementById('jGridMyst').innerHTML=JUDGES.filter(j=>j.type==='mystery').map(mk).join('');
@@ -502,6 +508,16 @@ function judgeLogin(){
   const pin=document.getElementById('jPin').value.trim();
   if(pin!==PINS[selJudge.id]){ document.getElementById('jErr').textContent="密碼錯誤，請再試一次"; return; }
   curJudge=selJudge; document.getElementById('jPin').value=''; document.getElementById('jErr').textContent='';
+  if(PINS[curJudge.id]==='8888'){ forceChangePw(); } else { openJudgeList(); }
+}
+function forceChangePw(){
+  const v=prompt('首次登入，請設定你的新密碼（取代預設 8888）：');
+  if(v===null){ switchJudge(); return; }
+  const nv=v.trim();
+  if(!nv || nv==='8888'){ alert('密碼不可空白、也不能是 8888，請重新設定'); forceChangePw(); return; }
+  PINS[curJudge.id]=nv;
+  if(db) db.collection('control').doc('auth').set({pins:{[curJudge.id]:nv}},{merge:true}).catch(function(){});
+  alert('✓ 已設定新密碼，請牢記：'+nv);
   openJudgeList();
 }
 function switchJudge(){ curJudge=null; if(typeof selJudge!=='undefined') selJudge=null; navStack=[]; go('s-jlogin'); }
@@ -524,6 +540,9 @@ function openJudgeList(){
     db.collection('scores').where('judgeId','==',curJudge.id).onSnapshot(s=>{
       myScores={}; s.forEach(d=>{const v=d.data(); myScores[v.teamId]=v;}); renderJudgeList();
     },()=>renderJudgeList());
+    db.collection('notes').where('judgeId','==',curJudge.id).onSnapshot(s=>{
+      myNotes={}; s.forEach(d=>{const v=d.data(); myNotes[v.teamId]=v.comment||'';}); renderJudgeList();
+    },()=>{});
   }
   renderJudgeList(); go('s-jlist');
 }
@@ -533,7 +552,7 @@ function renderJudgeList(){
     const done=myScores[t.id]; return `
     <div class="tcard" onclick="openScore(${t.id})">
       <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
-        <span class="badge ${done?'b-done':'b-todo'}">${done?('已評 '+done.total):'待評分'}</span></div>
+        <span class="badge ${done?'b-done':(myNotes[t.id]?'b-done':'b-todo')}">${done?('已評 '+done.total):(myNotes[t.id]?'📝 筆記':'待評分')}</span></div>
       <div class="name">${t.name}</div><div class="topic">${t.tag}</div>
       <div class="meta2">隊長 ${t.lead}·${t.dept} ｜ ${t.ppl} ｜ ${t.tool}</div>
       <button class="linkbtn" onclick="event.stopPropagation(); openDemo(${t.id})">🔗 作品＋登入帳密</button>
@@ -578,7 +597,7 @@ function openScore(id){
   const bf=document.getElementById('scBrief');
   bf.innerHTML='<div class="bft">隊長 '+cur.lead+'·'+cur.dept+' ｜ '+cur.ppl+' ｜ AI：'+cur.tool+'</div>';
   const pre=document.createElement('div'); pre.className='bftext'; pre.textContent=cur.brief||'（無簡介）'; bf.appendChild(pre);
-  document.getElementById('cmt').value=prev?prev.comment||'':'';
+  document.getElementById('cmt').value=(prev&&prev.comment)?prev.comment:(myNotes[cur.id]||'');
   document.getElementById('scErr').textContent='';
   document.getElementById('critBox').innerHTML=CRITERIA.map((c,i)=>{
     const v=prev?prev.scores[i]:Math.round(c.max*0.7);
@@ -592,6 +611,15 @@ function upd(i){ const r=document.querySelectorAll('#critBox input')[i];
   document.getElementById('v'+i).textContent=parseInt(r.value)+' / '+CRITERIA[i].max; calc(); }
 function calc(){ let t=0; document.querySelectorAll('#critBox input').forEach(r=>t+=parseInt(r.value));
   document.getElementById('totalVal').textContent=t+' / 100'; return t; }
+function saveNote(){
+  if(!cur) return;
+  const c=document.getElementById('cmt').value.trim();
+  const err=document.getElementById('scErr');
+  if(!db){ myNotes[cur.id]=c; err.style.color='var(--teal)'; err.textContent='✓ 筆記已存（離線）'; return; }
+  db.collection('notes').doc(curJudge.id+'__'+cur.id).set({judgeId:curJudge.id, judgeName:curJudge.name, teamId:cur.id, teamName:cur.name, comment:c, updatedAt:Date.now()})
+    .then(function(){ err.style.color='var(--teal)'; err.textContent='✓ 筆記已儲存（評分關閉也保留）'; })
+    .catch(function(e){ err.style.color='#ff8080'; err.textContent='存筆記失敗：'+e.message; });
+}
 function submitScore(){
   if(!control.scoringOpen){ document.getElementById('scErr').textContent='評分已關閉，無法送出'; return; }
   const scores=[...document.querySelectorAll('#critBox input')].map(r=>parseInt(r.value));
@@ -810,11 +838,12 @@ async function resetAll(){
   const txt=prompt('最後確認：請輸入「清除」兩個字才會執行歸零');
   if(txt!=='清除'){ alert('已取消，未清除任何資料'); return; }
   try{
-    await clearCol('scores'); await clearCol('votes'); await clearCol('awards');
-    await db.collection('control').doc('auth').set({names:{}},{merge:true});
+    await clearCol('scores'); await clearCol('votes'); await clearCol('awards'); await clearCol('notes');
+    await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}});
+    Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
     DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; } });
     fillJudgeGrid();
-    alert('✓ 已清除所有資料（分數、投票、得獎、評審姓名都已歸零）');
+    alert('✓ 已全部歸零：分數、投票、得獎、筆記、評審姓名與密碼（密碼回到預設 8888）');
   }catch(e){ alert('清除失敗：'+e.message); }
 }
 let curDemo=null;
