@@ -344,7 +344,8 @@
     <div class="sec-h">🔑 評審設定（姓名／密碼，改完立即生效）</div>
     <div class="pad" id="pwBox"></div>
     <div class="ctl" style="padding:18px 16px 8px"><button class="btn gho" onclick="exportCSV()">匯出成績 CSV</button></div>
-    <div class="ctl" style="padding:4px 16px 24px"><button class="btn" style="background:#7a1020" onclick="resetAll()">⚠ 清除所有資料（歸零）</button></div>
+    <div class="ctl" style="padding:4px 16px 0"><button class="btn gho" onclick="resetPwsTo8888()">🔁 重設所有評審密碼為 8888（不清分數）</button></div>
+    <div class="ctl" style="padding:8px 16px 24px"><button class="btn" style="background:#7a1020" onclick="resetAll()">⚠ 清除所有資料（歸零）</button></div>
   </section>
 
   <!-- BIG SCREEN -->
@@ -846,14 +847,22 @@ async function resetAll(){
   if(!confirm('⚠ 確定要清除「所有」評審分數與人氣投票嗎？\n此動作無法復原！')) return;
   const txt=prompt('最後確認：請輸入「清除」兩個字才會執行歸零');
   if(txt!=='清除'){ alert('已取消，未清除任何資料'); return; }
+  for(const col of ['scores','votes','awards','notes']){ try{ await clearCol(col); }catch(e){} }
   try{
-    await clearCol('scores'); await clearCol('votes'); await clearCol('awards'); await clearCol('notes');
     await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}});
     Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
     DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; } });
     fillJudgeGrid();
     alert('✓ 已全部歸零：分數、投票、得獎、筆記、評審姓名與密碼（密碼回到預設 8888）');
-  }catch(e){ alert('清除失敗：'+e.message); }
+  }catch(e){ alert('歸零時部分失敗：'+e.message); }
+}
+function resetPwsTo8888(){
+  if(!db){ alert('尚未連線 Firebase'); return; }
+  if(!confirm('將所有評審密碼重設為 8888（後台密碼回 0000）。他們下次登入需設定新密碼。確定？')) return;
+  db.collection('control').doc('auth').set({pins:DEFAULT_PINS},{merge:true}).then(function(){
+    Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
+    alert('✓ 完成！所有評審密碼已是 8888（後台 0000）。請評審用 8888 登入並設定新密碼。');
+  }).catch(function(e){ alert('重設失敗：'+e.message); });
 }
 let curDemo=null;
 function showCredReminder(t){
@@ -927,16 +936,4 @@ function copyVal(id){
   if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(()=>{}); }
   const b=event.target, old=b.textContent; b.textContent='已複製✓'; setTimeout(()=>b.textContent=old,1200);
 }
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  try{ localStorage.setItem('bxTheme', t); }catch(e){}
-  const b=document.getElementById('themeBtn'); if(b) b.textContent = (t==='light') ? '☀️ 大字版' : '🌙 科技版';
-}
-function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||'dark'; applyTheme(cur==='light'?'dark':'light'); }
-(function(){ let t='dark'; try{ t=localStorage.getItem('bxTheme')||'dark'; }catch(e){} applyTheme(t); })();
-fillJudgeGrid();
-initFirebase();
-renderVote();
-</script>
-</body>
-</html>
+fu
