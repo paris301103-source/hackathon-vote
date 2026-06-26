@@ -194,11 +194,12 @@
   .mrow{margin-top:12px;} .mrow .ml{font-size:13px; color:var(--mut); margin-bottom:5px;}
   .mrow .mv{display:flex; gap:8px; align-items:center; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
   .mrow .mv span{flex:1; font-size:16px; font-weight:700; word-break:break-all; white-space:pre-wrap;}
-  .cpy{font-size:13px; font-weight:700; border:1px solid var(--teal); color:var(--teal); background:transparent; border-radius:8px; padding:6px 12px; cursor:pointer; flex:none;}
+  .cpy{font-size:14px; font-weight:700; border:1px solid var(--teal); color:var(--teal); background:var(--bg2); border-radius:8px; padding:9px 16px; cursor:pointer; flex:none;}
   .mnote{font-size:13px; color:var(--mut); line-height:1.7; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; white-space:pre-wrap;}
   .mhint{font-size:12px; color:var(--mut); text-align:center; margin-top:10px; line-height:1.6;}
   .cpyall{display:block; width:100%; margin-top:12px; font-size:15px; font-weight:800; padding:12px; border-radius:12px; border:1px solid var(--teal); background:var(--bg2); color:var(--teal); cursor:pointer;}
   .pinbtn{border-color:var(--pink); color:var(--pink);}
+  #pwReminder{position:fixed; top:0; left:0; right:0; z-index:500; background:var(--pink); color:#fff; text-align:center; padding:13px 16px; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 6px 20px -6px #000a; line-height:1.5;}
   #dmPw{color:var(--pink);}
 </style>
 </head>
@@ -366,14 +367,16 @@
 
 </div>
 
+<div id="pwReminder" style="display:none" onclick="this.style.display='none'"></div>
 <div id="demoModal" class="modal" style="display:none" onclick="if(event.target===this)closeDemo()">
   <div class="mbox">
     <div class="mh"><span id="dmName"></span><span class="mx" onclick="closeDemo()">✕</span></div>
     <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyVal('dmAcct')">複製</button></div></div>
     <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyVal('dmPw')">複製</button></div></div>
     <div class="mrow" id="dmNoteRow"><div class="ml">備註</div><div class="mnote" id="dmNote"></div></div>
-    <button class="mopen" onclick="pinDemo()">📌 開啟帳密置頂小窗（含開啟作品）</button>
-    <div class="mhint">小窗會浮在最上層，切到作品頁登入時也一直看得到、可複製（Chrome／Edge 最佳）。</div>
+    <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品 ↗</a>
+    <button id="dmPinBtn" class="cpyall pinbtn" onclick="pinDemo()" style="display:none">📌 把帳密釘在最上層（電腦）</button>
+    <div class="mhint" id="dmHint"></div>
   </div>
 </div>
 
@@ -785,6 +788,12 @@ async function resetAll(){
   }catch(e){ alert('清除失敗：'+e.message); }
 }
 let curDemo=null;
+function showPwReminder(pw){
+  if(!pw) return;
+  const el=document.getElementById('pwReminder');
+  el.innerHTML='🔑 密碼已複製：<span style="font-size:22px">'+esc(pw)+'</span>　→ 到登入頁長按貼上（點此關閉）';
+  el.style.display='block';
+}
 function openDemo(id){
   const t=TEAMS.find(x=>x.id===id); if(!t) return; curDemo=t;
   document.getElementById('dmName').textContent='#'+String(t.id).padStart(2,'0')+' '+t.name;
@@ -792,6 +801,17 @@ function openDemo(id){
   setr('dmAcctRow','dmAcct',t.acct);
   setr('dmPwRow','dmPw',t.pw);
   setr('dmNoteRow','dmNote',t.note);
+  const lk=document.getElementById('dmLink');
+  if(t.link){
+    lk.style.display='block'; lk.href=t.link;
+    if(t.pw){ lk.textContent='開啟作品（已自動複製密碼）↗'; lk.onclick=function(){ if(navigator.clipboard) navigator.clipboard.writeText(t.pw).catch(function(){}); showPwReminder(t.pw); }; }
+    else { lk.textContent='開啟作品 ↗'; lk.onclick=null; }
+  } else lk.style.display='none';
+  const pip=('documentPictureInPicture' in window);
+  document.getElementById('dmPinBtn').style.display=(pip&&t.acct)?'block':'none';
+  document.getElementById('dmHint').innerHTML = t.acct
+    ? '按「開啟作品」會自動複製密碼 → 到登入頁貼上密碼；此組<b>有帳號</b>，再切回本頁按「複製帳號」貼一次。'
+    : '✅ 此組免帳號。按「開啟作品」會自動複製密碼，到登入頁長按貼上即可登入。';
   document.getElementById('demoModal').style.display='block';
 }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
