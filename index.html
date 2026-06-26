@@ -150,7 +150,14 @@
   .jchip{display:inline-block; font-size:10px; padding:3px 11px; border-radius:999px; margin-top:9px; font-weight:700; background:#00e0c61a; color:var(--teal);}
   .jchip.gold{background:#fbe6b0; color:#8a6400;}
   .crown{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:17px;}
-  .clap{position:absolute; top:8px; right:10px; font-size:16px;}
+  .clap{position:absolute; top:6px; left:0; right:0; text-align:center; font-size:15px; letter-spacing:3px;}
+  .jcard.honored{padding-top:30px; border:1px solid #ffd24a99; background:linear-gradient(160deg,var(--jm1),var(--jm2)); animation:hglow 2.2s ease-in-out infinite;}
+  @keyframes hglow{0%,100%{box-shadow:0 0 0 0 rgba(255,210,74,0);}50%{box-shadow:0 0 24px -4px rgba(255,210,74,.55), 0 0 24px -6px rgba(255,61,139,.45);}}
+  .jcard.honored:hover{transform:translateY(-3px);}
+  .jcard.honored .javatar.myst{animation:none; box-shadow:0 0 0 4px rgba(255,210,74,.35); color:#ffd24a;}
+  .jcard.honored .jname{color:#ffd24a;}
+  .vipchip{background:linear-gradient(90deg,#ffd24a33,#ff3d8b33); color:#ffd24a; font-weight:800; border:1px solid #ffd24a55;}
+  .hsub{font-size:12px; color:#ffd24a; margin-top:7px; font-weight:700;}
   .nmt{font-size:14px; font-weight:700; text-align:center; margin-bottom:10px;}
   #themeBtn{position:fixed; top:10px; right:10px; z-index:300; font-size:13px; font-weight:700; padding:8px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--txt); cursor:pointer; box-shadow:0 4px 14px -6px #00000055;}
   [data-theme="light"] .brief .bftext{font-size:20px; line-height:1.9;}
@@ -487,10 +494,13 @@ function fillJudgeGrid(){
     const named=myst && def && j.short!==def.short && j.short.trim()!=='';
     const av=myst?`<div class="javatar myst">${JSIL}</div>`:`<div class="javatar">${j.ini}</div>`;
     const crown=(j.role==='外部評審')?'<div class="crown">👑</div>':'';
-    const clap=named?'<div class="clap">👏👍</div>':'';
-    const chip=myst?'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">'+(named?'神秘評審 ✨':'神秘評審')+'</div>':`<div class="jchip ${j.id==='janet'?'gold':''}">${j.role}</div>`;
-    return `<div class="jcard ${j.pos} ${myst?'mystcard':''}" onclick="selectJudge('${j.id}')">
-      ${crown}${clap}${av}<div class="jname">${j.short}</div>${chip}</div>`;
+    const claprow=named?'<div class="clap">🎉 👏 ✨ 🌟 👍</div>':'';
+    const chip=myst
+      ? (named?'<div class="jchip vipchip">✨ 特邀神秘嘉賓 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>')
+      : `<div class="jchip ${j.id==='janet'?'gold':''}">${j.role}</div>`;
+    const hsub=named?'<div class="hsub">感謝蒞臨指導 🙏</div>':'';
+    return `<div class="jcard ${j.pos} ${myst?'mystcard':''} ${named?'honored':''}" onclick="selectJudge('${j.id}')">
+      ${crown}${claprow}${av}<div class="jname">${j.short}</div>${chip}${hsub}</div>`;
   };
   document.getElementById('jGridMain').innerHTML=JUDGES.filter(j=>j.type==='main').map(mk).join('');
   document.getElementById('jGridMyst').innerHTML=JUDGES.filter(j=>j.type==='mystery').map(mk).join('');
