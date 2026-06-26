@@ -372,8 +372,8 @@
 <div id="demoModal" class="modal" style="display:none" onclick="if(event.target===this)closeDemo()">
   <div class="mbox">
     <div class="mh"><span id="dmName"></span><span class="mx" onclick="closeDemo()">✕</span></div>
-    <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyVal('dmAcct')">複製</button></div></div>
-    <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyVal('dmPw')">複製</button></div></div>
+    <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號（多筆時複製第一筆）</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyCred('acct',this)">複製</button></div></div>
+    <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyCred('pw',this)">複製</button></div></div>
     <div class="mrow" id="dmNoteRow"><div class="ml">備註</div><div class="mnote" id="dmNote"></div></div>
     <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品 ↗</a>
     <button id="dmPinBtn" class="cpyall pinbtn" onclick="pinDemo()" style="display:none">📌 把帳密釘在最上層（電腦）</button>
@@ -799,7 +799,8 @@ function showCredReminder(t){
     +'<div style="margin-top:8px;font-size:14px;opacity:.95">帳號：'+esc(t.acct||'(無)')+'　｜　密碼：'+esc(t.pw||'(無)')+'</div>';
   el.style.display='block';
 }
-function copyCred(k,btn){ const t=curDemo; if(!t) return; const v=(k==='acct'?t.acct:t.pw)||''; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); const o=btn.textContent; btn.textContent='已複製✓'; setTimeout(function(){btn.textContent=o;},1100); }
+function firstAccount(a){ if(!a) return ''; a=String(a).split(/\r?\n/)[0].trim(); if(a.indexOf('://')<0 && a.indexOf('/')>=0) a=a.split('/')[0].trim(); return a; }
+function copyCred(k,btn){ const t=curDemo; if(!t) return; const v=(k==='acct'?firstAccount(t.acct):t.pw)||''; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); const o=btn.textContent; btn.textContent='已複製✓'; setTimeout(function(){btn.textContent=o;},1100); }
 function openDemo(id){
   const t=TEAMS.find(x=>x.id===id); if(!t) return; curDemo=t;
   document.getElementById('dmName').textContent='#'+String(t.id).padStart(2,'0')+' '+t.name;
@@ -812,7 +813,7 @@ function openDemo(id){
     lk.style.display='block'; lk.href=t.link;
     if(t.acct||t.pw){
       lk.textContent='開啟作品（已複製'+(t.acct?'帳號':'密碼')+'）↗';
-      lk.onclick=function(){ var v=t.acct||t.pw; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); showCredReminder(t); };
+      lk.onclick=function(){ var v=t.acct?firstAccount(t.acct):t.pw; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); showCredReminder(t); };
     } else { lk.textContent='開啟作品 ↗'; lk.onclick=null; }
   } else lk.style.display='none';
   const pip=('documentPictureInPicture' in window);
