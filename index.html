@@ -518,8 +518,8 @@ function openJudgeList(){
   renderJudgeList(); go('s-jlist');
 }
 function renderJudgeList(){
-  if(!control.scoringOpen){ document.getElementById('jList').innerHTML='<div class="closed">評分尚未開放，請等主辦開啟。</div>'; return; }
-  document.getElementById('jList').innerHTML=TEAMS.map(t=>{
+  const notice = !control.scoringOpen ? '<div style="grid-column:1/-1;text-align:center;color:var(--mut);font-size:13px;padding:6px 4px 2px">🔒 評分目前關閉，仍可查看作品連結與帳密；開放後即可打分</div>' : '';
+  document.getElementById('jList').innerHTML=notice+TEAMS.map(t=>{
     const done=myScores[t.id]; return `
     <div class="tcard" onclick="openScore(${t.id})">
       <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
