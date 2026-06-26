@@ -371,11 +371,9 @@
     <div class="mh"><span id="dmName"></span><span class="mx" onclick="closeDemo()">✕</span></div>
     <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyVal('dmAcct')">複製</button></div></div>
     <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyVal('dmPw')">複製</button></div></div>
-    <button id="dmBothBtn" class="cpyall" onclick="copyBoth(this)">📋 複製帳號＋密碼</button>
-    <button id="dmPinBtn" class="cpyall pinbtn" onclick="pinDemo()">📌 釘選帳密（置頂，切到作品也看得到）</button>
     <div class="mrow" id="dmNoteRow"><div class="ml">備註</div><div class="mnote" id="dmNote"></div></div>
-    <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品（另開分頁）↗</a>
-    <div class="mhint">開啟後這個視窗不會關，登入時切回本分頁就能複製帳號、密碼。</div>
+    <button class="mopen" onclick="pinDemo()">📌 開啟帳密置頂小窗（含開啟作品）</button>
+    <div class="mhint">小窗會浮在最上層，切到作品頁登入時也一直看得到、可複製（Chrome／Edge 最佳）。</div>
   </div>
 </div>
 
@@ -790,14 +788,11 @@ let curDemo=null;
 function openDemo(id){
   const t=TEAMS.find(x=>x.id===id); if(!t) return; curDemo=t;
   document.getElementById('dmName').textContent='#'+String(t.id).padStart(2,'0')+' '+t.name;
-  const lk=document.getElementById('dmLink');
-  if(t.link){ lk.style.display='block'; lk.href=t.link; } else { lk.style.display='none'; }
   const setr=(rowId,valId,v)=>{ const row=document.getElementById(rowId); if(v){ row.style.display='block'; document.getElementById(valId).textContent=v; } else row.style.display='none'; };
   setr('dmAcctRow','dmAcct',t.acct);
   setr('dmPwRow','dmPw',t.pw);
   setr('dmNoteRow','dmNote',t.note);
-  document.getElementById('dmBothBtn').style.display=(t.acct||t.pw)?'block':'none';
-  document.getElementById('demoModal').style.display='flex';
+  document.getElementById('demoModal').style.display='block';
 }
 function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 async function pinDemo(){
