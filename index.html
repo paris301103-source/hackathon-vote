@@ -200,6 +200,7 @@
   .cpyall{display:block; width:100%; margin-top:12px; font-size:15px; font-weight:800; padding:12px; border-radius:12px; border:1px solid var(--teal); background:var(--bg2); color:var(--teal); cursor:pointer;}
   .pinbtn{border-color:var(--pink); color:var(--pink);}
   #pwReminder{position:fixed; top:0; left:0; right:0; z-index:500; background:var(--pink); color:#fff; text-align:center; padding:13px 16px; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 6px 20px -6px #000a; line-height:1.5;}
+  #pwReminder .rbtn{background:#fff; color:#b3264f; border:none; border-radius:9px; padding:9px 16px; font-weight:800; font-size:15px; cursor:pointer;}
   #dmPw{color:var(--pink);}
 </style>
 </head>
@@ -788,12 +789,17 @@ async function resetAll(){
   }catch(e){ alert('清除失敗：'+e.message); }
 }
 let curDemo=null;
-function showPwReminder(pw){
-  if(!pw) return;
+function showCredReminder(t){
   const el=document.getElementById('pwReminder');
-  el.innerHTML='🔑 密碼已複製：<span style="font-size:22px">'+esc(pw)+'</span>　→ 到登入頁長按貼上（點此關閉）';
+  let btns='';
+  if(t.acct) btns+='<button class="rbtn" onclick="event.stopPropagation();copyCred(\'acct\',this)">複製帳號 📋</button>';
+  if(t.pw)   btns+='<button class="rbtn" onclick="event.stopPropagation();copyCred(\'pw\',this)">複製密碼 📋</button>';
+  el.innerHTML='<div style="margin-bottom:8px">🔑 '+esc(t.name)+' 登入資料 · 切到作品分頁點欄位長按貼上（點此關閉）</div>'
+    +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+btns+'</div>'
+    +'<div style="margin-top:8px;font-size:14px;opacity:.95">帳號：'+esc(t.acct||'(無)')+'　｜　密碼：'+esc(t.pw||'(無)')+'</div>';
   el.style.display='block';
 }
+function copyCred(k,btn){ const t=curDemo; if(!t) return; const v=(k==='acct'?t.acct:t.pw)||''; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); const o=btn.textContent; btn.textContent='已複製✓'; setTimeout(function(){btn.textContent=o;},1100); }
 function openDemo(id){
   const t=TEAMS.find(x=>x.id===id); if(!t) return; curDemo=t;
   document.getElementById('dmName').textContent='#'+String(t.id).padStart(2,'0')+' '+t.name;
@@ -804,8 +810,10 @@ function openDemo(id){
   const lk=document.getElementById('dmLink');
   if(t.link){
     lk.style.display='block'; lk.href=t.link;
-    if(t.pw){ lk.textContent='開啟作品（已自動複製密碼）↗'; lk.onclick=function(){ if(navigator.clipboard) navigator.clipboard.writeText(t.pw).catch(function(){}); showPwReminder(t.pw); }; }
-    else { lk.textContent='開啟作品 ↗'; lk.onclick=null; }
+    if(t.acct||t.pw){
+      lk.textContent='開啟作品（已複製'+(t.acct?'帳號':'密碼')+'）↗';
+      lk.onclick=function(){ var v=t.acct||t.pw; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); showCredReminder(t); };
+    } else { lk.textContent='開啟作品 ↗'; lk.onclick=null; }
   } else lk.style.display='none';
   const pip=('documentPictureInPicture' in window);
   document.getElementById('dmPinBtn').style.display=(pip&&t.acct)?'block':'none';
