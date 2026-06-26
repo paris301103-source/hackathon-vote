@@ -495,7 +495,7 @@ function fillJudgeGrid(){
     const crown=(j.role==='外部評審')?'<div class="crown">👑</div>':'';
     const claprow=named?'<div class="clap">'+(j.icon||'🎉')+'</div>':'';
     const chip=myst
-      ? (named?'<div class="jchip vipchip">✨ 特邀神秘嘉賓 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>')
+      ? (named?'<div class="jchip vipchip">✨ 特選神秘評審 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>')
       : `<div class="jchip ${j.id==='janet'?'gold':''}">${j.role}</div>`;
     const hsub=named?'<div class="hsub">感謝蒞臨指導 🙏</div>':'';
     return `<div class="jcard ${j.pos} ${myst?'mystcard':''} ${named?'honored':''}" onclick="selectJudge('${j.id}')">
