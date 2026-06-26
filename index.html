@@ -260,7 +260,7 @@
 
   <!-- JUDGE TEAM LIST -->
   <section id="s-jlist" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta">盲評 ●</span></div>
+    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta" onclick="switchJudge()" style="cursor:pointer">🔄 切換身分</span></div>
     <div style="padding:12px 18px 0"><button class="btn gho" onclick="openMyRank()">📊 看我目前的評分排名</button></div>
     <div id="jAwardWrap" style="padding:8px 18px 0; display:none"><button class="btn" onclick="openAward()">🏅 選出我的獎得主</button></div>
     <div class="pad grid" id="jList"></div>
@@ -334,7 +334,7 @@
     <div id="awardBox"></div>
     <div class="sec-h">🔥 人氣獎 Top 5</div>
     <div id="popBox"></div>
-    <div class="sec-h">🔑 修改密碼（改完立即生效）</div>
+    <div class="sec-h">🔑 評審設定（姓名／密碼，改完立即生效）</div>
     <div class="pad" id="pwBox"></div>
     <div class="ctl" style="padding:18px 16px 8px"><button class="btn gho" onclick="exportCSV()">匯出成績 CSV</button></div>
     <div class="ctl" style="padding:4px 16px 24px"><button class="btn" style="background:#7a1020" onclick="resetAll()">⚠ 清除所有資料（歸零）</button></div>
@@ -463,7 +463,12 @@ function onReady(){
     refreshControlUI();
   }, ()=>{});
   db.collection('control').doc('auth').onSnapshot(d=>{
-    if(d.exists && d.data().pins){ const pp=d.data().pins; JUDGES.forEach(j=>{ if(pp[j.id]) PINS[j.id]=pp[j.id]; }); if(pp.admin) PINS.admin=pp.admin; }
+    if(d.exists){
+      const pp=d.data().pins||{}; JUDGES.forEach(j=>{ if(pp[j.id]) PINS[j.id]=pp[j.id]; }); if(pp.admin) PINS.admin=pp.admin;
+      const nm=d.data().names||{}; let ch=false;
+      JUDGES.forEach(j=>{ if(nm[j.id]){ j.name=nm[j.id]; j.short=nm[j.id]; j.ini=(nm[j.id].trim().charAt(0)||j.ini).toUpperCase(); ch=true; } });
+      if(ch) fillJudgeGrid();
+    }
     const pb=document.getElementById('pwBox'); if(pb && pb.innerHTML) renderPwForm();
   }, ()=>{});
 }
@@ -500,6 +505,7 @@ function judgeLogin(){
   curJudge=selJudge; document.getElementById('jPin').value=''; document.getElementById('jErr').textContent='';
   openJudgeList();
 }
+function switchJudge(){ curJudge=null; if(typeof selJudge!=='undefined') selJudge=null; navStack=[]; go('s-jlogin'); }
 function openJudgeList(){
   document.getElementById('jTtl').textContent=curJudge.name;
   const aw=document.getElementById('jAwardWrap');
@@ -577,6 +583,7 @@ function upd(i){ const r=document.querySelectorAll('#critBox input')[i];
 function calc(){ let t=0; document.querySelectorAll('#critBox input').forEach(r=>t+=parseInt(r.value));
   document.getElementById('totalVal').textContent=t+' / 100'; return t; }
 function submitScore(){
+  if(!control.scoringOpen){ document.getElementById('scErr').textContent='評分已關閉，無法送出'; return; }
   const scores=[...document.querySelectorAll('#critBox input')].map(r=>parseInt(r.value));
   const total=scores.reduce((a,b)=>a+b,0);
   const rec={judgeId:curJudge.id, judgeName:curJudge.name, teamId:cur.id, teamName:cur.name,
@@ -676,6 +683,7 @@ function refreshControlUI(){
   if(bs) bs.textContent='評分：'+(control.scoringOpen?'開放中（點擊關閉）':'已關閉（點擊開放）');
   if(bv) bv.textContent='投票：'+(control.votingOpen?'開放中（點擊關閉）':'已關閉（點擊開放）');
   renderVote();
+  if(curJudge && document.getElementById('s-jlist').classList.contains('active')) renderJudgeList();
 }
 function toggleCtl(key){
   control[key]=!control[key];
@@ -762,21 +770,24 @@ function renderPop(){
 function renderPwForm(){
   const box=document.getElementById('pwBox'); if(!box) return;
   let html=JUDGES.map(j=>{
-    const label=(j.type==='mystery'?j.name:j.short)+'（'+j.role+'）';
-    return `<label class="fld" style="margin:10px 0 4px">${label}</label><input type="text" id="pw_${j.id}" value="${PINS[j.id]}">`;
+    const role=(j.type==='mystery'?'神秘評審（可填真名，登入頁仍顯示「神秘評審」）':j.role);
+    const nm=(j.name||'').replace(/"/g,'&quot;');
+    return `<div style="margin:14px 0 4px;font-size:12px;color:var(--teal);font-weight:700">${role}</div>
+      <input type="text" id="nm_${j.id}" value="${nm}" placeholder="姓名" style="margin-bottom:6px">
+      <input type="text" id="pw_${j.id}" value="${PINS[j.id]}" placeholder="密碼">`;
   }).join('');
-  html+=`<label class="fld" style="margin:10px 0 4px">主辦後台密碼</label><input type="text" id="pw_admin" value="${PINS.admin}">`;
-  html+=`<button class="btn" onclick="savePins()">儲存所有密碼</button><div class="err" id="pwErr"></div>`;
+  html+=`<div style="margin:14px 0 4px;font-size:12px;color:var(--teal);font-weight:700">主辦後台密碼</div><input type="text" id="pw_admin" value="${PINS.admin}">`;
+  html+=`<button class="btn" onclick="savePins()">儲存姓名與密碼</button><div class="err" id="pwErr"></div>`;
   box.innerHTML=html;
 }
 function savePins(){
-  const pins={}; let ok=true;
-  JUDGES.forEach(j=>{ const v=document.getElementById('pw_'+j.id).value.trim(); if(!v) ok=false; pins[j.id]=v; });
+  const pins={}, names={}; let ok=true;
+  JUDGES.forEach(j=>{ const v=document.getElementById('pw_'+j.id).value.trim(); if(!v) ok=false; pins[j.id]=v; const nm=document.getElementById('nm_'+j.id).value.trim(); if(nm) names[j.id]=nm; });
   pins.admin=document.getElementById('pw_admin').value.trim(); if(!pins.admin) ok=false;
   const err=document.getElementById('pwErr');
   if(!ok){ err.style.color='#ff8080'; err.textContent='密碼不可空白'; return; }
   if(!db){ err.textContent='尚未連線'; return; }
-  db.collection('control').doc('auth').set({pins}).then(()=>{ err.style.color='var(--teal)'; err.textContent='✓ 已儲存，立即生效'; }).catch(e=>{ err.style.color='#ff8080'; err.textContent='儲存失敗：'+e.message; });
+  db.collection('control').doc('auth').set({pins,names}).then(()=>{ err.style.color='var(--teal)'; err.textContent='✓ 已儲存，立即生效'; }).catch(e=>{ err.style.color='#ff8080'; err.textContent='儲存失敗：'+e.message; });
 }
 async function clearCol(col){
   const snap=await db.collection(col).get();
