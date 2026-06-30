@@ -146,7 +146,9 @@
   .javatar.myst{background:radial-gradient(circle at 50% 38%,var(--my1),var(--my2)); color:var(--dim); box-shadow:0 0 0 4px #ffffff0a; animation:mpulse 2.6s infinite;}
   @keyframes mpulse{0%,100%{box-shadow:0 0 0 4px #ffffff0a;}50%{box-shadow:0 0 0 7px #ff3d8b25;}}
   .jname{font-size:19px; font-weight:800;}
-  .jrole{font-size:13px; color:var(--mut); margin-top:4px;}
+  .jrole{font-size:13px; color:var(--mut); margin-top:4px; line-height:1.5;}
+  .lbr{display:none;}
+  [data-theme="light"] .lbr{display:inline;}
   .jchip{display:inline-block; font-size:10px; padding:3px 11px; border-radius:999px; margin-top:9px; font-weight:700; background:#00e0c61a; color:var(--teal);}
   .jchip.gold{background:#fbe6b0; color:#8a6400;}
   .crown{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:17px;}
@@ -157,6 +159,9 @@
   .jcard.honored .javatar.myst{animation:none; box-shadow:0 0 0 4px rgba(255,210,74,.35); color:#ffd24a;}
   .vipchip{background:linear-gradient(90deg,#ffd24a33,#ff3d8b33); color:#ffd24a; font-weight:800; border:1px solid #ffd24a55;}
   .hsub{font-size:12px; color:#ffd24a; margin-top:7px; font-weight:700;}
+  [data-theme="light"] .vipchip{color:#7a5800; border-color:#c9a23a; background:linear-gradient(90deg,#ffd24a55,#ff3d8b33);}
+  [data-theme="light"] .hsub{color:#7a5800;}
+  [data-theme="light"] .jcard.honored{border-color:#c9a23a;}
   .nmt{font-size:14px; font-weight:700; text-align:center; margin-bottom:10px;}
   #themeBtn{position:fixed; top:10px; right:10px; z-index:300; font-size:13px; font-weight:700; padding:8px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--txt); cursor:pointer; box-shadow:0 4px 14px -6px #00000055;}
   [data-theme="light"] .brief .bftext{font-size:20px; line-height:1.9;}
@@ -336,7 +341,7 @@
     <div id="jtopBox"></div>
     <div class="sec-h">🕵️ 神秘評審獨立計分</div>
     <div id="mysteryBox"></div>
-    <div class="sec-h">🏅 神秘評審頒獎</div>
+    <div class="sec-h" id="awardSec" style="display:none">🏅 神秘評審頒獎</div>
     <div id="awardBox"></div>
     <div class="sec-h">🔥 人氣獎 Top 5</div>
     <div id="popBox"></div>
@@ -406,13 +411,13 @@ const FIREBASE_CONFIG = {
 
 // 評審名單與密碼（type:'main'=具名評審計入綜合排行；'mystery'=神秘評審獨立計分）
 const JUDGES = [
-  {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'環球購物中心董事、前 LINE Taiwan 總經理', ini:'S', pin:'8888', type:'main', pos:'tl', vip:true},
-  {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'運點科技 創辦人暨執行長', ini:'M', pin:'8888', type:'main', pos:'tr', vip:true},
+  {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'環球購物中心董事、前 LINE Taiwan 總經理', roleHtml:'環球購物中心董事、<br>前 LINE Taiwan <br class="lbr">總經理', ini:'S', pin:'8888', type:'main', pos:'tl', vip:true},
+  {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'運點科技 創辦人暨執行長', roleHtml:'運點科技<br>創辦人暨執行長', ini:'M', pin:'8888', type:'main', pos:'tr', vip:true},
   {id:'janet', name:'薛淑菁 Janet Hsueh', short:'Janet Hsueh', role:'北祥總經理', ini:'J', pin:'8888', type:'main', pos:'mid'},
-  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'bl', award:'遺珠獎', icon:'🎉'},
-  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'br', award:'務實落地獎', icon:'👏'},
-  {id:'m3', name:'神秘評審三', short:'神秘評審三', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'bl', icon:'👍'},
-  {id:'m4', name:'神秘評審四', short:'神秘評審四', role:'神秘評審 · 身分保密', ini:'?', pin:'8888', type:'mystery', pos:'br', icon:'🎊'},
+  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'bl', icon:'🎉'},
+  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'br', icon:'👏'},
+  {id:'m3', name:'神秘評審三', short:'神秘評審三', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'bl', icon:'👍'},
+  {id:'m4', name:'神秘評審四', short:'神秘評審四', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'br', icon:'🎊'},
 ];
 const ADMIN_PIN = '0000';
 
@@ -442,7 +447,7 @@ let voterId=null, voterVoted=null, voteOrder=null, voterName=null;
 let cur=null;
 let awardsList=[];
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
-const DEFAULT_JUDGES = JUDGES.map(j=>({id:j.id,name:j.name,short:j.short,ini:j.ini,award:j.award}));
+const DEFAULT_JUDGES = JUDGES.map(j=>({id:j.id,name:j.name,short:j.short,ini:j.ini,award:j.award,title:j.title}));
 const DEFAULT_PINS = Object.assign({}, PINS);
 
 let navStack=[];
@@ -481,6 +486,8 @@ function onReady(){
       JUDGES.forEach(j=>{ if(nm[j.id]){ j.name=nm[j.id]; j.short=nm[j.id]; j.ini=(nm[j.id].trim().charAt(0)||j.ini).toUpperCase(); } });
       const aw=d.data().awards||{};
       JUDGES.forEach(j=>{ if(j.type==='mystery' && (j.id in aw)) j.award=aw[j.id]; });
+      const ti=d.data().titles||{};
+      JUDGES.forEach(j=>{ if(j.type==='mystery' && (j.id in ti)) j.title=ti[j.id]; });
       fillJudgeGrid();
     }
     const pb=document.getElementById('pwBox'); if(pb && pb.innerHTML) renderPwForm();
@@ -499,13 +506,14 @@ function fillJudgeGrid(){
     const crown=j.vip?'<div class="crown">👑</div>':'';
     if(!myst){
       return `<div class="jcard ${j.pos}" onclick="selectJudge('${j.id}')">
-        ${crown}${av}<div class="jname">${j.short}</div><div class="jrole">${j.role}</div></div>`;
+        ${crown}${av}<div class="jname">${j.short}</div><div class="jrole">${j.roleHtml||j.role}</div></div>`;
     }
     const claprow=named?'<div class="clap">'+(j.icon||'🎉')+'</div>':'';
     const chip=named?'<div class="jchip vipchip">✨ 特選神秘評審 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>';
+    const titleHtml=(named && j.title)?`<div class="jrole">${j.title}</div>`:'';
     const hsub=named?'<div class="hsub">感謝蒞臨指導 🙏</div>':'';
     return `<div class="jcard ${j.pos} mystcard ${named?'honored':''}" onclick="selectJudge('${j.id}')">
-      ${crown}${claprow}${av}<div class="jname">${j.short}</div>${chip}${hsub}</div>`;
+      ${crown}${claprow}${av}<div class="jname">${j.short}</div>${titleHtml}${chip}${hsub}</div>`;
   };
   document.getElementById('jGridMain').innerHTML=JUDGES.filter(j=>j.type==='main').map(mk).join('');
   const mysts=JUDGES.filter(j=>{ if(j.type!=='mystery') return false; const d=DEFAULT_JUDGES.find(x=>x.id===j.id); return d && j.short!==d.short && j.short.trim()!==''; });
@@ -692,6 +700,7 @@ function renderJudgeTops(){
 function renderAwards(list){
   const box=document.getElementById('awardBox'); if(!box) return;
   const ms=JUDGES.filter(j=>j.type==='mystery' && j.award);
+  const sec=document.getElementById('awardSec'); if(sec) sec.style.display=ms.length?'block':'none';
   box.innerHTML=ms.map(j=>{
     const a=list.find(x=>x.judgeId===j.id);
     return `<div class="lrow" style="${a?'':'border-style:dashed'}"><div class="rk" style="color:${a?'#ffd24a':'var(--dim)'}">🏅</div>
@@ -832,7 +841,11 @@ function renderPwForm(){
     let block=`<div style="margin:14px 0 4px;font-size:12px;color:var(--teal);font-weight:700">${role}</div>
       <input type="text" id="nm_${j.id}" value="${nm}" placeholder="姓名" style="margin-bottom:6px">
       <input type="text" id="pw_${j.id}" value="" placeholder="重設密碼（留空＝不變更）">`;
-    if(j.type==='mystery'){ const aw=(j.award||'').replace(/"/g,'&quot;'); block+=`<input type="text" id="aw_${j.id}" value="${aw}" placeholder="要頒的獎名（留空＝不頒獎，純評分）" style="margin-top:6px">`; }
+    if(j.type==='mystery'){
+      const ti=(j.title||'').replace(/"/g,'&quot;'); const aw=(j.award||'').replace(/"/g,'&quot;');
+      block+=`<input type="text" id="ti_${j.id}" value="${ti}" placeholder="職稱（選填，會顯示在卡片上）" style="margin-top:6px">`;
+      block+=`<input type="text" id="aw_${j.id}" value="${aw}" placeholder="要頒的獎名（留空＝不頒獎，純評分）" style="margin-top:6px">`;
+    }
     return block;
   }).join('');
   html+=`<div style="margin:14px 0 4px;font-size:12px;color:var(--teal);font-weight:700">主辦後台密碼</div><input type="text" id="pw_admin" value="" placeholder="重設後台密碼（留空＝不變更）">`;
@@ -840,12 +853,12 @@ function renderPwForm(){
   box.innerHTML=html;
 }
 function savePins(){
-  const pins={}, names={}, awards={};
-  JUDGES.forEach(j=>{ const v=document.getElementById('pw_'+j.id).value.trim(); pins[j.id]= v || PINS[j.id]; const nm=document.getElementById('nm_'+j.id).value.trim(); if(nm) names[j.id]=nm; if(j.type==='mystery'){ const ai=document.getElementById('aw_'+j.id); awards[j.id]= ai? ai.value.trim() : (j.award||''); } });
+  const pins={}, names={}, awards={}, titles={};
+  JUDGES.forEach(j=>{ const v=document.getElementById('pw_'+j.id).value.trim(); pins[j.id]= v || PINS[j.id]; const nm=document.getElementById('nm_'+j.id).value.trim(); if(nm) names[j.id]=nm; if(j.type==='mystery'){ const ai=document.getElementById('aw_'+j.id); awards[j.id]= ai? ai.value.trim() : (j.award||''); const tii=document.getElementById('ti_'+j.id); titles[j.id]= tii? tii.value.trim() : (j.title||''); } });
   const av=document.getElementById('pw_admin').value.trim(); pins.admin= av || PINS.admin;
   const err=document.getElementById('pwErr');
   if(!db){ err.textContent='尚未連線'; return; }
-  db.collection('control').doc('auth').set({pins,names,awards}).then(function(){ err.style.color='var(--teal)'; err.textContent='✓ 已儲存（密碼留空者不變）'; document.querySelectorAll('[id^=pw_]').forEach(function(i){ if(i.id!=='pwErr') i.value=''; }); }).catch(function(e){ err.style.color='#ff8080'; err.textContent='儲存失敗：'+e.message; });
+  db.collection('control').doc('auth').set({pins,names,awards,titles}).then(function(){ err.style.color='var(--teal)'; err.textContent='✓ 已儲存（密碼留空者不變）'; document.querySelectorAll('[id^=pw_]').forEach(function(i){ if(i.id!=='pwErr') i.value=''; }); }).catch(function(e){ err.style.color='#ff8080'; err.textContent='儲存失敗：'+e.message; });
 }
 async function clearCol(col){
   const snap=await db.collection(col).get();
@@ -861,9 +874,9 @@ async function resetAll(){
   for(const col of ['scores','votes','awards','notes']){ try{ await clearCol(col); }catch(e){} }
   try{
     var defAwards={}; DEFAULT_JUDGES.forEach(function(d){ if(d.award) defAwards[d.id]=d.award; });
-    await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}, awards:defAwards});
+    await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}, awards:defAwards, titles:{}});
     Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
-    DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; j.award=d.award; } });
+    DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; j.award=d.award; j.title=d.title; } });
     fillJudgeGrid();
     alert('✓ 已全部歸零：分數、投票、得獎、筆記、評審姓名與密碼（密碼回到預設 8888）');
   }catch(e){ alert('歸零時部分失敗：'+e.message); }
