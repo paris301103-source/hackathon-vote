@@ -145,7 +145,9 @@
   .jcard.mid .javatar{background:linear-gradient(135deg,#ffd24a,#e0935a); color:#3a2400; box-shadow:0 0 0 4px #ffd24a22, 0 6px 18px -4px #ffd24a99;}
   .javatar.myst{background:radial-gradient(circle at 50% 38%,var(--my1),var(--my2)); color:var(--dim); box-shadow:0 0 0 4px #ffffff0a; animation:mpulse 2.6s infinite;}
   @keyframes mpulse{0%,100%{box-shadow:0 0 0 4px #ffffff0a;}50%{box-shadow:0 0 0 7px #ff3d8b25;}}
-  .jname{font-size:19px; font-weight:800;}
+  .jname{font-size:19px; font-weight:800; line-height:1.25;}
+  .jname .en{font-size:13px; font-weight:600; color:var(--mut); margin-top:1px;}
+  [data-theme="light"] .jname .en{font-size:14px;}
   .jrole{font-size:13px; color:var(--mut); margin-top:4px; line-height:1.5;}
   .lbr{display:none;}
   [data-theme="light"] .lbr{display:inline;}
@@ -497,6 +499,12 @@ function onReady(){
 /* ---------- 評審登入（5 格選擇） ---------- */
 const JSIL='<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5Z"/></svg>';
 let selJudge=null;
+function splitName(s){
+  s=(s||'').trim();
+  const m=s.match(/^([\u4e00-\u9fff・·\u3000]+)\s+(.+)$/);
+  if(m) return '<div>'+m[1]+'</div><div class="en">'+m[2]+'</div>';
+  return s;
+}
 function fillJudgeGrid(){
   const mk=j=>{
     const myst=j.type==='mystery';
@@ -506,14 +514,14 @@ function fillJudgeGrid(){
     const crown=j.vip?'<div class="crown">👑</div>':'';
     if(!myst){
       return `<div class="jcard ${j.pos}" onclick="selectJudge('${j.id}')">
-        ${crown}${av}<div class="jname">${j.short}</div><div class="jrole">${j.roleHtml||j.role}</div></div>`;
+        ${crown}${av}<div class="jname">${splitName(j.name)}</div><div class="jrole">${j.roleHtml||j.role}</div></div>`;
     }
     const claprow=named?'<div class="clap">'+(j.icon||'🎉')+'</div>':'';
     const chip=named?'<div class="jchip vipchip">✨ 特選神秘評審 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>';
     const titleHtml=(named && j.title)?`<div class="jrole">${j.title}</div>`:'';
-    const hsub=named?'<div class="hsub">感謝蒞臨指導 🙏</div>':'';
+    const hsub='';
     return `<div class="jcard ${j.pos} mystcard ${named?'honored':''}" onclick="selectJudge('${j.id}')">
-      ${crown}${claprow}${av}<div class="jname">${j.short}</div>${titleHtml}${chip}${hsub}</div>`;
+      ${crown}${claprow}${av}<div class="jname">${splitName(j.name)}</div>${titleHtml}${chip}${hsub}</div>`;
   };
   document.getElementById('jGridMain').innerHTML=JUDGES.filter(j=>j.type==='main').map(mk).join('');
   const mysts=JUDGES.filter(j=>{ if(j.type!=='mystery') return false; const d=DEFAULT_JUDGES.find(x=>x.id===j.id); return d && j.short!==d.short && j.short.trim()!==''; });
