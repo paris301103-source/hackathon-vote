@@ -360,9 +360,8 @@
     <div class="sec-h">🎖 特別獎（評審團商議後登錄，可不頒）</div>
     <div class="pad" id="spBox" style="padding-top:0"></div>
     <div class="ctl" style="padding:2px 16px 0"><button class="btn gho" onclick="addSpecial()">＋ 新增獎項</button><button class="btn gho" onclick="saveSpecial()">💾 儲存特別獎</button></div>
-    <div class="sec-h">🏅 佳作（預設 5 名，可增減）</div>
+    <div class="sec-h">🏅 佳作（自動取金銀銅之後名次，可調名額）</div>
     <div class="pad" id="hmBox" style="padding-top:0"></div>
-    <div class="ctl" style="padding:2px 16px 0"><button class="btn gho" onclick="addHm()">＋ 新增佳作</button><button class="btn gho" onclick="saveHm()">💾 儲存佳作</button></div>
     <div class="sec-h">🔥 人氣獎 Top 5</div>
     <div id="popBox"></div>
     <div class="sec-h">🔑 評審設定（姓名／密碼，改完立即生效）</div>
@@ -385,6 +384,7 @@
   <!-- CEREMONY -->
   <section id="s-ceremony" class="screen">
     <div class="cerem" onclick="ceremNext()">
+      <span class="cer-x" id="cerMute" onclick="event.stopPropagation(); toggleMute()" style="left:22px;right:auto">🔊</span>
       <span class="cer-x" onclick="event.stopPropagation(); ceremExit()">✕</span>
       <div class="cer-cat" id="cerCat">🎬 頒獎典禮</div>
       <div class="cer-name" id="cerName">點一下畫面開始 👏</div>
@@ -479,7 +479,7 @@ let voterId=null, voterVoted=null, voteOrder=null, voterName=null;
 let cur=null;
 let awardsList=[];
 let specialAwards=[];
-let honorableList=[];
+let honorableCount=5;
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
 const DEFAULT_JUDGES = JUDGES.map(j=>({id:j.id,name:j.name,short:j.short,ini:j.ini,award:j.award,title:j.title}));
 const DEFAULT_PINS = Object.assign({}, PINS);
@@ -525,7 +525,7 @@ function onReady(){
     const pb=document.getElementById('pwBox'); if(pb && pb.innerHTML) renderPwForm();
   }, ()=>{});
   db.collection('control').doc('special').onSnapshot(d=>{ specialAwards=(d.exists&&Array.isArray(d.data().list))?d.data().list:[]; renderBigscreen(); }, ()=>{});
-  db.collection('control').doc('honorable').onSnapshot(d=>{ honorableList=(d.exists&&Array.isArray(d.data().list))?d.data().list:[]; renderBigscreen(); }, ()=>{});
+  db.collection('control').doc('honorable').onSnapshot(d=>{ honorableCount=(d.exists&&typeof d.data().count==='number')?d.data().count:5; if(document.getElementById('hmNum')) renderHmForm(); renderBigscreen(); }, ()=>{});
 }
 
 /* ---------- 評審登入（5 格選擇） ---------- */
@@ -716,14 +716,31 @@ function ceremRows(){
   return TEAMS.map(t=>{ const ss=allScores.filter(s=>s.teamId===t.id&&mains.some(j=>j.id===s.judgeId)); const avg=ss.length?ss.reduce((a,b)=>a+b.total,0)/ss.length:0; return {name:t.name,avg};}).sort((a,b)=>b.avg-a.avg);
 }
 let ceremSteps=[], ceremIdx=-1, ceremBusy=false;
+let actx=null, cerMuted=false;
+function audioInit(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==='suspended') actx.resume(); }
+function beep(freq,dur,type,vol){ if(!actx||cerMuted) return; try{ const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.setValueAtTime(vol||0.2,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+(dur||0.15)); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+(dur||0.15)); }catch(e){} }
+function cerSound(kind){
+  if(cerMuted||!actx) return;
+  if(kind==='tick'){ beep(680,0.12,'square',0.18); return; }
+  if(kind==='reveal'){
+    [523,659,784,1047,1319].forEach(function(f,i){ setTimeout(function(){ beep(f,0.4,'triangle',0.22); },i*95); });
+    try{ const dur=1.9,bs=Math.floor(actx.sampleRate*dur),buf=actx.createBuffer(1,bs,actx.sampleRate),d=buf.getChannelData(0);
+      for(let i=0;i<bs;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/bs,1.4); }
+      const src=actx.createBufferSource(); src.buffer=buf; const bp=actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=1600; bp.Q.value=0.5; const g=actx.createGain(); g.gain.value=0.33; src.connect(bp); bp.connect(g); g.connect(actx.destination); src.start();
+    }catch(e){}
+  }
+}
+function toggleMute(){ cerMuted=!cerMuted; const b=document.getElementById('cerMute'); if(b) b.textContent=cerMuted?'🔇':'🔊'; if(!cerMuted) audioInit(); }
 function startCeremony(){
   const rows=ceremRows();
   ceremSteps=[];
-  honorableList.forEach(function(id){ const t=TEAMS.find(function(x){return x.id===id;}); if(t) ceremSteps.push({cat:'🏅 佳作', name:t.name}); });
+  const pops=TEAMS.map(function(t){return {name:t.name,v:voteCounts[t.id]||0};}).sort(function(a,b){return b.v-a.v;});
+  if(pops[0]) ceremSteps.push({cat:'🔥 人氣獎', name:(pops[0].v>0?pops[0].name:'—'), huge:true});
+  rows.slice(3,3+honorableCount).forEach(function(t){ ceremSteps.push({cat:'🏅 佳作', name:t.name}); });
   if(rows[2]) ceremSteps.push({cat:'🥉 銅賞', name:rows[2].name, huge:true});
   if(rows[1]) ceremSteps.push({cat:'🥈 銀賞', name:rows[1].name, huge:true});
   if(rows[0]) ceremSteps.push({cat:'🥇 金賞', name:rows[0].name, huge:true});
-  specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); ceremSteps.push({cat:'🎖 '+a.name+'（評審團加碼獎）', name:t?t.name:'（未頒）'}); });
+  specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); ceremSteps.push({cat:'🎖 '+a.name+'（評審團特別獎）', name:t?t.name:'（未頒）'}); });
   ceremIdx=-1;
   document.getElementById('cerCat').textContent='🎬 頒獎典禮';
   document.getElementById('cerName').textContent='點一下畫面開始 👏';
@@ -735,9 +752,11 @@ function showCount(n){
   const nm=document.getElementById('cerName');
   nm.className='cer-name'; void nm.offsetWidth;
   nm.textContent=n; nm.className='cer-name countnum';
+  cerSound('tick');
 }
 function ceremNext(){
   if(ceremBusy) return;
+  audioInit();
   ceremIdx++;
   if(ceremIdx>=ceremSteps.length){ ceremFinish(); return; }
   const s=ceremSteps[ceremIdx];
@@ -753,17 +772,17 @@ function ceremNext(){
       const nm=document.getElementById('cerName');
       nm.className='cer-name'; void nm.offsetWidth;
       nm.textContent=s.name; nm.className='cer-name show'+(s.huge?' huge':'');
-      ceremApplause();
+      ceremApplause(); cerSound('reveal');
       ceremBusy=false;
       document.getElementById('cerHint').style.display=(ceremIdx>=ceremSteps.length-1)?'none':'block';
     }
-  },800);
+  },1200);
 }
 function ceremFinish(){
   document.getElementById('cerCat').textContent='🎉 恭喜所有得獎者 🎉';
   const nm=document.getElementById('cerName'); nm.textContent='北祥黑客松 2026'; nm.className='cer-name show';
   document.getElementById('cerHint').style.display='none';
-  ceremApplause(); setTimeout(ceremApplause,600);
+  ceremApplause(); setTimeout(ceremApplause,600); cerSound('reveal');
 }
 function ceremExit(){ ceremSteps=[]; ceremIdx=-1; go('s-dash'); }
 function ceremApplause(){
@@ -787,7 +806,8 @@ function renderBigscreen(){
     let html='<div class="awgrp">評審獎</div>';
     for(let k=0;k<3;k++){ const tt=rows[k]; html+=`<div class="bigaward"><div class="aw">${medals[k]}</div><div class="tm">${tt&&tt.avg>0?tt.name:'—'}</div></div>`; }
     specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); html+=`<div class="bigaward"><div class="aw">🎖 ${a.name}</div><div class="tm">${t?t.name:'未頒'}</div></div>`; });
-    if(honorableList.length){ html+='<div class="awgrp" style="margin-top:10px">佳作</div>'; honorableList.forEach(function(id){ const t=TEAMS.find(function(x){return x.id===id;}); if(t) html+=`<div class="bigaward" style="padding:10px"><div class="tm" style="font-size:20px">${t.name}</div></div>`; }); }
+    const hms=rows.slice(3,3+honorableCount);
+    if(hms.length){ html+='<div class="awgrp" style="margin-top:10px">佳作</div>'; hms.forEach(function(t){ html+=`<div class="bigaward" style="padding:10px"><div class="tm" style="font-size:20px">${t.name}</div></div>`; }); }
     const topPop=pop[0];
     html+='<div class="awgrp" style="margin-top:14px">人氣獎</div>';
     html+=`<div class="bigaward" style="border-color:var(--pink);border-style:solid"><div class="aw">🔥 人氣獎（觀眾票選）</div><div class="tm" style="color:var(--pink)">${topPop&&topPop.v>0?topPop.name:'—'}</div></div>`;
@@ -812,21 +832,19 @@ function saveSpecial(){
   const list=[...document.querySelectorAll('#spBox .sprow')].map(function(r){ return { name:r.querySelector('.spname').value.trim(), teamId: r.querySelector('.spteam').value? parseInt(r.querySelector('.spteam').value):null }; }).filter(function(a){ return a.name; });
   db.collection('control').doc('special').set({list:list}).then(function(){ specialAwards=list; alert('✓ 特別獎已儲存（'+list.length+' 個）'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); });
 }
-function hmRowHtml(teamId){
-  const opts='<option value="">— 未選 —</option>'+TEAMS.map(t=>`<option value="${t.id}" ${String(teamId)===String(t.id)?'selected':''}>#${String(t.id).padStart(2,'0')} ${t.name}</option>`).join('');
-  return `<div class="hmrow" style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><select class="hmteam" style="flex:1">${opts}</select><button class="cpy" style="flex:none" onclick="this.closest('.hmrow').remove()">✕</button></div>`;
-}
 function renderHmForm(){
   const box=document.getElementById('hmBox'); if(!box) return;
-  const list=honorableList.length?honorableList:[null,null,null,null,null];
-  box.innerHTML=list.map(id=>hmRowHtml(id)).join('');
+  box.innerHTML='<div style="display:flex;align-items:center;gap:12px">'
+    +'<button class="btn gho" style="margin:0;min-width:52px;font-size:20px" onclick="chHm(-1)">−</button>'
+    +'<div style="font-size:24px;font-weight:900;min-width:44px;text-align:center" id="hmNum">'+honorableCount+'</div>'
+    +'<button class="btn gho" style="margin:0;min-width:52px;font-size:20px" onclick="chHm(1)">＋</button>'
+    +'<button class="btn" style="margin:0;flex:1" onclick="saveHm()">💾 儲存名額</button></div>'
+    +'<div style="font-size:12px;color:var(--mut);margin-top:6px" id="hmHint"></div>';
+  updHmHint();
 }
-function addHm(){ const box=document.getElementById('hmBox'); box.insertAdjacentHTML('beforeend', hmRowHtml(null)); }
-function saveHm(){
-  if(!db){ alert('尚未連線'); return; }
-  const list=[...document.querySelectorAll('#hmBox .hmrow')].map(function(r){return r.querySelector('.hmteam').value;}).filter(function(v){return v;}).map(function(v){return parseInt(v);});
-  db.collection('control').doc('honorable').set({list:list}).then(function(){ honorableList=list; alert('✓ 佳作已儲存（'+list.length+' 名）'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); });
-}
+function updHmHint(){ const el=document.getElementById('hmHint'); if(el) el.textContent='佳作＝綜合排名第 4～'+(3+honorableCount)+' 名（可減到 0）'; }
+function chHm(d){ honorableCount=Math.max(0,Math.min(20,honorableCount+d)); const n=document.getElementById('hmNum'); if(n) n.textContent=honorableCount; updHmHint(); }
+function saveHm(){ if(!db){alert('尚未連線');return;} db.collection('control').doc('honorable').set({count:honorableCount}).then(function(){ alert('✓ 佳作名額已設為 '+honorableCount+' 名'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); }); }
 function renderJudgeTops(){
   const box=document.getElementById('jtopBox'); if(!box) return;
   const mains=JUDGES.filter(j=>j.type==='main');
@@ -1014,7 +1032,7 @@ async function resetAll(){
   try{
     await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}, titles:{}});
     try{ await db.collection('control').doc('special').set({list:[]}); specialAwards=[]; }catch(e){}
-    try{ await db.collection('control').doc('honorable').set({list:[]}); honorableList=[]; }catch(e){}
+    try{ await db.collection('control').doc('honorable').set({count:5}); honorableCount=5; }catch(e){}
     Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
     DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; j.title=d.title; } });
     fillJudgeGrid();
