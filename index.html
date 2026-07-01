@@ -220,6 +220,16 @@
   #pwReminder{position:fixed; top:0; left:0; right:0; z-index:500; background:var(--pink); color:#fff; text-align:center; padding:13px 16px; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 6px 20px -6px #000a; line-height:1.5;}
   #pwReminder .rbtn{background:#fff; color:#b3264f; border:none; border-radius:9px; padding:9px 16px; font-weight:800; font-size:15px; cursor:pointer;}
   #dmPw{color:var(--pink);}
+  #s-ceremony .cerem{position:fixed; inset:0; z-index:350; background:radial-gradient(120% 90% at 50% 28%, #1a0f2a 0%, #05050c 70%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; padding:24px; overflow:hidden;}
+  .cer-cat{font-size:26px; font-weight:800; color:#00e0c6; letter-spacing:4px;}
+  .cer-name{font-size:56px; font-weight:900; color:#fff; margin-top:20px; line-height:1.15; padding:0 10px;}
+  .cer-name.show{animation:cerpop .6s ease;}
+  .cer-name.huge{font-size:74px; color:#ffd24a;}
+  .cer-name.countnum{font-size:150px; font-weight:900; color:#ff3d8b; animation:cerpop .55s ease;}
+  @keyframes cerpop{0%{transform:scale(.55);opacity:0;}55%{transform:scale(1.12);opacity:1;}100%{transform:scale(1);}}
+  .cer-hint{position:absolute; bottom:32px; font-size:16px; color:#8a8aa0; animation:blink 1.6s infinite;}
+  @keyframes blink{0%,100%{opacity:.4;}50%{opacity:1;}}
+  .cer-x{position:absolute; top:16px; right:22px; font-size:24px; color:#8a8aa0; cursor:pointer; z-index:2;}
 </style>
 </head>
 <body>
@@ -340,7 +350,7 @@
       <button class="btn" id="btnScore" onclick="toggleCtl('scoringOpen')">評分：—</button>
       <button class="btn gho" id="btnVote" onclick="toggleCtl('votingOpen')">投票：—</button>
     </div>
-    <div class="ctl" style="padding-top:10px"><button class="btn gho" onclick="openBig()">🖥 開啟大螢幕成果板</button></div>
+    <div class="ctl" style="padding-top:10px"><button class="btn gho" onclick="openBig()">🖥 大螢幕成果板</button><button class="btn" onclick="startCeremony()">🎬 開始頒獎典禮</button></div>
     <div class="sec-h">綜合排行（具名評審 Sting／Mark／Janet 平均）</div>
     <div id="leadBox"></div>
     <div class="sec-h">📋 各具名評審個人 Top 3</div>
@@ -369,6 +379,16 @@
       <div class="bigcol"><h2>🏆 綜合排行</h2><div id="bigLead"></div></div>
       <div class="bigcol"><h2>🔥 人氣榜</h2><div id="bigPop"></div></div>
       <div class="bigcol"><h2>🎖 得獎揭曉</h2><div id="bigAward"></div></div>
+    </div>
+  </section>
+
+  <!-- CEREMONY -->
+  <section id="s-ceremony" class="screen">
+    <div class="cerem" onclick="ceremNext()">
+      <span class="cer-x" onclick="event.stopPropagation(); ceremExit()">✕</span>
+      <div class="cer-cat" id="cerCat">🎬 頒獎典禮</div>
+      <div class="cer-name" id="cerName">點一下畫面開始 👏</div>
+      <div class="cer-hint" id="cerHint">點畫面揭曉下一位 →</div>
     </div>
   </section>
 
@@ -690,6 +710,67 @@ function renderMystery(){
       <div class="nm">${j.name}　·　已評 ${ss.length}/24</div>
       <div class="sub">${top||'尚未評分'}</div></div></div>`;
   }).join('');
+}
+function ceremRows(){
+  const mains=JUDGES.filter(j=>j.type==='main');
+  return TEAMS.map(t=>{ const ss=allScores.filter(s=>s.teamId===t.id&&mains.some(j=>j.id===s.judgeId)); const avg=ss.length?ss.reduce((a,b)=>a+b.total,0)/ss.length:0; return {name:t.name,avg};}).sort((a,b)=>b.avg-a.avg);
+}
+let ceremSteps=[], ceremIdx=-1, ceremBusy=false;
+function startCeremony(){
+  const rows=ceremRows();
+  ceremSteps=[];
+  honorableList.forEach(function(id){ const t=TEAMS.find(function(x){return x.id===id;}); if(t) ceremSteps.push({cat:'🏅 佳作', name:t.name}); });
+  if(rows[2]) ceremSteps.push({cat:'🥉 銅賞', name:rows[2].name, huge:true});
+  if(rows[1]) ceremSteps.push({cat:'🥈 銀賞', name:rows[1].name, huge:true});
+  if(rows[0]) ceremSteps.push({cat:'🥇 金賞', name:rows[0].name, huge:true});
+  specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); ceremSteps.push({cat:'🎖 '+a.name+'（評審團加碼獎）', name:t?t.name:'（未頒）'}); });
+  ceremIdx=-1;
+  document.getElementById('cerCat').textContent='🎬 頒獎典禮';
+  document.getElementById('cerName').textContent='點一下畫面開始 👏';
+  document.getElementById('cerName').className='cer-name';
+  document.getElementById('cerHint').style.display='block';
+  go('s-ceremony');
+}
+function showCount(n){
+  const nm=document.getElementById('cerName');
+  nm.className='cer-name'; void nm.offsetWidth;
+  nm.textContent=n; nm.className='cer-name countnum';
+}
+function ceremNext(){
+  if(ceremBusy) return;
+  ceremIdx++;
+  if(ceremIdx>=ceremSteps.length){ ceremFinish(); return; }
+  const s=ceremSteps[ceremIdx];
+  document.getElementById('cerCat').textContent=s.cat;
+  document.getElementById('cerHint').style.display='none';
+  ceremBusy=true;
+  let n=3; showCount(n);
+  const iv=setInterval(function(){
+    n--;
+    if(n>=1){ showCount(n); }
+    else{
+      clearInterval(iv);
+      const nm=document.getElementById('cerName');
+      nm.className='cer-name'; void nm.offsetWidth;
+      nm.textContent=s.name; nm.className='cer-name show'+(s.huge?' huge':'');
+      ceremApplause();
+      ceremBusy=false;
+      document.getElementById('cerHint').style.display=(ceremIdx>=ceremSteps.length-1)?'none':'block';
+    }
+  },800);
+}
+function ceremFinish(){
+  document.getElementById('cerCat').textContent='🎉 恭喜所有得獎者 🎉';
+  const nm=document.getElementById('cerName'); nm.textContent='北祥黑客松 2026'; nm.className='cer-name show';
+  document.getElementById('cerHint').style.display='none';
+  ceremApplause(); setTimeout(ceremApplause,600);
+}
+function ceremExit(){ ceremSteps=[]; ceremIdx=-1; go('s-dash'); }
+function ceremApplause(){
+  const ems=['👏','🎉','👏','🎊','👏','✨','🙌','👏'];
+  for(let i=0;i<46;i++){ const c=document.createElement('div'); c.className='confetti'; c.textContent=ems[i%ems.length];
+    c.style.left=(Math.random()*100)+'vw'; c.style.fontSize=(18+Math.random()*26)+'px'; c.style.animationDuration=(1.2+Math.random()*1.8)+'s'; c.style.animationDelay=(Math.random()*0.5)+'s';
+    document.body.appendChild(c); setTimeout(function(){c.remove();},3400); }
 }
 function openBig(){ renderBigscreen(); go('s-bigscreen'); }
 function renderBigscreen(){
