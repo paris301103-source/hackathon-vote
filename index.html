@@ -182,6 +182,9 @@
   [data-theme="light"] select,[data-theme="light"] input,[data-theme="light"] textarea{font-size:19px;}
   [data-theme="light"] .h-main{font-size:28px;} [data-theme="light"] .jname{font-size:22px;} [data-theme="light"] .jrole{font-size:15px;}
   [data-theme="light"] .stat .v{font-size:26px;}
+  .medal{display:inline-block;font-size:11px;font-weight:800;padding:1px 8px;border-radius:999px;margin-left:6px;}
+  .medal.m1{background:#ffd24a2e;color:#ffd24a;} .medal.m2{background:#cfd3dc2e;color:#cfd3dc;} .medal.m3{background:#e0935a2e;color:#e0935a;}
+  [data-theme="light"] .medal.m1{color:#8a6400;} [data-theme="light"] .medal.m2{color:#565863;} [data-theme="light"] .medal.m3{color:#8a4a1a;}
   .pbar{height:10px; background:var(--track); border-radius:999px; overflow:hidden;}
   .pbar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .5s;}
   .pbar.mini{height:7px; margin-top:7px;}
@@ -687,7 +690,7 @@ function renderBigscreen(){
   const lb=document.getElementById('bigLead'); if(!lb) return;
   const mains=JUDGES.filter(j=>j.type==='main');
   const rows=TEAMS.map(t=>{ const ss=allScores.filter(s=>s.teamId===t.id&&mains.some(j=>j.id===s.judgeId)); const avg=ss.length?ss.reduce((a,b)=>a+b.total,0)/ss.length:0; return {name:t.name,avg};}).sort((a,b)=>b.avg-a.avg).slice(0,8);
-  lb.innerHTML=rows.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${i+1}. ${t.name}</span><span class="v">${t.avg.toFixed(1)}</span></div><div class="bar"><i style="width:${Math.round(t.avg)}%"></i></div></div>`).join('');
+  lb.innerHTML=rows.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${['🥇','🥈','🥉'][i]||(i+1+'.')} ${t.name}</span><span class="v">${t.avg.toFixed(1)}</span></div><div class="bar"><i style="width:${Math.round(t.avg)}%"></i></div></div>`).join('');
   const pop=TEAMS.map(t=>({name:t.name,v:voteCounts[t.id]||0})).sort((a,b)=>b.v-a.v).slice(0,8);
   const mx=Math.max(1,...pop.map(x=>x.v));
   const pb=document.getElementById('bigPop'); if(pb) pb.innerHTML=pop.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${i+1}. ${t.name}</span><span class="v">${t.v}</span></div><div class="bar"><i style="width:${Math.round(t.v/mx*100)}%"></i></div></div>`).join('');
@@ -767,8 +770,10 @@ function renderLead(){
   document.getElementById('stProg').textContent=Math.round(filled/totalCells*100)+'%';
   document.getElementById('leadBox').innerHTML=rows.map((t,i)=>{
     const detail=t.per.map(p=>`${p.nm} ${p.v!=null?p.v:'—'}`).join('　');
-    return `<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
-      <div class="info"><div class="nm">${t.name}</div><div class="sub">${detail}　·　總分 ${t.sum}</div></div>
+    const medal=['🥇','🥈','🥉'][i]||(i+1);
+    const mbadge=['<span class="medal m1">金獎</span>','<span class="medal m2">銀獎</span>','<span class="medal m3">銅獎</span>'][i]||'';
+    return `<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${medal}</div>
+      <div class="info"><div class="nm">${t.name}${mbadge}</div><div class="sub">${detail}　·　總分 ${t.sum}</div></div>
       <div class="pts">${t.avg.toFixed(1)}</div></div>`;}).join('');
   const pf=document.getElementById('progFill'); if(pf) pf.style.width=Math.round(filled/totalCells*100)+'%';
 }
