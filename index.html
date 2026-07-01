@@ -197,6 +197,7 @@
   .bigrow .v{font-size:20px; font-weight:900; color:var(--teal);}
   .bigrow .bar{height:12px; background:var(--track); border-radius:999px; margin-top:7px; overflow:hidden;}
   .bigrow .bar i{display:block; height:100%; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .5s;}
+  .awgrp{font-size:13px;font-weight:800;letter-spacing:2px;color:var(--dim);margin:4px 0 8px;}
   .bigaward{text-align:center; padding:16px; border:1px dashed var(--line); border-radius:14px; margin-bottom:12px;}
   .bigaward .aw{font-size:14px; color:var(--mut);} .bigaward .tm{font-size:26px; font-weight:900; margin-top:6px; color:var(--pink);}
   @media(min-width:680px){ .bigwrap{grid-template-columns:1fr 1fr 1fr;} .bigcol h2{font-size:24px;} .bigrow .nm{font-size:20px;} .bigaward .tm{font-size:30px;} }
@@ -349,6 +350,9 @@
     <div class="sec-h">🎖 特別獎（評審團商議後登錄，可不頒）</div>
     <div class="pad" id="spBox" style="padding-top:0"></div>
     <div class="ctl" style="padding:2px 16px 0"><button class="btn gho" onclick="addSpecial()">＋ 新增獎項</button><button class="btn gho" onclick="saveSpecial()">💾 儲存特別獎</button></div>
+    <div class="sec-h">🏅 佳作（預設 5 名，可增減）</div>
+    <div class="pad" id="hmBox" style="padding-top:0"></div>
+    <div class="ctl" style="padding:2px 16px 0"><button class="btn gho" onclick="addHm()">＋ 新增佳作</button><button class="btn gho" onclick="saveHm()">💾 儲存佳作</button></div>
     <div class="sec-h">🔥 人氣獎 Top 5</div>
     <div id="popBox"></div>
     <div class="sec-h">🔑 評審設定（姓名／密碼，改完立即生效）</div>
@@ -455,6 +459,7 @@ let voterId=null, voterVoted=null, voteOrder=null, voterName=null;
 let cur=null;
 let awardsList=[];
 let specialAwards=[];
+let honorableList=[];
 const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
 const DEFAULT_JUDGES = JUDGES.map(j=>({id:j.id,name:j.name,short:j.short,ini:j.ini,award:j.award,title:j.title}));
 const DEFAULT_PINS = Object.assign({}, PINS);
@@ -500,6 +505,7 @@ function onReady(){
     const pb=document.getElementById('pwBox'); if(pb && pb.innerHTML) renderPwForm();
   }, ()=>{});
   db.collection('control').doc('special').onSnapshot(d=>{ specialAwards=(d.exists&&Array.isArray(d.data().list))?d.data().list:[]; renderBigscreen(); }, ()=>{});
+  db.collection('control').doc('honorable').onSnapshot(d=>{ honorableList=(d.exists&&Array.isArray(d.data().list))?d.data().list:[]; renderBigscreen(); }, ()=>{});
 }
 
 /* ---------- 評審登入（5 格選擇） ---------- */
@@ -696,9 +702,14 @@ function renderBigscreen(){
   const pb=document.getElementById('bigPop'); if(pb) pb.innerHTML=pop.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${i+1}. ${t.name}</span><span class="v">${t.v}</span></div><div class="bar"><i style="width:${Math.round(t.v/mx*100)}%"></i></div></div>`).join('');
   const ab=document.getElementById('bigAward');
   if(ab){
-    const champ=rows[0];
-    let html=`<div class="bigaward"><div class="aw">🥇 冠軍（評審綜合）</div><div class="tm">${champ&&champ.avg>0?champ.name:'—'}</div></div>`;
+    const medals=['🥇 金獎','🥈 銀獎','🥉 銅獎'];
+    let html='<div class="awgrp">評審獎</div>';
+    for(let k=0;k<3;k++){ const tt=rows[k]; html+=`<div class="bigaward"><div class="aw">${medals[k]}</div><div class="tm">${tt&&tt.avg>0?tt.name:'—'}</div></div>`; }
     specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); html+=`<div class="bigaward"><div class="aw">🎖 ${a.name}</div><div class="tm">${t?t.name:'未頒'}</div></div>`; });
+    if(honorableList.length){ html+='<div class="awgrp" style="margin-top:10px">佳作</div>'; honorableList.forEach(function(id){ const t=TEAMS.find(function(x){return x.id===id;}); if(t) html+=`<div class="bigaward" style="padding:10px"><div class="tm" style="font-size:20px">${t.name}</div></div>`; }); }
+    const topPop=pop[0];
+    html+='<div class="awgrp" style="margin-top:14px">人氣獎</div>';
+    html+=`<div class="bigaward" style="border-color:var(--pink);border-style:solid"><div class="aw">🔥 人氣獎（觀眾票選）</div><div class="tm" style="color:var(--pink)">${topPop&&topPop.v>0?topPop.name:'—'}</div></div>`;
     ab.innerHTML=html;
   }
 }
@@ -719,6 +730,21 @@ function saveSpecial(){
   if(!db){ alert('尚未連線'); return; }
   const list=[...document.querySelectorAll('#spBox .sprow')].map(function(r){ return { name:r.querySelector('.spname').value.trim(), teamId: r.querySelector('.spteam').value? parseInt(r.querySelector('.spteam').value):null }; }).filter(function(a){ return a.name; });
   db.collection('control').doc('special').set({list:list}).then(function(){ specialAwards=list; alert('✓ 特別獎已儲存（'+list.length+' 個）'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); });
+}
+function hmRowHtml(teamId){
+  const opts='<option value="">— 未選 —</option>'+TEAMS.map(t=>`<option value="${t.id}" ${String(teamId)===String(t.id)?'selected':''}>#${String(t.id).padStart(2,'0')} ${t.name}</option>`).join('');
+  return `<div class="hmrow" style="display:flex;gap:8px;margin-bottom:8px;align-items:center"><select class="hmteam" style="flex:1">${opts}</select><button class="cpy" style="flex:none" onclick="this.closest('.hmrow').remove()">✕</button></div>`;
+}
+function renderHmForm(){
+  const box=document.getElementById('hmBox'); if(!box) return;
+  const list=honorableList.length?honorableList:[null,null,null,null,null];
+  box.innerHTML=list.map(id=>hmRowHtml(id)).join('');
+}
+function addHm(){ const box=document.getElementById('hmBox'); box.insertAdjacentHTML('beforeend', hmRowHtml(null)); }
+function saveHm(){
+  if(!db){ alert('尚未連線'); return; }
+  const list=[...document.querySelectorAll('#hmBox .hmrow')].map(function(r){return r.querySelector('.hmteam').value;}).filter(function(v){return v;}).map(function(v){return parseInt(v);});
+  db.collection('control').doc('honorable').set({list:list}).then(function(){ honorableList=list; alert('✓ 佳作已儲存（'+list.length+' 名）'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); });
 }
 function renderJudgeTops(){
   const box=document.getElementById('jtopBox'); if(!box) return;
@@ -753,7 +779,7 @@ function adminLogin(){
       renderPop(); renderBigscreen();
     },()=>{});
   }
-  renderLead(); renderJudgeTops(); renderMystery(); renderSpecialForm(); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
+  renderLead(); renderJudgeTops(); renderMystery(); renderSpecialForm(); renderHmForm(); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
 }
 function renderLead(){
   const mains=JUDGES.filter(j=>j.type==='main');
@@ -907,6 +933,7 @@ async function resetAll(){
   try{
     await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}, titles:{}});
     try{ await db.collection('control').doc('special').set({list:[]}); specialAwards=[]; }catch(e){}
+    try{ await db.collection('control').doc('honorable').set({list:[]}); honorableList=[]; }catch(e){}
     Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
     DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; j.title=d.title; } });
     fillJudgeGrid();
