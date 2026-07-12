@@ -283,16 +283,17 @@ function handlerBlock(p,t){
 function setHandler(pid,key){save(pid,{handler:key});const pp=PROJECTS.find(x=>x.id===pid);if(pp&&key!==pmOf(pp))notify(key,"【追蹤系統】你被設為追蹤對象："+pp.n,me.name+" 把「"+pp.n+"」交給你推進，請登入更新進度。");}
 function addCollab(pid){const nm=prompt("指派協作者的名字（英文不分大小寫；他用「名字＋8888」登入、首次改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("填他的 Email（收通知用，會一併存到後台；可留空）：")||"";const tk=prompt("要交付給他的任務／工作內容（可留空）：")||"";togPerm(pid,"editors",k);if(em.trim())setMail(k,em.trim());const pp=PROJECTS.find(x=>x.id===pid);if(tk.trim()){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:tk.trim(),by:me.name,at:Date.now(),due:"",assignee:k,done:false});save(pid,{tasks:tasks});}notify(k,"【追蹤系統】你被指派為協作："+(pp?pp.n:""),me.name+" 指派你協作「"+(pp?pp.n:"")+"」"+(tk.trim()?"，任務：「"+tk.trim()+"」":"")+"，請登入追蹤系統。",em);alert("✅ 已加入協作者"+(tk.trim()?"並指派任務":"")+(em.trim()?"、Email 已存後台":"")+"。");}
 function upcomingWeeks(n){const a=weekKey().split("-").map(Number);let d=new Date(a[0],a[1]-1,a[2]);const arr=[];for(let i=0;i<n;i++){arr.push(weekKey(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+7);}return arr;}
+function planStatus(it,cur){if(it.done){const onTime=!it.doneWeek||it.doneWeek<=it.week;return onTime?["✅ 如期完成","var(--teal)","#0ea89a1a"]:["🟠 延遲完成","var(--hold)","#c07a1214"];}if(it.week<cur)return ["🔴 逾期未完成","var(--warn)","#e0455f14"];if(it.week===cur)return ["🔵 本週待完成","var(--go)","#2e6bd614"];return ["⚪ 待進行","var(--mut)","#eef1f7"];}
 function planBlock(p,t){
  const items=(t.plan||[]).slice().sort((a,b)=>a.week<b.week?-1:a.week>b.week?1:0);const ed=canEdit(p);const cur=weekKey();
  let h=`<div class="sec"><div class="sl">📅 週計畫 · 每週要完成的項目 <span class="muted" style="font-weight:400">（負責人可自訂）</span></div>`;
- if(items.length){let lw=null;items.forEach(it=>{if(it.week!==lw){lw=it.week;h+=`<div style="font-weight:800;font-size:12.5px;margin:9px 0 3px;color:${it.week===cur?'var(--teal)':'var(--mut)'}">${weekLabel(it.week)}${it.week===cur?' · 本週':''}</div>`;}h+=`<div class="taskb" style="padding:5px 0"><div style="display:flex;gap:8px;align-items:center"><span class="tck" style="color:${it.done?'var(--teal)':'var(--mut)'}" ${ed?`onclick="togglePlan('${p.id}','${it.id}')"`:''}>${it.done?'✓':'☐'}</span><span class="tt" style="${it.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(it.goal)}</span>${ed?`<span class="tck" style="color:var(--warn)" onclick="delPlan('${p.id}','${it.id}')">✕</span>`:''}</div></div>`;});}
+ if(items.length){let lw=null;items.forEach(it=>{if(it.week!==lw){lw=it.week;h+=`<div style="font-weight:800;font-size:12.5px;margin:9px 0 3px;color:${it.week===cur?'var(--teal)':'var(--mut)'}">${weekLabel(it.week)}${it.week===cur?' · 本週':''}</div>`;}const st=planStatus(it,cur);h+=`<div class="taskb" style="padding:5px 0"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="tck" style="color:${it.done?'var(--teal)':'var(--mut)'}" ${ed?`onclick="togglePlan('${p.id}','${it.id}')"`:''}>${it.done?'✓':'☐'}</span><span class="tt" style="${it.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(it.goal)}</span><span class="pillst" style="background:${st[2]};color:${st[1]}">${st[0]}</span>${ed?`<span class="tck" style="color:var(--warn)" onclick="delPlan('${p.id}','${it.id}')">✕</span>`:''}</div></div>`;});}
  else h+=`<div class="muted" style="font-size:13px">尚未安排週計畫</div>`;
  if(ed){const ws=upcomingWeeks(12);h+=`<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap"><select id="pw-${p.id}" style="width:auto">${ws.map(w=>`<option value="${w}">${weekLabel(w)}${w===cur?'（本週）':''}</option>`).join('')}</select><input id="pg-${p.id}" placeholder="這週要完成的項目…" style="flex:1;min-width:150px"><button class="btn sm" onclick="addPlan('${p.id}')">＋ 排入</button></div>`;}
  h+=`</div>`;return h;
 }
 function addPlan(pid){const w=document.getElementById("pw-"+pid),g=document.getElementById("pg-"+pid);const wk=w?w.value:"";const goal=g?g.value.trim():"";if(!goal||!wk)return;const t=TRACK[pid]||{};const plan=(t.plan||[]).slice();plan.push({id:uid(),week:wk,goal:goal,done:false});save(pid,{plan:plan});}
-function togglePlan(pid,id){const t=TRACK[pid]||{};const plan=(t.plan||[]).map(x=>x.id===id?Object.assign({},x,{done:!x.done}):x);save(pid,{plan:plan});}
+function togglePlan(pid,id){const t=TRACK[pid]||{};const plan=(t.plan||[]).map(x=>x.id===id?Object.assign({},x,{done:!x.done,doneWeek:!x.done?weekKey():''}):x);save(pid,{plan:plan});}
 function delPlan(pid,id){const t=TRACK[pid]||{};save(pid,{plan:(t.plan||[]).filter(x=>x.id!==id)});}
 function decBlock(p,t){
  const dec=t.decision||"go";const dm=decMeta(dec);const prop=t.proposal;const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);
@@ -362,8 +363,8 @@ function renderAB(){
  if(adminTab==="perm"){b.innerHTML=permView();return;}
  if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));b.innerHTML=filterBar(true)+pager(ps);return;}
  // board
- let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0;
- PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(submittedThisWeek(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.tasks||[]).filter(x=>!x.done).length);tkr+=((t.tasks||[]).filter(x=>!x.reply&&!x.done).length);});
+ let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0,odue=0;
+ PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(submittedThisWeek(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.tasks||[]).filter(x=>!x.done).length);tkr+=((t.tasks||[]).filter(x=>!x.reply&&!x.done).length);odue+=((t.plan||[]).filter(x=>!x.done&&x.week<weekKey()).length);});
  const stats=`<div class="stats">
   <div class="stat" style="border-color:${rep>=24?'#12b88655':'#ff547055'}"><div class="n" style="color:${rep>=24?'var(--teal)':'var(--warn)'}">${rep}/24</div><div class="l">本週已送出</div></div>
   <div class="stat"><div class="n">${Math.round(sum/24)}%</div><div class="l">整體平均進度</div></div>
@@ -373,7 +374,7 @@ function renderAB(){
   <div class="stat"><div class="n" style="color:var(--stop)">${stop}</div><div class="l">已叫停</div></div>
   <div class="stat" style="border-color:${pend?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">🔔 ${pend}</div><div class="l">待裁決建議</div></div>
   <div class="stat"><div class="n" style="color:var(--pink)">${tk}</div><div class="l">指派任務未完成</div></div>
-  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">任務待各組回覆</div></div></div>`;
+  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">任務待各組回覆</div></div>\n  <div class="stat" style="border-color:${odue?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${odue}</div><div class="l">週計畫逾期</div></div></div>`;
  let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));
  const rows=ps.map(p=>{const t=TRACK[p.id]||{};const sm=stMeta(t.status||"idle");const dm=decMeta(t.decision||"go");const sub=submittedThisWeek(t);
   return `<tr class="${sub?'':'norep'}"><td><b>${esc(p.n)}</b>${t.proposal?' <span class="pillst" style="background:#e8a33d22;color:var(--obs)">🔔待裁決</span>':''}<div class="muted" style="font-size:11px">${esc(p.lead)}${p.medal?' · '+esc(p.medal):''}</div></td>
