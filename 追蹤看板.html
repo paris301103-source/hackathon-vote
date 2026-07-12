@@ -112,7 +112,6 @@ const PROJECTS=[
  {id:"p24",n:"通知超人",lead:"江村志",pm:"DIU",bk:"obs",medal:"",one:"AI 通知守門員、只在重要時打擾",next:"內部試用看黏著度",time:"8月"},
 ];
 const MANAGERS=[
- {k:"BOSS",name:"主管 / Leadership",role:"lead"},
  {k:"Janet",name:"Janet",role:"exec"},{k:"Sean",name:"Sean",role:"exec"},
  {k:"ADMIN",name:"後台 / 系統管理",role:"admin"},
  {k:"PUNK",name:"PUNK（資安/權限）",role:"punk"},
@@ -168,7 +167,7 @@ function renderLogin(){
  el.innerHTML=`<div class="authwrap"><div class="login">
   <div class="loginhero"><div class="k">★ 後續追蹤</div><h2>北祥黑客松 2026<br>專案追蹤系統</h2><p>打你的名字 → 輸入密碼，就開始</p></div>
   <div class="loginbody">
-   <label style="font-size:12px;color:var(--mut);font-weight:800">你的名字</label>
+   <label style="font-size:12px;color:var(--mut);font-weight:800">你的名字 <span style="font-weight:500">（英文不分大小寫）</span></label>
    <input id="who" list="names" autocomplete="off" placeholder="打你的名字（例：WIND、Julia、羅文財、主辦）" oninput="pickWho()" onchange="pickWho()" style="margin-top:5px">
    <datalist id="names">${allPeople().map(x=>`<option value="${esc(x.name.replace("（隊長）",""))}">`).join("")}</datalist>
    <div id="whoinfo" class="muted" style="min-height:16px;margin-top:5px;font-size:12px"></div>
@@ -177,7 +176,7 @@ function renderLogin(){
 }
 let pending=null;
 const ROLEZH={exec:"經營管理層",lead:"主管",pm:"專案負責人",collab:"合作者/隊長",punk:"PUNK 資安"};
-function findAccount(txt){txt=(txt||"").trim();if(!txt)return null;const low=txt.toLowerCase();return allPeople().find(x=>x.k.toLowerCase()===low||x.name.toLowerCase()===low||x.name.replace("（隊長）","").toLowerCase()===low)||((low==="主辦"||low==="主管")?allPeople().find(x=>x.role==="lead"):(low==="後台"||low==="系統")?allPeople().find(x=>x.role==="admin"):(low==="經營管理層"||low==="經管"||low==="經營")?allPeople().find(x=>x.role==="exec"):null);}
+function findAccount(txt){txt=(txt||"").trim();if(!txt)return null;const low=txt.toLowerCase();return allPeople().find(x=>x.k.toLowerCase()===low||x.name.toLowerCase()===low||x.name.replace("（隊長）","").toLowerCase()===low)||((low==="主管"||low==="主辦"||low==="經營"||low==="經營管理層"||low==="經管"||low==="管理層")?allPeople().find(x=>x.role==="exec"):(low==="後台"||low==="系統"||low==="管理"||low==="管理員")?allPeople().find(x=>x.role==="admin"):null);}
 function pickWho(){const v=document.getElementById("who").value;const acc=findAccount(v);pending=acc?acc.k:null;const info=document.getElementById("whoinfo");const box=document.getElementById("pwbox");if(acc){info.innerHTML="身分："+(ROLEZH[acc.role]||"")+"　"+esc(acc.name);box.style.display="block";}else{info.textContent=v?"找不到這個名字，請從提示清單選":"";box.style.display="none";}}
 function doLogin(){if(!pending){document.getElementById("lerr").textContent="請先選擇你的名字";return;}const pw=document.getElementById("pw").value.trim();if(pw!==pinFor(pending)){document.getElementById("lerr").textContent="密碼錯誤";return;}me=person(pending);pIdx=0;if(!PINS||!PINS[me.k]){renderForceChange();}else{renderApp();}}
 function pwError(pw){pw=(pw||"").trim();if(pw.length<8)return "密碼至少 8 碼";let c=0;if(/[a-z]/.test(pw))c++;if(/[A-Z]/.test(pw))c++;if(/[0-9]/.test(pw))c++;if(/[^A-Za-z0-9]/.test(pw))c++;if(c<3)return "需包含大寫、小寫、數字、符號中至少 3 種";return null;}
@@ -212,6 +211,7 @@ function pager(list){
 
   ${decBlock(p,t)}
   ${handlerBlock(p,t)}
+  ${planBlock(p,t)}
 
   <div class="sec"><div class="sl">目前進度</div>
    <div class="row" style="align-items:center"><div class="prog"><i style="width:${prog}%"></i></div><span class="bignum" id="pct-${p.id}" style="width:80px;text-align:right">${prog}%</span></div>
@@ -281,7 +281,19 @@ function handlerBlock(p,t){
  h+=`</div>`;return h;
 }
 function setHandler(pid,key){save(pid,{handler:key});const pp=PROJECTS.find(x=>x.id===pid);if(pp&&key!==pmOf(pp))notify(key,"【追蹤系統】你被設為追蹤對象："+pp.n,me.name+" 把「"+pp.n+"」交給你推進，請登入更新進度。");}
-function addCollab(pid){const nm=prompt("指派協作者的名字（他用「名字＋8888」登入、首次改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("填他的 Email（收通知用，會一併存到後台；可留空）：")||"";const tk=prompt("要交付給他的任務／工作內容（可留空）：")||"";togPerm(pid,"editors",k);if(em.trim())setMail(k,em.trim());const pp=PROJECTS.find(x=>x.id===pid);if(tk.trim()){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:tk.trim(),by:me.name,at:Date.now(),due:"",assignee:k,done:false});save(pid,{tasks:tasks});}notify(k,"【追蹤系統】你被指派為協作："+(pp?pp.n:""),me.name+" 指派你協作「"+(pp?pp.n:"")+"」"+(tk.trim()?"，任務：「"+tk.trim()+"」":"")+"，請登入追蹤系統。",em);alert("✅ 已加入協作者"+(tk.trim()?"並指派任務":"")+(em.trim()?"、Email 已存後台":"")+"。");}
+function addCollab(pid){const nm=prompt("指派協作者的名字（英文不分大小寫；他用「名字＋8888」登入、首次改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("填他的 Email（收通知用，會一併存到後台；可留空）：")||"";const tk=prompt("要交付給他的任務／工作內容（可留空）：")||"";togPerm(pid,"editors",k);if(em.trim())setMail(k,em.trim());const pp=PROJECTS.find(x=>x.id===pid);if(tk.trim()){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:tk.trim(),by:me.name,at:Date.now(),due:"",assignee:k,done:false});save(pid,{tasks:tasks});}notify(k,"【追蹤系統】你被指派為協作："+(pp?pp.n:""),me.name+" 指派你協作「"+(pp?pp.n:"")+"」"+(tk.trim()?"，任務：「"+tk.trim()+"」":"")+"，請登入追蹤系統。",em);alert("✅ 已加入協作者"+(tk.trim()?"並指派任務":"")+(em.trim()?"、Email 已存後台":"")+"。");}
+function upcomingWeeks(n){const a=weekKey().split("-").map(Number);let d=new Date(a[0],a[1]-1,a[2]);const arr=[];for(let i=0;i<n;i++){arr.push(weekKey(d));d=new Date(d.getFullYear(),d.getMonth(),d.getDate()+7);}return arr;}
+function planBlock(p,t){
+ const items=(t.plan||[]).slice().sort((a,b)=>a.week<b.week?-1:a.week>b.week?1:0);const ed=canEdit(p);const cur=weekKey();
+ let h=`<div class="sec"><div class="sl">📅 週計畫 · 每週要完成的項目 <span class="muted" style="font-weight:400">（負責人可自訂）</span></div>`;
+ if(items.length){let lw=null;items.forEach(it=>{if(it.week!==lw){lw=it.week;h+=`<div style="font-weight:800;font-size:12.5px;margin:9px 0 3px;color:${it.week===cur?'var(--teal)':'var(--mut)'}">${weekLabel(it.week)}${it.week===cur?' · 本週':''}</div>`;}h+=`<div class="taskb" style="padding:5px 0"><div style="display:flex;gap:8px;align-items:center"><span class="tck" style="color:${it.done?'var(--teal)':'var(--mut)'}" ${ed?`onclick="togglePlan('${p.id}','${it.id}')"`:''}>${it.done?'✓':'☐'}</span><span class="tt" style="${it.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(it.goal)}</span>${ed?`<span class="tck" style="color:var(--warn)" onclick="delPlan('${p.id}','${it.id}')">✕</span>`:''}</div></div>`;});}
+ else h+=`<div class="muted" style="font-size:13px">尚未安排週計畫</div>`;
+ if(ed){const ws=upcomingWeeks(12);h+=`<div class="row" style="margin-top:10px;gap:6px;flex-wrap:wrap"><select id="pw-${p.id}" style="width:auto">${ws.map(w=>`<option value="${w}">${weekLabel(w)}${w===cur?'（本週）':''}</option>`).join('')}</select><input id="pg-${p.id}" placeholder="這週要完成的項目…" style="flex:1;min-width:150px"><button class="btn sm" onclick="addPlan('${p.id}')">＋ 排入</button></div>`;}
+ h+=`</div>`;return h;
+}
+function addPlan(pid){const w=document.getElementById("pw-"+pid),g=document.getElementById("pg-"+pid);const wk=w?w.value:"";const goal=g?g.value.trim():"";if(!goal||!wk)return;const t=TRACK[pid]||{};const plan=(t.plan||[]).slice();plan.push({id:uid(),week:wk,goal:goal,done:false});save(pid,{plan:plan});}
+function togglePlan(pid,id){const t=TRACK[pid]||{};const plan=(t.plan||[]).map(x=>x.id===id?Object.assign({},x,{done:!x.done}):x);save(pid,{plan:plan});}
+function delPlan(pid,id){const t=TRACK[pid]||{};save(pid,{plan:(t.plan||[]).filter(x=>x.id!==id)});}
 function decBlock(p,t){
  const dec=t.decision||"go";const dm=decMeta(dec);const prop=t.proposal;const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);
  let h=`<div class="decbar dec-${dec}"><span>導入決策：${dm[1]}</span>`;
@@ -396,7 +408,7 @@ function permView(){
  return `<div class="banner">🔑 <b>角色與權限設定</b>　可調整每案的<b>負責人</b>、<b>可輸入</b>、<b>可檢視</b>；也能<b>指定名單外的人</b>（他用「名字＋8888」登入，首次登入需改密碼）。主管與 PUNK 一律看全部。</div>`+
  `<div class="wk"><div class="wn">🔑 帳號 · Email · 密碼</div><div class="muted" style="font-size:12px;margin:5px 0 9px">填 email 才能收通知（Email 通知目前：${NOTIFY_URL?'<b style=color:var(--teal)>已啟用</b>':'<b style=color:var(--warn)>未設定，見說明</b>'}）。重設＝把密碼設回 8888，對方下次登入需改新密碼。綠點＝已自訂密碼。</div><div style="display:flex;flex-wrap:wrap;gap:8px">${allPeople().map(x=>`<div style="display:flex;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:6px 9px;font-size:12.5px;margin-bottom:6px;flex-wrap:wrap"><span style="width:8px;height:8px;border-radius:50%;background:${(PINS&&PINS[x.k])?'var(--teal)':'#c3c9d6'};flex:none"></span><b style="min-width:110px">${esc((x.name||'').replace('（隊長）',''))}</b><input placeholder="email（收通知用）" value="${esc((MAIL&&MAIL[x.k])||'')}" onchange="setMail('${x.k}',this.value)" style="flex:1;min-width:160px;padding:6px"><button class="btn gh sm" onclick="resetPw('${x.k}')">重設密碼</button></div>`).join('')}</div></div>`+
  PROJECTS.map(p=>{const ed=editorsOf(p),vw=viewersOf(p),curpm=pmOf(p);
-  const chips=(field,arr)=>ppl.map(x=>`<span class="chip ${arr.includes(x.k)?'s':'x'}" onclick="togPerm('${p.id}','${field}','${x.k}')">${esc((x.name||'').replace('（隊長）',''))}</span>`).join('')+` <span class="chip s" style="border:1px dashed var(--teal)" onclick="addAssigned('${p.id}','${field}')">＋ 指定他人</span>`;
+  const chips=(field,arr)=>(arr.length?arr.map(k=>`<span class="chip s" style="padding:3px 9px">${esc(pn(k))} <span onclick="togPerm('${p.id}','${field}','${k}')" style="cursor:pointer;color:var(--warn);font-weight:900;margin-left:3px">×</span></span>`).join(''):'<span class="muted" style="font-size:12px">（目前無）</span>')+` <select onchange="quickAdd('${p.id}','${field}',this.value)" style="width:auto;padding:4px 7px;font-size:12px;margin-left:4px"><option value="">＋ 從名單加入</option>${allPeople().filter(x=>!arr.includes(x.k)).map(x=>`<option value="${x.k}">${esc((x.name||'').replace('（隊長）',''))}</option>`).join('')}</select> <span class="chip s" style="border:1px dashed var(--teal)" onclick="addAssigned('${p.id}','${field}')">＋ 指定新人</span>`;
   return `<div class="wk"><div class="wn">${esc(p.n)} <span class="muted" style="font-size:12px">· ${BUCKETS[p.bk].n}</span></div>
    <div class="row"><label>負責人</label>${p.team?'<span style="font-weight:800">RAE · IAN · GIBBY（三人共管）</span>':`<select style="width:auto" onchange="togPM('${p.id}',this.value)">${allPeople().filter(x=>x.role==='pm').map(x=>`<option value="${x.k}" ${x.k===curpm?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`}</div>
    <div style="margin-top:7px"><span class="muted" style="font-size:11px">可輸入（editors）</span><div style="margin-top:4px">${chips('editors',ed)}</div></div>
@@ -404,12 +416,13 @@ function permView(){
   </div>`;}).join("");
 }
 function togPM(pid,key){const cur=Object.assign({},PERM[pid]||{});cur.pm=key;const patch={};patch[pid]=cur;db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
-function addAssigned(pid,field){const nm=prompt("輸入要指定的人的名字（他可用「名字＋8888」登入，首次需改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("順便填他的 Email（收通知用，可留空）：")||"";togPerm(pid,field,k);if(em.trim())setMail(k,em.trim());}
+function quickAdd(pid,field,key){if(!key)return;togPerm(pid,field,key);}
+function addAssigned(pid,field){const nm=prompt("輸入要指定的人的名字（英文不分大小寫；他可用「名字＋8888」登入，首次需改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("順便填他的 Email（收通知用，可留空）：")||"";togPerm(pid,field,k);if(em.trim())setMail(k,em.trim());}
 function resetPw(key){if(!confirm("將「"+key+"」的密碼重設為 8888？對方下次登入需重新設定新密碼。"))return;const patch={};patch[key]=firebase.firestore.FieldValue.delete();db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>alert("✅ 已重設為 8888")).catch(e=>alert("失敗："+e.message));}
 function setMail(key,val){val=(val||"").trim();MAIL[key]=val;const patch={};patch[key]=val;db.collection("control").doc("trackmail").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
 function togPerm(pid,field,key){
  const cur=Object.assign({},PERM[pid]||{});const p=PROJECTS.find(x=>x.id===pid);
- let arr=(cur[field]||(field==='editors'?[p.pm,p.lead]:[])).slice();
+ let arr=(cur[field]||(field==='editors'?editorsOf(p):viewersOf(p))).slice();
  if(arr.includes(key))arr=arr.filter(x=>x!==key);else arr.push(key);
  cur[field]=arr;const patch={};patch[pid]=cur;
  db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));
