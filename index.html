@@ -1,1146 +1,423 @@
-<!DOCTYPE html>
-<html lang="zh-Hant">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>北祥黑客松 2026 · 評審系統</title>
+<!DOCTYPE html><html lang="zh-Hant"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>北祥黑客松 2026 · 專案追蹤系統</title>
 <style>
-  :root, :root[data-theme="dark"]{
-    --bg:#0a0a14; --bg2:#0d0d1c; --card:#14142a; --line:#ffffff14;
-    --pink:#ff3d8b; --teal:#00e0c6; --txt:#ffffff; --mut:#a7a7c2; --dim:#6f6f8c;
-    --body:#05050c; --hero1:#1a0f2a; --track:#2a2a44; --thumbb:#05050c;
-    --jc1:#16162e; --jc2:#0d0d1d; --jm1:#241c33; --jm2:#14101f; --my1:#2a2a45; --my2:#101020; --tt1:#1a1430; --tt2:#0e0e1f;
-  }
-  :root[data-theme="light"]{
-    --bg:#eef0f7; --bg2:#f8f9fd; --card:#ffffff; --line:#1f204514;
-    --pink:#e0356f; --teal:#0a9d8e; --txt:#1b1c30; --mut:#5c5e74; --dim:#9496ac;
-    --body:#e9ebf3; --hero1:#ffe3ee; --track:#dadcec; --thumbb:#ffffff;
-    --jc1:#ffffff; --jc2:#f3f5fc; --jm1:#fff9ec; --jm2:#fdf2dc; --my1:#eaecf6; --my2:#d2d5e8; --tt1:#ffffff; --tt2:#fbf1f5;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0; padding:0; background:var(--body); color:var(--txt);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang TC","Microsoft JhengHei",sans-serif;}
-  .wrap{max-width:430px; margin:0 auto; min-height:100vh; background:var(--bg); position:relative; overflow:hidden;}
-  .screen{display:none; padding-bottom:40px; animation:fade .25s ease;}
-  .screen.active{display:block;}
-  @keyframes fade{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
-  .banner{position:fixed; top:0; left:0; right:0; z-index:99; text-align:center; font-size:12px;
-    padding:7px; background:#7a1020; color:#ffd; display:none;}
-
-  .hero{padding:56px 22px 26px; text-align:center;
-    background:radial-gradient(120% 80% at 50% 0%, var(--hero1) 0%, var(--bg) 60%);}
-  .pill{display:inline-block; font-size:11px; letter-spacing:3px; color:var(--teal);
-    border:1px solid #00e0c655; border-radius:999px; padding:5px 14px; margin-bottom:18px;}
-  .h-title{font-size:32px; font-weight:900; line-height:1.1; letter-spacing:1px;}
-  .h-title .p{color:var(--pink);}
-  .h-year{font-size:48px; font-weight:900; color:var(--teal); letter-spacing:8px; margin:2px 0 16px;}
-  .h-main{font-size:21px; font-weight:800;}
-  .h-sub{font-size:15px; color:var(--mut); font-style:italic; margin-top:8px;}
-  .h-date{font-size:12px; color:var(--dim); margin-top:16px; letter-spacing:2px;}
-
-  .pad{padding:14px 18px;}
-  .role{display:flex; align-items:center; gap:14px; background:var(--card); border:1px solid var(--line);
-    border-radius:16px; padding:18px; margin-bottom:12px; cursor:pointer; transition:.15s;}
-  .role:active{transform:scale(.98);}
-  .role .ic{width:46px; height:46px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:22px; flex:none;}
-  .role .t{font-size:18px; font-weight:700;}
-  .role .d{font-size:14px; color:var(--mut); margin-top:2px;}
-  .role .arr{margin-left:auto; color:var(--dim); font-size:20px;}
-
-  .top{position:sticky; top:0; z-index:10; background:var(--bg2); border-bottom:1px solid var(--line);
-    padding:15px 18px; display:flex; align-items:center; gap:12px;}
-  .top .back{font-size:22px; color:var(--teal); cursor:pointer; line-height:1;}
-  .top .ttl{font-size:16px; font-weight:700;}
-  .top .meta{margin-left:auto; font-size:11px; color:var(--teal);}
-
-  .tcard{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:10px; cursor:pointer; transition:.15s;}
-  .tcard:active{transform:scale(.99);}
-  .tcard .row{display:flex; justify-content:space-between; align-items:flex-start;}
-  .tcard .num{font-size:12px; color:var(--pink); font-weight:700;}
-  .badge{font-size:10px; border-radius:6px; padding:3px 8px; font-weight:700;}
-  .b-todo{background:var(--teal); color:#05050c;} .b-done{color:var(--teal); border:1px solid #00e0c655;}
-  .b-pick{background:var(--pink); color:#fff;}
-  .tcard .name{font-size:19px; font-weight:700; margin-top:6px;}
-  .tcard .topic{font-size:15px; color:var(--mut); margin-top:3px;}
-  .tcard .link{font-size:14px; color:var(--teal); margin-top:8px; display:inline-block; text-decoration:none;}
-  .tcard .meta2{font-size:13px; color:var(--dim); margin-top:6px; line-height:1.5;}
-  .brief{padding:14px 18px; border-bottom:1px solid var(--line);}
-  .brief .bft{font-size:14px; color:var(--teal); font-weight:700; margin-bottom:8px;}
-  .brief .bftext{font-size:16px; line-height:1.75; color:var(--mut); white-space:pre-wrap;}
-  .voteBtn:active{transform:scale(.96);}
-  .vtoast{position:fixed; inset:0; z-index:200; display:flex; align-items:center; justify-content:center; pointer-events:none;}
-  .vtoast .vc{background:linear-gradient(160deg,var(--tt1),var(--tt2)); border:1px solid var(--pink); border-radius:20px; padding:26px 36px; text-align:center; transform:scale(.6); opacity:0; animation:vpop .5s forwards; box-shadow:0 20px 60px -20px #ff3d8b88;}
-  .vtoast .big{font-size:36px;} .vtoast .t1{font-size:18px;font-weight:800;margin-top:6px;} .vtoast .t2{font-size:13px;color:var(--mut);margin-top:4px;}
-  @keyframes vpop{0%{transform:scale(.6);opacity:0;}45%{transform:scale(1.08);opacity:1;}70%{transform:scale(.98);}100%{transform:scale(1);opacity:1;}}
-  .confetti{position:fixed; top:-16px; z-index:600; font-size:18px; pointer-events:none; animation:cfall linear forwards;}
-  @keyframes cfall{0%{transform:translateY(-20px) rotate(0);opacity:1;}100%{transform:translateY(105vh) rotate(420deg);opacity:0;}}
-
-  label.fld{display:block; font-size:15px; color:var(--mut); margin:14px 0 6px;}
-  select,input[type=password],input[type=text],textarea{width:100%; background:var(--card);
-    border:1px solid var(--line); border-radius:12px; color:var(--txt); padding:14px; font-size:17px; font-family:inherit;}
-  textarea{height:64px; resize:none;}
-  .btn{display:block; width:100%; text-align:center; font-size:18px; font-weight:800; border-radius:14px;
-    padding:15px; cursor:pointer; border:none; margin-top:18px; color:#fff; background:var(--pink);}
-  .btn:active{transform:scale(.98);}
-  .btn.gho{background:transparent; border:1px solid var(--teal); color:var(--teal);}
-  .err{color:#ff8080; font-size:13px; margin-top:10px; text-align:center; min-height:18px;}
-
-  .score-head{padding:18px; text-align:center; background:var(--bg2); border-bottom:1px solid var(--line);}
-  .score-head .n{font-size:12px; color:var(--pink); font-weight:700;}
-  .score-head .nm{font-size:25px; font-weight:800; margin-top:4px;}
-  .score-head .tp{font-size:15px; color:var(--mut); margin-top:4px;}
-  .crit{padding:18px;} .crit .item{margin-bottom:22px;}
-  .crit .lbl{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:4px;}
-  .crit .lbl .nm{font-size:16px; font-weight:700;} .crit .lbl .w{font-size:13px; color:var(--dim);}
-  .crit .lbl .val{font-size:26px; font-weight:900; color:var(--teal);}
-  input[type=range]{-webkit-appearance:none; appearance:none; width:100%; height:6px; border-radius:999px; background:var(--track); outline:none; margin-top:8px;}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none; width:24px; height:24px; border-radius:50%; background:var(--pink); border:3px solid var(--thumbb);}
-  input[type=range]::-moz-range-thumb{width:24px; height:24px; border-radius:50%; background:var(--pink); border:3px solid var(--thumbb);}
-  .total{margin:6px 18px 0; background:var(--card); border:1px solid var(--pink); border-radius:14px; padding:16px; display:flex; justify-content:space-between; align-items:center;}
-  .total .l{font-size:13px; color:var(--mut);} .total .v{font-size:28px; font-weight:900; color:var(--pink);}
-
-  .stat-row{display:flex; gap:10px; padding:14px 16px 0;}
-  .stat{flex:1; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; text-align:center;}
-  .stat .v{font-size:22px; font-weight:900; color:var(--teal);} .stat .l{font-size:11px; color:var(--mut); margin-top:2px;}
-  .sec-h{font-size:13px; color:var(--dim); letter-spacing:1px; padding:18px 18px 6px; font-weight:700;}
-  .lrow{display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 16px 8px;}
-  .lrow .rk{font-size:18px; font-weight:900; width:30px; text-align:center; color:var(--dim);}
-  .lrow.top1 .rk{color:#ffd24a;} .lrow.top2 .rk{color:#cfd3dc;} .lrow.top3 .rk{color:#e0935a;}
-  .lrow .info{flex:1;} .lrow .nm{font-size:16px; font-weight:700;} .lrow .sub{font-size:13px; color:var(--mut); margin-top:2px;}
-  .lrow .pts{font-size:25px; font-weight:900; color:var(--teal);}
-  .ctl{display:flex; gap:10px; padding:0 16px; flex-wrap:wrap;}
-  .ctl .btn{flex:1; min-width:130px; margin-top:0; font-size:14px; padding:13px;}
-
-  .vbar{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin:0 16px 10px;}
-  .vbar .vt{display:flex; justify-content:space-between;}
-  .vbar .nm{font-size:17px; font-weight:700;} .vbar .ct{font-size:14px; color:var(--pink); font-weight:800;}
-  .track{height:8px; background:var(--track); border-radius:999px; margin-top:8px; overflow:hidden;}
-  .fill{height:100%; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .4s;}
-  .voteBtn{margin-top:10px; font-size:15px; font-weight:700; padding:9px 0; text-align:center; border-radius:10px; border:1px solid var(--pink); color:var(--pink); cursor:pointer;}
-  .voteBtn.voted{background:var(--pink); color:#fff;} .voteBtn.disabled{opacity:.4; pointer-events:none; border-color:var(--dim); color:var(--dim);}
-  .closed{text-align:center; color:var(--dim); padding:40px 24px; font-size:16px;}
-
-  @media (min-width:680px){
-    .wrap{max-width:960px; min-height:auto;}
-    .pad{max-width:560px; margin:0 auto;}
-    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:12px;}
-    .grid .tcard,.grid .vbar{margin:0;}
-    .score-head,.crit,.total{max-width:600px; margin-left:auto; margin-right:auto;}
-    .jgrid{max-width:560px; margin:0 auto;}
-  }
-  .jhero{text-align:center; padding:24px 18px 2px;}
-  .jhero .jt{font-size:12px; letter-spacing:5px; color:var(--teal);}
-  .jhero .jb{font-size:24px; font-weight:900; margin-top:6px; letter-spacing:1px;}
-  .jhero .js{font-size:12px; color:var(--mut); margin-top:5px;}
-  .jsec{font-size:12px; letter-spacing:3px; color:var(--dim); padding:16px 18px 2px; font-weight:700;}
-  .jgrid{display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:8px 18px;}
-  .jcard{position:relative; background:linear-gradient(160deg,var(--jc1),var(--jc2)); border:1px solid #ffffff14; border-radius:20px; padding:24px 12px 18px; text-align:center; cursor:pointer; overflow:hidden; transition:transform .15s, box-shadow .25s, border-color .25s;}
-  .jcard:hover{transform:translateY(-3px); border-color:#00e0c655; box-shadow:0 10px 30px -10px #00e0c655;}
-  .jcard:active{transform:scale(.98);}
-  .jcard.mid{grid-column:1/3; justify-self:center; width:68%; background:linear-gradient(160deg,var(--jm1),var(--jm2)); border-color:#ffd24a55;}
-  .jcard.mid:hover{border-color:#ffd24a; box-shadow:0 10px 34px -10px #ffd24a66;}
-  .jcard.mystcard{border-style:dashed; border-color:#ff3d8b40;}
-  .jcard.mystcard:hover{border-color:#ff3d8b; box-shadow:0 10px 30px -10px #ff3d8b55;}
-  .javatar{width:62px; height:62px; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; color:#04121a; background:linear-gradient(135deg,#00e0c6,#378add); box-shadow:0 0 0 4px #00e0c622, 0 6px 18px -4px #00e0c699;}
-  .jcard.mid .javatar{background:linear-gradient(135deg,#ffd24a,#e0935a); color:#3a2400; box-shadow:0 0 0 4px #ffd24a22, 0 6px 18px -4px #ffd24a99;}
-  .javatar.myst{background:radial-gradient(circle at 50% 38%,var(--my1),var(--my2)); color:var(--dim); box-shadow:0 0 0 4px #ffffff0a; animation:mpulse 2.6s infinite;}
-  @keyframes mpulse{0%,100%{box-shadow:0 0 0 4px #ffffff0a;}50%{box-shadow:0 0 0 7px #ff3d8b25;}}
-  .jname{font-size:19px; font-weight:800; line-height:1.25;}
-  .jname .en{font-size:13px; font-weight:600; color:var(--mut); margin-top:1px;}
-  [data-theme="light"] .jname .en{font-size:14px;}
-  .jrole{font-size:13px; color:var(--mut); margin-top:4px; line-height:1.5;}
-  .lbr{display:none;}
-  [data-theme="light"] .lbr{display:inline;}
-  .jchip{display:inline-block; font-size:10px; padding:3px 11px; border-radius:999px; margin-top:9px; font-weight:700; background:#00e0c61a; color:var(--teal);}
-  .jchip.gold{background:#fbe6b0; color:#8a6400;}
-  .crown{position:absolute; top:10px; left:50%; transform:translateX(-50%); font-size:17px;}
-  .clap{position:absolute; top:6px; left:0; right:0; text-align:center; font-size:22px;}
-  .jcard.honored{padding-top:30px; border:2px solid #ffd24a; background:linear-gradient(160deg,var(--jc1),var(--jc2)); animation:hglow 2.2s ease-in-out infinite;}
-  @keyframes hglow{0%,100%{box-shadow:0 0 0 0 rgba(255,210,74,0);}50%{box-shadow:0 0 24px -4px rgba(255,210,74,.55), 0 0 24px -6px rgba(255,61,139,.45);}}
-  .jcard.honored:hover{transform:translateY(-3px);}
-  .jcard.honored .javatar.myst{animation:none; box-shadow:0 0 0 4px rgba(255,210,74,.35); color:#ffd24a;}
-  .vipchip{background:linear-gradient(90deg,#ffd24a33,#ff3d8b33); color:#ffd24a; font-weight:800; border:1px solid #ffd24a55;}
-  .hsub{font-size:12px; color:#ffd24a; margin-top:7px; font-weight:700;}
-  [data-theme="light"] .vipchip{color:#7a5800; border-color:#c9a23a; background:linear-gradient(90deg,#ffd24a55,#ff3d8b33);}
-  [data-theme="light"] .hsub{color:#7a5800;}
-  [data-theme="light"] .jcard.honored{border-color:#c9a23a;}
-  .nmt{font-size:14px; font-weight:700; text-align:center; margin-bottom:10px;}
-  #themeBtn{position:fixed; top:10px; right:10px; z-index:300; font-size:13px; font-weight:700; padding:8px 13px; border-radius:999px; border:1px solid var(--line); background:var(--card); color:var(--txt); cursor:pointer; box-shadow:0 4px 14px -6px #00000055;}
-  [data-theme="light"] .brief .bftext{font-size:20px; line-height:1.9;}
-  [data-theme="light"] .brief .bft{font-size:16px;}
-  [data-theme="light"] .crit .lbl .nm{font-size:21px;} [data-theme="light"] .crit .lbl .w{font-size:15px;}
-  [data-theme="light"] .crit .lbl .val{font-size:34px;}
-  [data-theme="light"] .tcard .name{font-size:25px;}
-  [data-theme="light"] .tcard .topic{font-size:18px;}
-  [data-theme="light"] .tcard .meta2{font-size:15px;}
-  [data-theme="light"] .tcard .num{font-size:15px;} [data-theme="light"] .badge{font-size:13px;}
-  [data-theme="light"] .btn{font-size:23px; padding:18px;}
-  [data-theme="light"] .vbar .nm{font-size:22px;} [data-theme="light"] .voteBtn{font-size:18px; padding:13px 0;}
-  [data-theme="light"] .score-head .nm{font-size:34px;} [data-theme="light"] .score-head .tp{font-size:17px;}
-  [data-theme="light"] .lrow .nm{font-size:21px;} [data-theme="light"] .lrow .sub{font-size:15px;} [data-theme="light"] .lrow .pts{font-size:32px;}
-  [data-theme="light"] .sec-h{font-size:15px;} [data-theme="light"] label.fld{font-size:17px;}
-  [data-theme="light"] select,[data-theme="light"] input,[data-theme="light"] textarea{font-size:19px;}
-  [data-theme="light"] .h-main{font-size:28px;} [data-theme="light"] .jname{font-size:22px;} [data-theme="light"] .jrole{font-size:15px;}
-  [data-theme="light"] .stat .v{font-size:26px;}
-  .medal{display:inline-block;font-size:11px;font-weight:800;padding:1px 8px;border-radius:999px;margin-left:6px;}
-  .medal.m1{background:#ffd24a2e;color:#ffd24a;} .medal.m2{background:#cfd3dc2e;color:#cfd3dc;} .medal.m3{background:#e0935a2e;color:#e0935a;}
-  [data-theme="light"] .medal.m1{color:#8a6400;} [data-theme="light"] .medal.m2{color:#565863;} [data-theme="light"] .medal.m3{color:#8a4a1a;}
-  .pbar{height:10px; background:var(--track); border-radius:999px; overflow:hidden;}
-  .pbar i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .5s;}
-  .pbar.mini{height:7px; margin-top:7px;}
-  .bigwrap{display:grid; grid-template-columns:1fr; gap:16px; padding:18px;}
-  .bigcol{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px 18px 8px;}
-  .bigcol h2{font-size:21px; font-weight:900; margin:0 0 14px;}
-  .bigrow{margin-bottom:14px;}
-  .bigrow .h{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
-  .bigrow .nm{font-size:18px; font-weight:800;}
-  .bigrow .v{font-size:20px; font-weight:900; color:var(--teal);}
-  .bigrow .bar{height:12px; background:var(--track); border-radius:999px; margin-top:7px; overflow:hidden;}
-  .bigrow .bar i{display:block; height:100%; background:linear-gradient(90deg,var(--pink),var(--teal)); border-radius:999px; transition:width .5s;}
-  .awgrp{font-size:13px;font-weight:800;letter-spacing:2px;color:var(--dim);margin:4px 0 8px;}
-  .bigaward{text-align:center; padding:16px; border:1px dashed var(--line); border-radius:14px; margin-bottom:12px;}
-  .bigaward .aw{font-size:14px; color:var(--mut);} .bigaward .tm{font-size:26px; font-weight:900; margin-top:6px; color:var(--pink);}
-  @media(min-width:680px){ .bigwrap{grid-template-columns:1fr 1fr 1fr;} .bigcol h2{font-size:24px;} .bigrow .nm{font-size:20px;} .bigaward .tm{font-size:30px;} }
-  .linkbtn{margin-top:8px; font-size:14px; color:var(--teal); background:transparent; border:none; padding:0; cursor:pointer; font-weight:700;}
-  .modal{position:fixed; z-index:400; right:16px; bottom:16px; max-width:380px; width:calc(100% - 32px); animation:slidein .25s ease;}
-  @keyframes slidein{from{opacity:0; transform:translateY(20px);} to{opacity:1; transform:none;}}
-  .mbox{background:var(--card); border:1px solid var(--teal); border-radius:16px; padding:18px; box-shadow:0 18px 55px -10px #000c; max-height:82vh; overflow:auto;}
-  @media(max-width:560px){ .modal{right:0; left:0; bottom:0; width:100%; max-width:none;} .mbox{border-radius:18px 18px 0 0;} }
-  .mh{display:flex; justify-content:space-between; align-items:center; font-size:18px; font-weight:800; margin-bottom:14px;}
-  .mh .mx{cursor:pointer; color:var(--mut); font-size:18px;}
-  .mopen{display:block; text-align:center; background:var(--pink); color:#fff; font-weight:800; font-size:16px; padding:14px; border-radius:12px; text-decoration:none; margin-top:16px;}
-  .mrow{margin-top:12px;} .mrow .ml{font-size:13px; color:var(--mut); margin-bottom:5px;}
-  .mrow .mv{display:flex; gap:8px; align-items:center; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px;}
-  .mrow .mv span{flex:1; font-size:16px; font-weight:700; word-break:break-all; white-space:pre-wrap;}
-  .cpy{font-size:14px; font-weight:700; border:1px solid var(--teal); color:var(--teal); background:var(--bg2); border-radius:8px; padding:9px 16px; cursor:pointer; flex:none;}
-  .mnote{font-size:13px; color:var(--mut); line-height:1.7; background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px; white-space:pre-wrap;}
-  .mhint{font-size:12px; color:var(--mut); text-align:center; margin-top:10px; line-height:1.6;}
-  .cpyall{display:block; width:100%; margin-top:12px; font-size:15px; font-weight:800; padding:12px; border-radius:12px; border:1px solid var(--teal); background:var(--bg2); color:var(--teal); cursor:pointer;}
-  .pinbtn{border-color:var(--pink); color:var(--pink);}
-  #pwReminder{position:fixed; top:0; left:0; right:0; z-index:500; background:var(--pink); color:#fff; text-align:center; padding:13px 16px; font-weight:800; font-size:16px; cursor:pointer; box-shadow:0 6px 20px -6px #000a; line-height:1.5;}
-  #pwReminder .rbtn{background:#fff; color:#b3264f; border:none; border-radius:9px; padding:9px 16px; font-weight:800; font-size:15px; cursor:pointer;}
-  #dmPw{color:var(--pink);}
-  #s-ceremony .cerem{position:fixed; inset:0; z-index:350; background:radial-gradient(120% 90% at 50% 28%, #1a0f2a 0%, #05050c 70%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; cursor:pointer; padding:24px; overflow:hidden;}
-  .cer-cat{font-size:26px; font-weight:800; color:#00e0c6; letter-spacing:4px;}
-  .cer-name{font-size:56px; font-weight:900; color:#fff; margin-top:20px; line-height:1.15; padding:0 10px;}
-  .cer-name.show{animation:cerpop .6s ease;}
-  .cer-name.huge{font-size:74px; color:#ffd24a;}
-  .cer-name.countnum{font-size:150px; font-weight:900; color:#ff3d8b; animation:cerpop .55s ease;}
-  @keyframes cerpop{0%{transform:scale(.55);opacity:0;}55%{transform:scale(1.12);opacity:1;}100%{transform:scale(1);}}
-  .cer-hint{position:absolute; bottom:32px; font-size:16px; color:#8a8aa0; animation:blink 1.6s infinite;}
-  @keyframes blink{0%,100%{opacity:.4;}50%{opacity:1;}}
-  .cer-x{position:absolute; top:16px; right:22px; font-size:24px; color:#8a8aa0; cursor:pointer; z-index:2;}
-</style>
-</head>
-<body>
-<div class="banner" id="banner"></div>
-<button id="themeBtn" onclick="toggleTheme()">🌙 科技版</button>
-<div class="wrap">
-
-  <!-- HOME -->
-  <section id="s-home" class="screen active">
-    <div class="hero">
-      <div class="h-title">北祥<span class="p">黑客松</span></div>
-      <div class="h-year">2026</div>
-      <div class="h-main">敢想，就能 Run</div>
-      <div class="h-sub">你的點子，值得被執行。</div>
-      <div class="h-date">7 / 3　·　24 組　·　即時計分</div>
-    </div>
-    <div class="pad">
-      <div class="role" onclick="go('s-jlogin')">
-        <div class="ic" style="background:#00e0c622;color:var(--teal)">⚖️</div>
-        <div><div class="t">評審登入</div></div>
-        <div class="arr">›</div>
-      </div>
-      <div class="role" onclick="go('s-vote'); initVote()">
-        <div class="ic" style="background:#ffd24a22;color:#ffd24a">🔥</div>
-        <div><div class="t">人氣投票</div><div class="d">姓名＋工號登入，一人一票</div></div>
-        <div class="arr">›</div>
-      </div>
-      <div class="role" onclick="go('s-alogin')">
-        <div class="ic" style="background:#ff3d8b22;color:var(--pink)">📊</div>
-        <div><div class="t">主辦後台</div><div class="d">加權總表、進度、開關投票</div></div>
-        <div class="arr">›</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- JUDGE LOGIN -->
-  <section id="s-jlogin" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">評審登入</span></div>
-    <div class="jhero">
-      <div class="jt">北祥黑客松 2026</div>
-      <div class="jb">評審團登入</div>
-      <div class="js">點選你的身分，輸入專屬密碼</div>
-    </div>
-    <div class="jsec">正式評審</div>
-    <div id="jGridMain" class="jgrid"></div>
-    <div class="jsec" id="jsecMyst" style="display:none">神秘嘉賓</div>
-    <div id="jGridMyst" class="jgrid"></div>
-    <div id="jPinBox" class="pad" style="display:none">
-      <div class="nmt" id="jPinName"></div>
-      <input type="password" id="jPin" inputmode="numeric" placeholder="輸入專屬密碼">
-      <button class="btn" onclick="judgeLogin()">登入評分</button>
-      <div class="err" id="jErr"></div>
-    </div>
-  </section>
-
-  <!-- JUDGE TEAM LIST -->
-  <section id="s-jlist" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="jTtl">評審</span><span class="meta" id="jMeta" onclick="switchJudge()" style="cursor:pointer">🔄 切換身分</span></div>
-    <div style="padding:12px 18px 0; display:flex; gap:10px"><button class="btn gho" onclick="openMyRank()" style="margin:0">📊 我的評分排名</button><button class="btn gho" onclick="changeMyPw()" style="margin:0">🔑 改我的密碼</button></div>
-    <div id="jAwardWrap" style="padding:8px 18px 0; display:none"><button class="btn" onclick="openAward()">🏅 選出我的獎得主</button></div>
-    <div class="pad grid" id="jList"></div>
-  </section>
-
-  <!-- AWARD PICK (mystery judges) -->
-  <section id="s-award" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="awTtl">選出得獎組別</span></div>
-    <div style="padding:14px 18px 4px;color:var(--mut);font-size:12px;text-align:center">點一組頒給你的獎，再點一次可取消（也可以不選）</div>
-    <div class="pad grid" id="awList"></div>
-  </section>
-
-  <!-- MY RANK -->
-  <section id="s-myrank" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">我的評分排名</span></div>
-    <div style="padding:14px 18px 4px; color:var(--mut); font-size:12px; text-align:center">只顯示你已評分的組別，依你給的總分高低排序（其他評審看不到）</div>
-    <div id="myRankBox"></div>
-  </section>
-
-  <!-- SCORING -->
-  <section id="s-score" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">評分</span></div>
-    <div class="score-head"><div class="n" id="scNum"></div><div class="nm" id="scName"></div><div class="tp" id="scTopic"></div></div>
-    <div class="brief" id="scBrief"></div>
-    <div style="padding:12px 18px 0"><button class="btn gho" onclick="if(cur)openDemo(cur.id)">🔗 查看作品＋登入帳密</button></div>
-    <div class="crit" id="critBox"></div>
-    <div class="total"><span class="l">加權總分</span><span class="v" id="totalVal">0 / 100</span></div>
-    <div style="padding:14px 18px"><textarea id="cmt" placeholder="評語（選填）…"></textarea></div>
-    <div style="padding:0 18px"><button class="btn" onclick="submitScore()">送出評分</button><button class="btn gho" onclick="saveNote()" style="margin-top:10px">💾 只儲存筆記（評分關閉也能用）</button><div class="err" id="scErr"></div></div>
-  </section>
-
-  <!-- SPECIAL JUDGE PICK -->
-  <section id="s-spick" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl" id="spTtl">特殊評審</span></div>
-    <div style="padding:18px 18px 0; color:var(--mut); font-size:13px;">選出一組頒給你的特殊大獎（備用，可不選）。再點一次可取消。</div>
-    <div class="pad grid" id="spList"></div>
-  </section>
-
-  <!-- ADMIN LOGIN -->
-  <section id="s-alogin" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">主辦後台</span></div>
-    <div class="pad">
-      <label class="fld">主辦密碼</label>
-      <input type="password" id="aPin" inputmode="numeric" placeholder="••••">
-      <button class="btn" onclick="adminLogin()">進入後台</button>
-      <div class="err" id="aErr"></div>
-    </div>
-  </section>
-
-  <!-- ADMIN DASHBOARD -->
-  <section id="s-dash" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">主辦後台</span><span class="meta">即時 ●</span></div>
-    <div class="stat-row">
-      <div class="stat"><div class="v">24</div><div class="l">參賽組</div></div>
-      <div class="stat"><div class="v" id="stProg">0%</div><div class="l">評分進度</div></div>
-      <div class="stat"><div class="v" id="stVotes">0</div><div class="l">人氣總票</div></div>
-    </div>
-    <div style="padding:10px 16px 0"><div class="pbar"><i id="progFill"></i></div></div>
-    <div class="ctl" style="padding-top:14px">
-      <button class="btn" id="btnScore" onclick="toggleCtl('scoringOpen')">評分：—</button>
-      <button class="btn gho" id="btnVote" onclick="toggleCtl('votingOpen')">投票：—</button>
-    </div>
-    <div class="ctl" style="padding-top:10px"><button class="btn gho" onclick="openBig()">🖥 大螢幕成果板</button><button class="btn" onclick="startCeremony()">🎬 開始頒獎典禮</button></div>
-    <div class="sec-h">綜合排行（3 位具名評審總分，滿分 300）</div>
-    <div id="leadBox"></div>
-    <div class="sec-h">📋 各具名評審個人 Top 3</div>
-    <div id="jtopBox"></div>
-    <div class="sec-h">🕵️ 神秘評審獨立計分</div>
-    <div id="mysteryBox"></div>
-    <div class="sec-h">🎖 特別獎（評審團商議後登錄，可不頒）</div>
-    <div class="pad" id="spBox" style="padding-top:0"></div>
-    <div class="ctl" style="padding:2px 16px 0"><button class="btn gho" onclick="addSpecial()">＋ 新增獎項</button><button class="btn gho" onclick="saveSpecial()">💾 儲存特別獎</button></div>
-    <div class="sec-h">🏅 佳作（自動取金銀銅之後名次，可調名額）</div>
-    <div class="pad" id="hmBox" style="padding-top:0"></div>
-    <div class="sec-h">🔥 人氣獎 Top 5</div>
-    <div id="popBox"></div>
-    <div class="sec-h">🔑 評審設定（姓名／密碼，改完立即生效）</div>
-    <div class="pad" id="pwBox"></div>
-    <div class="ctl" style="padding:18px 16px 8px"><button class="btn gho" onclick="exportCSV()">匯出成績 CSV</button></div>
-    <div class="ctl" style="padding:4px 16px 0"><button class="btn gho" onclick="resetPwsTo8888()">🔁 重設所有評審密碼為 8888（不清分數）</button></div>
-    <div class="ctl" style="padding:8px 16px 24px"><button class="btn" style="background:#7a1020" onclick="resetAll()">⚠ 清除所有資料（歸零）</button></div>
-  </section>
-
-  <!-- BIG SCREEN -->
-  <section id="s-bigscreen" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">🖥 大螢幕成果板</span><span class="meta">即時 ●</span></div>
-    <div class="bigwrap">
-      <div class="bigcol"><h2>🏆 綜合排行</h2><div id="bigLead"></div></div>
-      <div class="bigcol"><h2>🔥 人氣榜</h2><div id="bigPop"></div></div>
-      <div class="bigcol"><h2>🎖 得獎揭曉</h2><div id="bigAward"></div></div>
-    </div>
-  </section>
-
-  <!-- CEREMONY -->
-  <section id="s-ceremony" class="screen">
-    <div class="cerem" onclick="ceremNext()">
-      <span class="cer-x" id="cerMute" onclick="event.stopPropagation(); toggleMute()" style="left:22px;right:auto">🔊</span>
-      <span class="cer-x" onclick="event.stopPropagation(); ceremExit()">✕</span>
-      <div class="cer-cat" id="cerCat">🎬 頒獎典禮</div>
-      <div class="cer-name" id="cerName">點一下畫面開始 👏</div>
-      <div class="cer-hint" id="cerHint">點畫面揭曉下一位 →</div>
-    </div>
-  </section>
-
-  <!-- VOTE -->
-  <section id="s-vote" class="screen">
-    <div class="top"><span class="back" onclick="goBack()">‹</span><span class="ttl">🔥 人氣投票</span></div>
-    <div id="voteWrap"><div class="closed" id="voteMsg">載入中…</div></div>
-    <div class="pad" id="voteIdBox" style="display:none">
-      <label class="fld">帳號（你的英文姓名）</label>
-      <input type="text" id="empAcc" placeholder="例如 Vita Tung（大小寫、空白皆可）" autocomplete="off">
-      <label class="fld">密碼（員工工號）</label>
-      <input type="text" id="empPw" placeholder="例如 A11407003" autocomplete="off">
-      <button class="btn gho" onclick="setVoter()">登入投票</button>
-      <div class="err" id="voteErr"></div>
-      <div id="voterStatus" style="text-align:center;font-size:14px;color:var(--teal);margin-top:8px"></div>
-    </div>
-    <div class="pad grid" id="voteList"></div>
-  </section>
-
-</div>
-
-<div id="pwReminder" style="display:none" onclick="this.style.display='none'"></div>
-<div id="demoModal" class="modal" style="display:none" onclick="if(event.target===this)closeDemo()">
-  <div class="mbox">
-    <div class="mh"><span id="dmName"></span><span class="mx" onclick="closeDemo()">✕</span></div>
-    <div class="mrow" id="dmAcctRow"><div class="ml">登入帳號（多筆時複製第一筆）</div><div class="mv"><span id="dmAcct"></span><button class="cpy" onclick="copyCred('acct',this)">複製</button></div></div>
-    <div class="mrow" id="dmPwRow"><div class="ml">登入密碼</div><div class="mv"><span id="dmPw"></span><button class="cpy" onclick="copyCred('pw',this)">複製</button></div></div>
-    <div class="mrow" id="dmNoteRow"><div class="ml">備註</div><div class="mnote" id="dmNote"></div></div>
-    <a id="dmLink" class="mopen" target="_blank" rel="noopener">開啟作品 ↗</a>
-    <button id="dmPinBtn" class="cpyall pinbtn" onclick="pinDemo()" style="display:none">📌 把帳密釘在最上層（電腦）</button>
-    <div class="mhint" id="dmHint"></div>
-  </div>
-</div>
-
+:root{--bg:#eef1f7;--card:#ffffff;--soft:#f7f9fd;--line:#e5e8f1;--txt:#232a3d;--mut:#6b7280;--pink:#e83a86;--teal:#0ea89a;--navy:#1f3864;
+--opt:#0e9f8e;--plat:#2e6bd6;--km:#7c53d6;--obs:#c07a12;--ok:#12a07f;--go:#2e6bd6;--warn:#e0455f;--idle:#94a0b5;--stop:#e0455f;--hold:#c07a12;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
+body{background:var(--bg);color:var(--txt);min-height:100vh}
+.wrap{max-width:1240px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;gap:10px;padding:12px 4px;flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:900;color:var(--navy)}.top .sp{flex:1}
+.badge{background:#e83a8618;color:var(--pink);font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:.5px}
+.btn{background:var(--pink);color:#fff;border:0;border-radius:10px;padding:9px 15px;font-weight:800;font-size:14px;cursor:pointer}
+.btn.gh{background:#fff;border:1px solid var(--line);color:var(--txt)}
+.btn.sm{padding:6px 11px;font-size:12.5px}.btn.big{padding:13px 20px;font-size:16px;width:100%}
+.btn.teal{background:var(--teal);color:#fff}
+.muted{color:var(--mut);font-size:13px}
+.login{max-width:480px;margin:5vh auto;background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 24px 60px -28px #1f386466}
+.loginhero{background:linear-gradient(135deg,#1f3864 0%,#5b3a8f 55%,#e83a86 100%);padding:28px 26px;color:#fff}
+.loginhero .k{font-size:11.5px;letter-spacing:3px;font-weight:800;opacity:.92}
+.loginhero h2{font-size:25px;font-weight:900;margin-top:8px;line-height:1.25}
+.loginhero p{font-size:13px;opacity:.92;margin-top:9px}
+.loginbody{padding:18px 22px 22px}
+.lrole{display:flex;gap:10px;align-items:center;margin:14px 0 6px}
+.ri{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.rt{font-weight:900;font-size:14.5px}.rd{font-size:11.5px;color:var(--mut);margin-top:1px}
+.loginbody select{margin-bottom:2px}
+select,input,textarea{background:#fff;border:1px solid #d9dde8;color:var(--txt);border-radius:9px;padding:9px;font-size:14px;width:100%;font-family:inherit}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--teal)}
+textarea{resize:vertical;min-height:44px}
+.err{color:var(--warn);font-size:13px;min-height:18px;margin-top:6px}
+.pgnav{display:flex;align-items:center;justify-content:center;gap:14px;margin:2px 0 14px;flex-wrap:wrap}
+.pgcount{font-weight:900;font-size:15px;color:var(--mut);min-width:70px;text-align:center}
+.one1{max-width:820px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 10px 30px -20px #1f386433}
+.o1h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.o1n{font-size:23px;font-weight:900;color:var(--navy)}
+.tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.t-opt{background:#0e9f8e1a;color:var(--opt)}.t-plat{background:#2e6bd61a;color:var(--plat)}.t-km{background:#7c53d61a;color:var(--km)}.t-obs{background:#c07a121a;color:var(--obs)}
+.medal{font-size:10.5px;font-weight:800;color:#b7791f}
+.o1one{color:var(--mut);font-size:13.5px;margin:9px 0 2px;line-height:1.6}
+.decbar{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:11px;font-weight:800}
+.dec-go{background:#2e6bd612;color:var(--go);border:1px solid #2e6bd633}
+.dec-hold{background:#c07a1214;color:var(--hold);border:1px solid #c07a1233}
+.dec-stop{background:#e0455f14;color:var(--stop);border:1px solid #e0455f33}
+.sec{margin-top:15px;border-top:1px solid var(--line);padding-top:13px}
+.sl{font-size:13.5px;font-weight:800;margin-bottom:8px;color:var(--txt)}
+.ro{font-size:15px;line-height:1.65;white-space:pre-wrap;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:10px 12px;min-height:20px}
+.row{display:flex;align-items:center;gap:8px;margin:9px 0}.row label{font-size:12px;color:var(--mut);width:72px;flex:none;font-weight:700}
+.prog{height:12px;background:#e9edf5;border-radius:9px;overflow:hidden;flex:1}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--pink))}
+input[type=range]{accent-color:var(--teal)}
+.bignum{font-size:28px;font-weight:900;color:var(--navy)}
+.miles{display:flex;gap:6px;flex-wrap:wrap}.mile{display:flex;align-items:center;gap:4px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;user-select:none}
+.mile.on{background:#0e9f8e18;border-color:var(--teal);color:var(--teal);font-weight:800}
+.punkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px}
+.pg{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center;font-size:11px}
+.pg b{display:block;margin-bottom:4px;color:var(--mut)}
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:6px;cursor:pointer;margin:1px}
+.chip.s{background:#0e9f8e1a;color:var(--teal)}.chip.x{background:#e0455f14;color:var(--warn)}
+.saved{font-size:11px;color:var(--teal);opacity:0;transition:.3s}.saved.show{opacity:1}
+.upd{font-size:11px;color:var(--mut);margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+.banner{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin:4px 4px 14px;font-size:14px;line-height:1.6}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.tabs button{background:#fff;border:1px solid var(--line);color:var(--mut);border-radius:10px;padding:8px 13px;font-weight:800;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--pink);color:#fff;border-color:var(--pink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:2px 0 14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;box-shadow:0 6px 18px -14px #1f386433}.stat .n{font-size:27px;font-weight:900}.stat .l{font-size:12px;color:var(--mut);margin-top:2px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}.filters select{width:auto;min-width:120px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-size:11.5px;font-weight:800;background:var(--soft)}tr:hover td{background:var(--soft)}.norep td{background:#e0455f0d}
+.tb-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 12px;overflow:auto;max-height:64vh}
+.pillst{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.wk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}.wk .wn{font-weight:900;font-size:15px}
+.hist{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:7px;font-size:13px}
+.permrow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;flex-wrap:wrap}
+.permrow .pn{font-weight:800;min-width:150px}
+@media(max-width:640px){.wrap{padding:10px}.top{gap:6px;padding:10px 2px}.top h1{font-size:15px}.badge{font-size:10px;padding:3px 8px}.login{margin:3vh auto}.loginhero{padding:22px}.loginhero h2{font-size:22px}.one1{padding:16px}.o1n{font-size:20px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat{padding:11px}.stat .n{font-size:22px}.decbar{flex-wrap:wrap}.row label{width:58px;font-size:11px}.sl{font-size:12.5px}.ro{font-size:14px}th,td{padding:6px 6px;font-size:12px}.btn{padding:8px 12px;font-size:13px}.btn.sm{padding:5px 9px;font-size:12px}.filters select{min-width:46%}.tabs button{padding:7px 10px;font-size:12px}.permrow .pn{min-width:100%}}
+.taskb{padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}.taskb:last-child{border-bottom:0}.taskb.done .tt{text-decoration:line-through;color:var(--mut)}.tt{flex:1;font-weight:600}.tck{cursor:pointer;font-weight:900;font-size:16px}.treply{margin:6px 0 0 26px;background:#0ea89a12;border:1px solid #0ea89a33;border-radius:8px;padding:6px 10px;font-size:13px}
+</style></head>
+<body><div id="app" class="wrap"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
-/* ============================================================
-   ① 設定區 —— 上線前請依教學填好這一段
-   ============================================================ */
-const FIREBASE_CONFIG = {
-  apiKey: "AIzaSyBKTx8ZiEx-GihLhoSQjFNCsoGQiAEylEE",
-  authDomain: "beixiang-hackathon.firebaseapp.com",
-  projectId: "beixiang-hackathon",
-  storageBucket: "beixiang-hackathon.firebasestorage.app",
-  messagingSenderId: "502853267890",
-  appId: "1:502853267890:web:c5d421c3cf3791f5d0f4ab"
-};
-
-// 評審名單與密碼（type:'main'=具名評審計入綜合排行；'mystery'=神秘評審獨立計分）
-const JUDGES = [
-  {id:'sting', name:'陶韻智 Sting Tao',   short:'Sting Tao',   role:'環球購物中心董事、前 LINE Taiwan 總經理', roleHtml:'環球購物中心董事、<br>前 LINE Taiwan <br class="lbr">總經理', ini:'S', pin:'8888', type:'main', pos:'tl', vip:true},
-  {id:'mark',  name:'林靖德 Mark Lin',    short:'Mark Lin',    role:'運點科技 創辦人暨執行長', roleHtml:'運點科技<br>創辦人暨執行長', ini:'M', pin:'8888', type:'main', pos:'tr', vip:true},
-  {id:'janet', name:'薛淑菁 Janet Hsueh', short:'Janet Hsueh', role:'北祥總經理', ini:'J', pin:'8888', type:'main', pos:'mid'},
-  {id:'m1', name:'神秘評審一', short:'神秘評審一', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'bl', icon:'🎉'},
-  {id:'m2', name:'神秘評審二', short:'神秘評審二', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'br', icon:'👏'},
-  {id:'m3', name:'神秘評審三', short:'神秘評審三', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'bl', icon:'👍'},
-  {id:'m4', name:'神秘評審四', short:'神秘評審四', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'br', icon:'🎊'},
-  {id:'m5', name:'神秘評審五', short:'神秘評審五', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'bl', icon:'🥳'},
-  {id:'m6', name:'神秘評審六', short:'神秘評審六', role:'神秘評審 · 身分保密', title:'', award:'', ini:'?', pin:'8888', type:'mystery', pos:'br', icon:'🙌'},
+const FIREBASE_CONFIG={apiKey:"AIzaSyBKTx8ZiEx-GihLhoSQjFNCsoGQiAEylEE",authDomain:"beixiang-hackathon.firebaseapp.com",projectId:"beixiang-hackathon",storageBucket:"beixiang-hackathon.firebasestorage.app",messagingSenderId:"502853267890",appId:"1:502853267890:web:c5d421c3cf3791f5d0f4ab"};
+const NOTIFY_URL="https://script.google.com/macros/s/AKfycbwolpi_xWRQtA8W6L2bMpw73AQeWDptSYc8bPvXWYrzk9s4lcPqsXEXqnMpvnsJ4okDPw/exec";  /* 貼上你的 Google Apps Script 網址即開啟 Email 通知（見設定說明） */
+const BUCKETS={opt:{n:"流程優化・產品孵化",c:"t-opt"},plat:{n:"中小企業 AI 平台",c:"t-plat"},km:{n:"KM 整合產品",c:"t-km"},obs:{n:"觀察評估",c:"t-obs"}};
+const PROJECTS=[
+ {id:"p1",n:"Felina",lead:"羅文財",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"金賞",one:"集中管理各 AI 工具的設定與技能",next:"個人→部門→全公司納管、做成本看板",time:"7–10月"},
+ {id:"p2",n:"出納實驗室",lead:"邱暐玲",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"銀賞",one:"現金流三視角整合成單一來源",next:"財務試營運、串接 ERP、訂為標準工具",time:"7–10月"},
+ {id:"p3",n:"DIU.gain(100000)",lead:"古鴻澤",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"銅賞",one:"自然語言查 ERP，AI 只建草稿",next:"真實 ERP PoC、確認內控、開放查詢",time:"7–10月"},
+ {id:"p4",n:"三薪二億",lead:"鄭宇真",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"佳作",one:"簽核前自動檢核單據遺漏與金額",next:"接簽核前置檢核、累積規則、擴大單據",time:"7–9月"},
+ {id:"p5",n:"揪 Together",lead:"游佩宣",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"HR",one:"興趣標籤促進跨部門交流",next:"HR 推動員工互動、收集回饋、常態營運",time:"7–10月"},
+ {id:"p6",n:"10萬碳長",lead:"麥育豪",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"ESG",one:"ESG 財會自動化、財報轉 GRI",next:"用於自家 ESG 報告、專家審準則",time:"7–10月"},
+ {id:"p7",n:"四娘教子",lead:"彭子育",pm:"Julia",bk:"opt",medal:"",one:"採購倉儲盤點自動化 3 小時→5 分",next:"從個人擴大到部門、全公司採用",time:"7–9月"},
+ {id:"p8",n:"Log分析助理",lead:"張渝閎",pm:"Bryan",bk:"opt",medal:"",one:"用聊天快速分析跨系統 Log",next:"IT 擴大使用、累積問題樣板",time:"7–9月"},
+ {id:"p9",n:"票交覺醒者",lead:"張靖嫆",pm:"Jaguar",bk:"opt",medal:"",one:"給 AI 裝上票交所大腦",next:"確認應用範圍、擴大導入",time:"7–9月"},
+ {id:"p10",n:"我是助理凱粒",lead:"吳佳珊",pm:"Julia",bk:"opt",medal:"",one:"AI 自動核對工時、抓掛錯",next:"校準判斷準確度、擴大到 PM 部門",time:"7–9月"},
+ {id:"p11",n:"PDC木奉木奉",lead:"江釗杰",pm:"Andy",bk:"opt",medal:"人氣獎",one:"報價/歸檔/銷售洞察三合一",next:"補完 30% 功能、選報價線試點、看成效",time:"7–10月"},
+ {id:"p12",n:"招兵買馬",lead:"許智堯",pm:"Julia",bk:"opt",medal:"",one:"履歷變滑卡、一手勢初篩",next:"HR 用起來、評估使用價值",time:"7–9月"},
+ {id:"p13",n:"我帶著工程師的頭銜回來了",lead:"吳佳珊",pm:"Justin",bk:"opt",medal:"佳作",one:"RPG 闖關學 Python，遊戲化學習",next:"用於 HR 教育訓練、擴大同仁學習",time:"7–9月"},
+ {id:"p14",n:"CorpMind",lead:"楊智惟",pm:"Allen",bk:"km",medal:"核心引擎",one:"上傳文件即問即答、附來源、可地端",next:"原7月→Client Zero 對內試、做對外主體",time:"7月–11月"},
+ {id:"p15",n:"智庫守護者",lead:"高聖翔",pm:"Allen",bk:"km",medal:"佳作",one:"一入口六模組內部平台",next:"用核心引擎做對內版、先上線",time:"7–9月"},
+ {id:"p16",n:"我要10萬(Web-GPT)",lead:"方翊宸",pm:"Allen",bk:"km",medal:"",one:"爬網站變 AI 知識庫、LINE 問答",next:"LINE Bot＋爬蟲併入核心入口",time:"9–10月"},
+ {id:"p17",n:"Personal KM Hub",lead:"高卡納",pm:"Allen",bk:"km",medal:"",one:"個人文件變知識圖譜",next:"收斂為個人版、排後續",time:"11月"},
+ {id:"p18",n:"A²PE (On-Site)",lead:"胡慧婕",pm:"WIND",bk:"plat",medal:"佳作·先做",one:"外勤語音一句話，AI 生紀錄回寫 CRM",next:"第一批先做、北祥 Client Zero 試",time:"9–10月"},
+ {id:"p19",n:"好事成雙 (INTELLIGENT)",lead:"張嫻芳",pm:"WIND",bk:"plat",medal:"先做",one:"七視角業務、取代天價 CRM",next:"第一批先做、北祥 Client Zero 試",time:"9–10月"},
+ {id:"p20",n:"DIUDIU (哨兵)",lead:"鄭絲睿",pm:"WIND",bk:"plat",medal:"",one:"AI 生成詐騙情境、員工實戰演練",next:"第二批模組、內部先跑一輪案例",time:"11月"},
+ {id:"p21",n:"快報開麥拉",lead:"張柏珩",pm:"WIND",bk:"plat",medal:"佳作",one:"新聞到短影音一條龍自動製播",next:"第二批模組、內部行銷先用",time:"11月"},
+ {id:"p22",n:"三色豆",lead:"蔡宸豪",pm:"DIU",bk:"obs",medal:"",one:"訊息智慧降噪、只推重要到 LINE",next:"評估自建取代 Make.com",time:"8月"},
+ {id:"p23",n:"小理專",lead:"劉孟函",pm:"DIU",bk:"obs",medal:"",one:"開完會自動生摘要、待辦、決策",next:"找利基或內部先用",time:"8月"},
+ {id:"p24",n:"通知超人",lead:"江村志",pm:"DIU",bk:"obs",medal:"",one:"AI 通知守門員、只在重要時打擾",next:"內部試用看黏著度",time:"8月"},
 ];
-const ADMIN_PIN = '0000';
-
-// 可投票名單：帳號=英文姓名（不分大小寫、空白可省略），密碼=員工工號。最後 10 筆為備用帳號
-const EMPLOYEES = [
-  {"n":"Cheng Hsiao","p":"A11506004"}, {"n":"Beverly Lin","p":"A11506008"}, {"n":"Jason Wu","p":"A11506007"}, {"n":"Zan Kuo","p":"B11506009"}, {"n":"Jenny Lin","p":"A11507001"}, {"n":"Benjamin Huang","p":"A11507002"}, {"n":"Peter Liao","p":"A11507003"}, {"n": "Vita Tung", "p": "A11407003"}, {"n": "Frank Chen", "p": "07101001"}, {"n": "Vicki Ku", "p": "09510004"}, {"n": "Sean Chen", "p": "10002002"}, {"n": "Julia Yang", "p": "07907001"}, {"n": "Janet Hsueh", "p": "A11411003"}, {"n": "Andy Huang", "p": "08802001"}, {"n": "Teresa Hung", "p": "10308001"}, {"n": "Sera Hung", "p": "11002001"}, {"n": "Alex Wang", "p": "10911001"}, {"n": "Vivian Huang", "p": "A11407002"}, {"n": "Summer Wu", "p": "A11506003"}, {"n": "Lynn Chang", "p": "09006002"}, {"n": "Jason Hsueh", "p": "09208001"}, {"n": "Will Wang", "p": "09706002"}, {"n": "Maxx Hsu", "p": "09802001"}, {"n": "Nova Shih", "p": "09809002"}, {"n": "Gordon Hsieh", "p": "10102001"}, {"n": "Purin Chang", "p": "10105003"}, {"n": "Jason Chiu", "p": "10810004"}, {"n": "Louis Chen", "p": "11004002"}, {"n": "Steven Liao", "p": "11105008"}, {"n": "Dylan Chien", "p": "11108004"}, {"n": "Carson Hsiao", "p": "10411002"}, {"n": "Andy Wu", "p": "10411003"}, {"n": "C.H. Chou", "p": "10501002"}, {"n": "Audrey Lin", "p": "10807005"}, {"n": "Webber Li", "p": "10803001"}, {"n": "Savanna Chuang", "p": "11107005"}, {"n": "Marcos Huang", "p": "11107011"}, {"n": "Jeff Yang", "p": "11108003"}, {"n": "Kevin Huang", "p": "11108007"}, {"n": "Tsaifu Liu", "p": "11109001"}, {"n": "Sam Lin", "p": "11211004"}, {"n": "Jay Chen", "p": "A11401005"}, {"n": "Jessica Wu", "p": "A11403002"}, {"n": "Luca Lu", "p": "08906001"}, {"n": "Angel Wu", "p": "09009001"}, {"n": "Yihsin Lin", "p": "10906003"}, {"n": "Kurtis Chen", "p": "A11409003"}, {"n": "Yuno Zhong", "p": "A11501001"}, {"n": "Chester Young", "p": "A11501002"}, {"n": "Cathy Mao", "p": "10404002"}, {"n": "Jason Chen", "p": "10505006"}, {"n": "Maggie Fu", "p": "10910001"}, {"n": "Alynn Chen", "p": "10912001"}, {"n": "Nono Lin", "p": "09708001"}, {"n": "John Weng", "p": "10510002"}, {"n": "Mechell Wu", "p": "10511003"}, {"n": "Benson Hsieh", "p": "10704010"}, {"n": "Jeter Chiu", "p": "10801001"}, {"n": "Eason Liu", "p": "10906004"}, {"n": "Eric Kao", "p": "A11403001"}, {"n": "ChiaoHsun Yang", "p": "A11403007"}, {"n": "Steven Liu", "p": "A11411001"}, {"n": "Ringo Huang", "p": "A11505002"}, {"n": "Kiki Chiu", "p": "11105001"}, {"n": "Justin Wei", "p": "09603001"}, {"n": "Tommy Chen", "p": "09611003"}, {"n": "Flora Hsieh", "p": "11206002"}, {"n": "Dustin Wang", "p": "11209006"}, {"n": "Faye Hsieh", "p": "11304007"}, {"n": "Kelly Wu", "p": "11110003"}, {"n": "Yasir Chen", "p": "11112002"}, {"n": "Olivia Chu", "p": "09503004"}, {"n": "T.Y. Yang", "p": "09507004"}, {"n": "Clark Chen", "p": "11110002"}, {"n": "Upon Hsu", "p": "10202007"}, {"n": "Beatrice Cheng", "p": "10202008"}, {"n": "Robin Lee", "p": "10204010"}, {"n": "Wenfei Shie", "p": "10305001"}, {"n": "Sereya Huang", "p": "10404005"}, {"n": "Ken Lin", "p": "10412005"}, {"n": "Pierce Yao", "p": "10504006"}, {"n": "Sam Hsieh", "p": "10905002"}, {"n": "Jamie Yang", "p": "10907002"}, {"n": "Cindy Wen", "p": "11009004"}, {"n": "Christina Chen", "p": "11107004"}, {"n": "Carol Tsai", "p": "11304005"}, {"n": "Kelly Ke", "p": "10207012"}, {"n": "Steven Huang", "p": "11005012"}, {"n": "Elsa Hsu", "p": "11106001"}, {"n": "Jimmy Chang", "p": "10211001"}, {"n": "Emily Lin", "p": "10407002"}, {"n": "Carlos Chang", "p": "10412003"}, {"n": "Irene Cheng", "p": "10502004"}, {"n": "Tzu Yu Chen", "p": "11109004"}, {"n": "Kat Huang", "p": "11207005"}, {"n": "Galileo Chen", "p": "10205002"}, {"n": "Henry Lin", "p": "10104001"}, {"n": "Ian Chien", "p": "10506005"}, {"n": "Taco Zhang", "p": "10701002"}, {"n": "Charly Yueh", "p": "11005001"}, {"n": "Rita Lu", "p": "11107010"}, {"n": "Terry Chen", "p": "11206006"}, {"n": "Eddie Wang", "p": "11209005"}, {"n": "Kent Tang", "p": "10110001"}, {"n": "Jason Tsao", "p": "10404007"}, {"n": "Euger Wu", "p": "10412004"}, {"n": "Leo Yulin", "p": "10509001"}, {"n": "Peter Guo", "p": "10807002"}, {"n": "Sam Po", "p": "11008004"}, {"n": "Eddy Chen", "p": "11211010"}, {"n": "Eason Yang", "p": "10011001"}, {"n": "John Lin", "p": "10412006"}, {"n": "Sophie Chou", "p": "11107008"}, {"n": "BillChen", "p": "11203006"}, {"n": "Chris Hsieh", "p": "11304002"}, {"n": "EJ TANG", "p": "11305001"}, {"n": "Jaguar Lin", "p": "11009001"}, {"n": "William Tu", "p": "11105007"}, {"n": "Tina Guo", "p": "11107002"}, {"n": "Jerry Chien", "p": "11108001"}, {"n": "Edwin Hsieh", "p": "11110001"}, {"n": "Shelly Hsieh", "p": "11208004"}, {"n": "Joe Li", "p": "11208006"}, {"n": "Felix Lin", "p": "11210002"}, {"n": "Gloria Chang", "p": "11301001"}, {"n": "Jack Lo", "p": "11301003"}, {"n": "Lleyton Lin", "p": "11301005"}, {"n": "Shipon Zhuang", "p": "11303007"}, {"n": "Samuel Hsu", "p": "A11410003"}, {"n": "Panny Chen", "p": "09205001"}, {"n": "Joy Cheng", "p": "A11408004"}, {"n": "Bryan Lin", "p": "11111001"}, {"n": "Tristan Chou", "p": "A11408001"}, {"n": "Jack Lu", "p": "A11412004"}, {"n": "Brian Chang", "p": "10704004"}, {"n": "Sherry Lee", "p": "11206003"}, {"n": "Bella Huang", "p": "11209003"}, {"n": "Cindy yang", "p": "11308005"}, {"n": "Wind Huang", "p": "10412001"}, {"n": "Meta Liu", "p": "10406001"}, {"n": "Feby Chen", "p": "11001002"}, {"n": "Galladon Lin", "p": "11004009"}, {"n": "Flora Huang", "p": "11012002"}, {"n": "Rae Jheng", "p": "11105005"}, {"n": "James Yu", "p": "11312001"}, {"n": "James Hsu", "p": "11005002"}, {"n": "Karnan Gopalakrishnan", "p": "11212007"}, {"n": "Allen Yang", "p": "11304004"}, {"n": "Jennifer Huang", "p": "11305004"}, {"n": "Amanda Lee", "p": "11305007"}, {"n": "Myles Lin", "p": "11307004"}, {"n": "Billy Xu", "p": "A11405004"}, {"n": "Alvin Luo", "p": "A11410004"}, {"n": "Punk Chien", "p": "09411001"}, {"n": "Michael Fang", "p": "10506006"}, {"n": "Anita Hu", "p": "A11403008"}, {"n": "Eugene Huang", "p": "A11409001"}, {"n": "Alley Tsai", "p": "A11504001"}, {"n": "YuHao Mai", "p": "11209001"}, {"n": "CoCo Wu", "p": "08711001"}, {"n": "Angel Chen", "p": "10411004"}, {"n": "Lynn Chiu", "p": "11208008"}, {"n": "Sally Shen", "p": "A11404001"}, {"n": "weifeng Wang", "p": "A11401003"}, {"n": "Passion Yo", "p": "A11405003"}, {"n": "Nagi Chang", "p": "A11506001"}, {"n": "Bonnie Cheng", "p": "10106003"}, {"n": "Ruby Lai", "p": "11204004"}, {"n": "Yolanda Peng", "p": "11208003"}, {"n": "Jay Chiu", "p": "11303001"}, {"n": "Grace Lee", "p": "A11404007"}, {"n": "Andy Liu", "p": "08206001"}, {"n": "Michael Mai", "p": "08412001"}, {"n": "Helen Sung", "p": "10608003"}, {"n": "Joyce Hsieh", "p": "11305005"}, {"n": "Max Wang", "p": "B11410002"}, {"n": "Chiyen Huang", "p": "B11412001"}, {"n": "James Lee", "p": "10407008"}, {"n": "Vivian Yang", "p": "10901002"}, {"n": "Angus Chuang", "p": "11304006"}, {"n": "Anna liu", "p": "B11506002"}, {"n": "Jane Wu", "p": "10008001"}, {"n": "Ranee Wu", "p": "B11408002"}, {"n": "Johnny Wang", "p": "B11504002"}, {"n": "Jay Chiang", "p": "B11504003"}, {"n": "Alex Huang", "p": "10907005"}, {"n": "Evan Liu", "p": "11307008"}, {"n": "KK Liu", "p": "B11412003"}, {"n": "Morgan Lee", "p": "09203001"}, {"n": "Judy Chen", "p": "10007001"}, {"n": "Lydia Tsai", "p": "10704011"}, {"n": "Carrie Wu", "p": "11304008"}, {"n": "Dora Wang", "p": "11104003"}, {"n": "Jessie Chen", "p": "11306002"}, {"n": "Yan", "p": "B11506006"}, {"n": "Sara Chang", "p": "10601001"}, {"n": "Wayne Chang", "p": "10708006"}, {"n": "Joanna Lee", "p": "11306006"}, {"n": "Cindy Chang", "p": "11307006"}, {"n": "Coder Kao", "p": "11308002"}, {"n": "YuWei Chen", "p": "B11407001"}, {"n": "Ally chen", "p": "11305008"}, {"n": "John Yei", "p": "11307007"}, {"n": "Leo Liang", "p": "11306003"}, {"n": "Audrey Chang", "p": "10707003"}, {"n": "CJ hsu", "p": "11305006"}, {"n": "Apple Zhu", "p": "11305010"}, {"n": "Gina Wei", "p": "11308003"}, {"n": "Jessie Yu", "p": "11308004"}, {"n": "Cara Chang", "p": "11107006"}, {"n": "Ian Chen", "p": "11003003"}, {"n": "Gibby Li", "p": "11005006"}, {"n": "Ben Ku", "p": "11105006"}, {"n": "Richard Lin", "p": "11109005"}, {"n": "Howard Tsai", "p": "11210004"}, {"n": "Pika Lin", "p": "B11410001"}, {"n": "Johnny Jiang", "p": "B11412002"}, {"n": "Allen Lee", "p": "B11503001"}, {"n": "Melody Chen", "p": "B11404002"}, {"n": "Guest01", "p": "VOTE01"}, {"n": "Guest02", "p": "VOTE02"}, {"n": "Guest03", "p": "VOTE03"}, {"n": "Guest04", "p": "VOTE04"}, {"n": "Guest05", "p": "VOTE05"}, {"n": "Guest06", "p": "VOTE06"}, {"n": "Guest07", "p": "VOTE07"}, {"n": "Guest08", "p": "VOTE08"}, {"n": "Guest09", "p": "VOTE09"}, {"n": "Guest10", "p": "VOTE10"}];
-
-// 評分項目（每項上限＝權重，加總滿分 100）
-const CRITERIA = [
-  {k:"痛點解決與實用性", max:40, d:"切中真實工作痛點？效率提升顯著且實用？"},
-  {k:"技術實現",        max:30, d:"善用指定 AI 工具？架構完整可行且穩定？"},
-  {k:"創新與創意",      max:20, d:"具新穎性、突破傳統？應用場景令人耳目一新？"},
-  {k:"簡報表達與展示",  max:10, d:"簡報清晰易懂？Demo 流暢展現核心價值？"},
+const MANAGERS=[
+ {k:"BOSS",name:"主管 / Leadership",role:"lead"},
+ {k:"Janet",name:"Janet",role:"exec"},{k:"Sean",name:"Sean",role:"exec"},
+ {k:"ADMIN",name:"後台 / 系統管理",role:"admin"},
+ {k:"PUNK",name:"PUNK（資安/權限）",role:"punk"},
+ {k:"RAE",name:"RAE",role:"pm"},{k:"IAN",name:"IAN",role:"pm"},{k:"GIBBY",name:"GIBBY",role:"pm"},{k:"WIND",name:"WIND",role:"pm"},{k:"Allen",name:"Allen",role:"pm"},{k:"DIU",name:"DIU",role:"pm"},
+ {k:"Julia",name:"Julia",role:"pm"},{k:"Bryan",name:"Bryan",role:"pm"},{k:"Jaguar",name:"Jaguar",role:"pm"},{k:"Andy",name:"Andy",role:"pm"},{k:"Justin",name:"Justin",role:"pm"},
 ];
+// 合作者（隊長）帳號，key=姓名
+const LEADS=[...new Set(PROJECTS.map(p=>p.lead))].map(nm=>({k:nm,name:nm+"（隊長）",role:"collab"}));
+const PEOPLE=[...MANAGERS,...LEADS];
+const DEFAULT_PINS={};PEOPLE.forEach(p=>DEFAULT_PINS[p.k]=(p.role==="lead"||p.role==="admin"||p.role==="exec")?"0000":"8888");
+const STATUS=[["idle","未開始","--idle"],["go","進行中","--go"],["warn","卡關","--warn"],["ok","已完成","--ok"]];
+const DECIDE=[["go","繼續導入","dec-go"],["hold","暫停觀察","dec-hold"],["stop","叫停·不導入","dec-stop"]];
+const MILES=[["m7","7月"],["m8","8月"],["m9","9月"],["m10","10月"],["q4","Q4"]];
 
-// 24 組（編號順序）。含部署連結、帳密、隊員名單
-const TEAMS = [{"name": "讓子彈飛", "cat": "業務拓展", "lead": "游佩宣", "dept": "ASD", "ppl": "2人", "tool": "Claude", "tag": "「揪 Together」職場連結互動平台", "brief": "「揪 Together」是一個以提升職場連結與互動為核心的創新平台，透過「探索（Explore）」、「連結（Connect）」、「共創（Create）」與「洞察（Insight）」四大設計概念，讓員工能透過興趣標籤、職場動物測驗與自主提案機制快速認識彼此，並促進跨部門交流與合作。同時，平台以趣味化社交設計與數據洞察回饋，協助企業打造更有參與感與凝聚力的組織文化，提升員工歸屬感與互動品質。", "link": "https://join-together.japaneast.cloudapp.azure.com/", "acct": "AlexW@00jfr.onmicrosoft.com\nPradeepG@00jfr.onmicrosoft.com", "pw": "userUSER_135", "note": "", "members": ["游佩宣", "黃士珍"]}, {"name": "A²PE", "cat": "業務拓展", "lead": "胡慧婕", "dept": "DIU", "ppl": "4人", "tool": "Claude", "tag": "PTSC On-Site 外勤現場服務系統", "brief": "PTSC On-Site｜外勤現場服務系統\n別讓繁瑣行政磨滅服務熱忱！PTSC On-Site 讓外勤現場「做完即記得」：口述語音，AI 隨即產出紀錄並回寫 CRM；GPS 與電子簽名杜絕誤差，發票即拍即歸檔。智慧稽核自動偵測異常，主管一頁掌握動態。預期縮減 80% 行政時間，憑證 100% 可追溯。答應客戶的事，系統幫你記，商機不再從指縫漏掉。一支手機，讓團隊專注服務本質，行政交給 AI!!", "link": "https://ptsc-onsite.vercel.app/", "acct": "", "pw": "12345678", "note": "", "members": ["胡慧婕", "蔡子琪", "黃靖詠", "簡志豪"]}, {"name": "我是助理凱粒", "cat": "日常工作", "lead": "吳佳珊", "dept": "DFU", "ppl": "1人", "tool": "Claude", "tag": "AI TCMS 工時審核系統", "brief": "本專案旨在建立一套 AI 輔助的 TCMS 工時審核系統，解決 PM 每月需人工逐筆核對工時紀錄的效率瓶頸。\n目前核對流程為每月工時申報後，PM進行人工比對：工時是否足夠、填寫內容與專案是否相符、是否存在掛錯專案，以及工時數是否合理，會耗費大量人力與時間。\n本專案計畫透過網頁介面上傳 TCMS 資料，串接 Claude AI 進行語意判斷，自動比對工時填寫內容與專案性質是否一致，並識別異常或疑似掛錯的紀錄。系統會學習各專案的特性描述，作為比對基準，判斷同仁填寫內容是否符合所屬專案，或更像其他專案的工作內容。\n此外，AI 將主動標記疑點並產出審核報告，PM 只需針對 AI 標出的疑點進行人工確認，期望能大幅減少每週、每月底的全量人工核查負擔，將人力聚焦在例外管理而非逐筆審閱。\n預期成效：縮短工時審核作業時間、提升異常偵測準確率，並建立可持續優化的 AI 輔助審核機制。", "link": "https://0623tcms.azurewebsites.net", "acct": "", "pw": "", "note": "提供額外的檔案提供測試", "members": ["吳佳珊"]}, {"name": "三色豆風味巧克酥", "cat": "日常工作", "lead": "蔡宸豪", "dept": "DIU", "ppl": "2人", "tool": "Claude", "tag": "跨平台訊息整合・智慧降噪摘要", "brief": "針對企業資訊過載與告警疲勞痛點，打造跨平台訊息整合流程。透過 Make.com 整合 Outlook 與 Gemini，推送 LINE 智慧降噪摘要，網頁控制台則動態載入訊息來源，容納本地客製化分類規則，同時結合來源信件跳轉，幫助提升應變與處理效率。", "link": "http://tricolor.japaneast.cloudapp.azure.com", "acct": "demothenieve@gmail.com", "pw": "UE>M=yP7RTB56rZ<", "note": "此為測試用信箱，請勿任意修改密碼。可使用外部信箱對測試信箱寄信，並且觀察同步效果", "members": ["蔡宸豪", "李緯綸"]}, {"name": "出納實驗室", "cat": "日常工作", "lead": "邱暐玲", "dept": "ASD", "ppl": "1人", "tool": "Claude", "tag": "現金流量自動化三視角平台", "brief": "本專案運用 Claude 協作開發「現金流量自動化三視角整合平台」，將原本分散於 ERP、Excel、Power BI 及多份底稿的現金流作業流程整合為單一資料來源。透過事件驅動架構，建立主管、財務及出納三種視角，並支援雙幣別四桶管理模式。有效降低重複作業與資料版本差異，將原本需分別製作多份報表的流程整合為一次產出，大幅提升作業效率與決策品質。", "link": "https://cashflow-dashboard-release-git-main-ptsc-on-site.vercel.app/", "acct": "", "pw": "pershing2026", "note": "", "members": ["邱暐玲"]}, {"name": "我要10萬", "cat": "日常工作", "lead": "方翊宸", "dept": "DIU", "ppl": "1人", "tool": "Claude", "tag": "Web-GPT 企業智慧問答系統", "brief": "Web-GPT — 企業智慧問答系統\n \n找不到資訊？語言不通？\n \nWeb-GPT 自動爬取指定網站與文件，將所有內容轉化為可問答的 AI 知識庫。使用者只需用 LINE\n傳訊或開啟網頁聊天，即可用中文或英文即時獲得準確解答，不再需要自己翻找官網。\n \n管理員透過後台一鍵掌控知識庫內容，排程爬蟲每日自動更新，資訊永遠不過時。\n \n▎ RAG + LLM × 多語支援 × LINE Bot + Web Chat，讓企業資訊觸手可及。", "link": "http://172.207.49.119/admin/login", "acct": "", "pw": "", "note": "", "members": ["方翊宸"]}, {"name": "好事成雙", "cat": "業務拓展", "lead": "張嫻芳", "dept": "DIU", "ppl": "2人", "tool": "Claude", "tag": "PTSC INTELLIGENT・7 視角業務系統", "brief": "B2B 業務的真痛是「7 種角色被同一套系統淹沒在看不懂的資料裡 ── 還要繳天價授權費」。\nPTSC INTELLIGENT 滿足：AI 替你看 CRM 想下一步、業務看自己、PM 看活動、主管看團隊、經營層看 BU、IT 看異常、Bot 跨系統閉環。\n一套系統 · 7 種視角 · 6 層資安全稽核 · 跨系統閉環,還省下整年雲端授權費。\n不要另一個 CRM，要「會替你工作的夥伴」。", "link": "https://ptsc-intelligent-jp-duagene0cyeqdcag.southeastasia-01.azurewebsites.net/", "acct": "it.admin/Sean/Janet/Julia/Wind/Anita/James/Cara", "pw": "12345678", "note": "不同帳號登入是不同權限，分為系統管理者/公司高層/業務主管/業務/PM/行政，共六個角色", "members": ["張嫻芳", "黃菀榆"]}, {"name": "票交覺醒者", "cat": "營運效率", "lead": "張靖嫆", "dept": "DFU", "ppl": "3人", "tool": "Claude", "tag": "票交所 AI 大腦・規格與程式遷移", "brief": "本專案於票交所eDDA與eACH系統更新時「頻繁翻閱繁複規格書」與「維護跨框架舊程式碼」等核心痛點，團隊在Claude平台建立安全隔離的私有專案空間。透過導入Markdown格式編排的三大專家技能包（文件專家、程式專家、技術專家），賦能AI系統具備「票交所大腦」。\n\n本計畫成功實現自動化比對規格書、一鍵產出網頁動態電子書，並能逆向解析舊原始碼（Groovy）自動生成系統技術文件與JUnit測試腳本。最終更結合Claude Code工具對本地目錄進行掃描，順利將舊有的Grails框架一鍵翻轉搬遷（Migration）至現代化的Java 21與Spring Boot 3架構，顯著縮短60%以上的開發與維護時間，全方位釋放研發動能並實現企業數位資產化。", "link": "https://2026h-106983.gitlab.io/", "acct": "", "pw": "", "note": "", "members": ["張靖嫆", "李易承", "莊智元"]}, {"name": "CorpMind", "cat": "業務拓展", "lead": "楊智惟", "dept": "DIU", "ppl": "1人", "tool": "ChatGPT Codex", "tag": "企業級 AI 知識庫平台", "brief": "CorpMind 是一套企業級 AI 知識庫平台。只要把公司文件上傳，員工就能用自然語言提問，AI 會從企業自有資料中找到答案，並附上原始文件來源，確保每個回答都有依據、可驗證。\n與直接用 ChatGPT 不同，CorpMind 解決了三個企業最在意的問題：資料不外洩（支援地端部署）、知識集中管理（更新一次全公司同步）、回答可追溯（答錯找得到原因）。\n技術上，系統結合語意搜尋與關鍵字比對的混合檢索，比單純向量搜尋更精準；還有經驗記憶機制，使用者回饋會讓 AI 越用越聰明。目前已實際導入保險業客戶並持續運作，是一套可直接銷售的完整產品。", "link": "http://20.78.33.51/ai-kb/", "acct": "pershing", "pw": "pershing", "note": "pershing 為系統管理員權限", "members": ["楊智惟"]}, {"name": "招兵買馬", "cat": "營運效率", "lead": "許智堯", "dept": "DIU", "ppl": "5人", "tool": "ChatGPT Codex", "tag": "履歷快篩・滑卡決策系統", "brief": "主管的時間分秒必爭，但每一天常常是從一封封塞爆信箱的履歷開始：開信、找重點、轉寄給 HR、查行事曆、還要避免重看同一個人。真正的決策只要幾秒，周邊雜務卻吃掉整段時間與專注力。\n\n企業履歷快篩系統把這件每天必做、卻最累人的事，變成一場輕鬆的滑卡體驗——每位候選人都是一張整理好的卡片，主管一個手勢就完成決策：略過、通知，或先收藏待辦。不用來回跟HR溝通、輕鬆找人。", "link": "http://40.81.209.134/login", "acct": "boss@example.com", "pw": "boss-password", "note": "若登入後若履歷都被分類過，請按中間的\"重置列表\"，可清除履歷的狀態", "members": ["許智堯", "羅文財", "楊智惟", "黃士珍"]}, {"name": "10萬碳長", "cat": "日常工作", "lead": "麥育豪", "dept": "ASD", "ppl": "2人", "tool": "Claude", "tag": "ESG 財會自動化工具組", "brief": "最懂痛點的「業務專家」驅動：\n由財會與 ESG 專家親自定義需求，精準鎖定「多筆冷媒動態逸散計算」、「PDF 財報自動解析轉 GRI 201 格式」、「同業 TPEX 對標雷達圖」等核心痛點，確保工具百分之百切合實務運作，絕無花拳繡腿。\n\n新世代「AI 共創（Cowork）」開發典範：\n我們打破了傳統非工程師背景的資訊壁壘！團隊以 Claude AI 作為核心開發夥伴，採用敏捷的自然語言需求描述，在短時間內全程開發出「無需安裝、單檔 HTML 執行」的智慧工具組，展現了極致的 AI 轉型生產力。\n\n卓越的量化效益與 100% 完成度：\n我們帶來的解決方案並非概念（Concept），而是整體完成度已達 100%、可立即進行完整 Demo 的實體成果！導入後預期能將財會人員的 ESG 年度作業工時驟降 80%（從 40 小時縮短至 8 小時內），讓永續揭露真正走向精準化與自動化。", "link": "https://esg-report-chi.vercel.app/", "acct": "", "pw": "", "note": "", "members": ["麥育豪", "邱暐玲"]}, {"name": "DIUDIU", "cat": "業務拓展", "lead": "鄭絲睿", "dept": "DIU", "ppl": "2人", "tool": "Claude", "tag": "哨兵 Sentry 資安意識訓練平台", "brief": "哨兵 Sentry 是一套 AI 驅動的企業資安意識訓練平台，透過生成式 AI 建立真實詐騙與社交工程情境，讓員工以對話方式進行實戰演練。平台整合 AI 教練、詐騙辨識、成效分析儀表板及多租戶管理機制，協助企業持續提升資安識別能力與降低人為風險。我們希望將傳統被動式教育訓練轉變為主動式學習體驗，讓每位員工都成為企業資安防線的重要一員。", "link": "https://sentry-web-drab.vercel.app/login", "acct": "admin@demo-corp.local", "pw": "DemoAdmin!2026", "note": "", "members": ["鄭絲睿", "余承澔"]}, {"name": "PDC木奉木奉小隊", "cat": "日常工作", "lead": "江釗杰", "dept": "SPU", "ppl": "5人", "tool": "Claude", "tag": "智能報價・文件歸檔・銷售洞察", "brief": "「木奉木奉示羊」智能自動化平台以 Claude AI 驅動三大模組：【智慧報價引擎】自動解析原廠 SQO 報價規則、換算匯率、串接 BID Form 與 PA Form，實現一條龍自動產出；【文件智能歸檔】確保 HW 專案 Config 檔案依標準命名後即時同步至 Teams/SharePoint，杜絕拿錯版本；【銷售數據洞察】自動整合 IBM 報表與 CRM Pipeline 週更新，消除人工比對作業。六項自動化方案解決業務每人每週耗費 3–5 小時重複性作業的痛點，影響範圍涵蓋業務、主管、高階主管、商業夥伴、客戶與原廠六大利害關係人。", "link": "https://bangbang-b5auceavawbmbgd5.eastasia-01.azurewebsites.net/", "acct": "", "pw": "", "note": "提供額外的檔案提供測試", "members": ["江釗杰", "黃祺彥", "張竣喆", "伍怡菁", "洪韻鴻"]}, {"name": "AI-Powered Personal Knowledge Hub", "cat": "日常工作", "lead": "高卡納", "dept": "DIU", "ppl": "1人", "tool": "Claude", "tag": "個人 AI 知識圖譜 Wiki", "brief": "Personal KM Wiki turns your scattered documents and notes into a living, AI-powered knowledge graph you can chat with.\nDrop in a PDF, Word file, text, or any URL, and IBM watsonx.ai reads it, extracting a title, an overview, the key contributions, and a set of reusable concepts that each become their own linked wiki page. Everything you add is woven into an interactive knowledge graph that connects papers, concepts, and your own notes, automatically surfacing how ideas relate.\nYou can ask questions through a retrieval-augmented chat that answers only from your own sources and cites them by name, no outside facts, no hallucinations. Capture your daily thinking as notes, and at the end of a session, let the system summarize your whole conversation into a journal entry that joins the graph automatically. Any answer can be exported as a PDF, Word document, or generated PowerPoint deck.\nThe design is deliberately transparent: every page is a plain Markdown file, and the graph is derived from the links inside them. No database, no lock-in, just portable knowledge you fully own, compatible with tools like Obsidian.", "link": "http://pkmptsc.eastus.cloudapp.azure.com/", "acct": "", "pw": "", "note": "", "members": ["高卡納"]}, {"name": "四娘教子", "cat": "日常工作", "lead": "彭子育", "dept": "ASD", "ppl": "5人", "tool": "ChatGPT Codex", "tag": "採購倉儲盤點報告自動化", "brief": "我們團隊全員非工程背景，但期望藉此次黑客松探索 AI 的強大潛能，並實際改善工作痛點，優化採購倉儲課的日常流程。\n過去隊員需耗費多時手動比對多份格式各異的Excel與Access檔。本系統運用 AI 自動解析跨表資料、精準提取欄位，並一鍵產出標準化盤點報告與IBM品號建立。成功將原本3小時的人工作業縮減至5分鐘，大幅降低人為錯誤，徹底解決資料整合的痛點，實現工作效率的飛躍性提升。", "link": "https://siniang.ccxie.qzz.io/login", "acct": "a27171415@gmail.com", "pw": "ji3g4d8zo", "note": "可以自行註冊，也可以使用測試帳號", "members": ["彭子育", "鄭綺潔", "邱俊傑", "賴韻如", "李雅玲"]}, {"name": "DIU.gain(100000)", "cat": "日常工作", "lead": "古鴻澤", "dept": "DIU", "ppl": "4人", "tool": "Claude", "tag": "Agile ERP AI 助理", "brief": "Agile ERP Agent 是一套結合 Claude Desktop、MCP Server 與 ERPNext 的企業日常工作 AI 助理。使用者可用自然語言查詢庫存、供應商交期、專案毛利與客戶信用風險；AI 會依情境呼叫 MCP Tools 讀取 ERPNext 真實模擬資料，並在必要時建立報價單、物料請購草稿或內控/信用覆核 ToDo。系統強調可驗證與內控邊界，AI 只建草稿與提醒，不提交、不過帳、不凍結客戶。", "link": "http://138.91.7.12:8100/", "acct": "", "pw": "DIUHackathonTest", "note": "", "members": ["古鴻澤", "陳禹安", "林盈達", "林廷軒"]}, {"name": "快報開麥拉", "cat": "日常工作", "lead": "張柏珩", "dept": "MKD", "ppl": "4人", "tool": "Claude", "tag": "AI 市場情報短影音生成", "brief": "「快報開麥拉」是一套 AI 市場情報短影音自動生成平台，目標是把原本需要人工搜尋新聞、擷取素材、整理重點、撰寫腳本、製作字幕與剪輯影片的流程，整合成一個可在瀏覽器操作的 AI 製播工具。", "link": "http://20.44.152.97/studio", "acct": "", "pw": "", "note": "", "members": ["張柏珩", "李怡萱", "黃品嘉", "楊謦竹"]}, {"name": "三薪二億", "cat": "日常工作", "lead": "鄭宇真", "dept": "ASD", "ppl": "3人", "tool": "Claude", "tag": "上單審查輕量化檢核工具", "brief": "本專案旨在開發一款上單審查輕量化小工具。透過自動化邏輯檢核，在業務人員提交報價單、訂單或合約進入正式簽核流程前，協助審視資料遺漏、金額計算錯誤或合約條款合理性等問題。", "link": "http://210.64.71.190/", "acct": "", "pw": "", "note": "第一次登入可隨意輸入，後續登入用相同帳密即可", "members": ["鄭宇真", "呂柏霖", "周春富"]}, {"name": "工人智慧小尖兵", "cat": "營運效率", "lead": "劉孟函", "dept": "DIU", "ppl": "2人", "tool": "Claude", "tag": "小理專・AI 會議行動助手", "brief": "小理專 — 讓每一場會議都變成可執行的行動\n \n開完會，任務卻石沉大海？小理專是 AI 驅動的桌面助手：一鍵錄音，自動轉錄，LLM\n即時解析出摘要、待辦任務與決策紀錄。所有結果直送管理中心，團隊輕鬆審閱、指派、追蹤——從對話到行動，零手動整理。", "link": "http://172.207.49.119:3000/", "acct": "", "pw": "", "note": "", "members": ["劉孟函", "方翊宸"]}, {"name": "挖伊井", "cat": "日常工作", "lead": "江村志", "dept": "DIU", "ppl": "1人", "tool": "Claude", "tag": "通知超人・AI 通知守門員", "brief": "通知超人是一套執行於 Windows 的 AI 智慧通知守門員。\n\n它常駐在螢幕右側以半透明面板顯示，整合 Microsoft Teams、Outlook（透過 Graph API) 等訊息來源，自動偵測使用者目前的工作狀態（專注寫程式、開會、放鬆），並以本地 Rule Engine + Azure AI 對每則通知評分（0–10 分），只在分數達到閾值時才真正打擾使用者。\n\n敏感資料（OTP、信用卡號、身分證）在送出 AI 前會自動遮蔽，並支援 Google Safe Browsing URL 掃描與危險連結偵測。使用者可對通知標記「重要 / 不重要」，系統會持續學習調整個人化過濾策略，讓你在高度專注時只收到真正重要的訊息。", "link": "https://bst-ed629df9-db2f-4e2b-8969-59d67a750611.bastion.azure.com/api/shareable-url/a92b072a-6ab9-4d88-a5fe-a24ddc2ede37", "acct": "PTSC20admin", "pw": "PTSC20@admin", "note": "登入畫面除了帳密不要改，同時間只能一個人連線", "members": ["江村志"]}, {"name": "Felina", "cat": "日常工作", "lead": "羅文財", "dept": "DIU", "ppl": "2人", "tool": "ChatGPT Codex", "tag": "本機 AI 工具管理平台", "brief": "Felina 是一個以本機運行為核心的 AI 管理平台，協助個人與團隊集中管理不同 AI 工具的設定、能力與使用紀錄。\n\n無論是 Claude、Codex、Gemini 等 AI 服務，都能透過 Felina 在同一個地方進行整合與管理，避免資料分散、重複設定，以及多人協作時常見的版本混亂問題，讓 AI 的使用更加有條理、更容易維護。", "link": "https://github.com/xzsa654/felina/releases/latest", "acct": "", "pw": "", "note": "", "members": ["羅文財", "許智堯"]}, {"name": "Log分析助理", "cat": "日常工作", "lead": "張渝閎", "dept": "DFU", "ppl": "1人", "tool": "OpenAI", "tag": "跨系統 Log 分析助手", "brief": "協助工程師快速分析跨系統Log，並透過chat 來了解目前問題", "link": "http://20.194.237.31:3000/", "acct": "", "pw": "", "note": "", "members": ["張渝閎"]}, {"name": "我帶著工程師的頭銜回來了", "cat": "日常工作", "lead": "吳佳珊", "dept": "DFU", "ppl": "1人", "tool": "Claude", "tag": "RPG 闖關式 Python 學習", "brief": "【專案目標】\n解決初學者學習新的語言知識時「不知道自己哪裡不懂」的核心痛點。有別於一些專業的學習平台可能僅收錄教學影片，初學者學習後偶爾會有撞牆期或是不知道自己這樣有沒有理解的疑問。我想用 Claude AI 結合古代 RPG 遊戲的機制，讓學習過程像打遊戲一樣有進度感、有成就感。\n【解決方案】\n以我現在正在學習的PYTHON語言為核心概念\nPYTHON有五大核心概念，以RPG風格中常有的「最終Boss 戰」包裝 Python 五個核心概念（變數、迴圈、函式等），初學者可以透過答題闖關擊敗最終BOSS後進行下一關卡，甚至可以加入BOSS互動對話或是戰鬥禮包等等豐富體驗感。\n也希望自己可能做出\n① 錯題紀錄；或是記錄初學者的相關弱點來進行出題，避免每次都是隨機出題練習進而無法達到真正的知識吸收與提升自己的短版的機會。\n② 答錯時，AI 可以使用繁體中文(為什麼說是繁體中文，這邊我想呈現的是偏白話的方式比較淺顯易懂的解析之類的回答)解釋這道題這個關卡「為什麼錯、邏輯在哪裡」，而不只給答案或是簡易答覆，減少來回問答的時間。\n③ 技能樹可視化：以PYTHON的五大核心概念為例子，每個學會的概念樹葉都可以在最初的技能樹顯示並逐一解鎖，貌似會覺得抽象但實際上透過技能樹上顯示的概念樹葉可以知道自己完成多少等等\n【預期成果】\n希望可以完成可實際玩的 Web Demo，涵蓋 5 個世界、N道動態生成題目，希望也能藉機驗證 使用AI工具生成一些比較偏個人化題組，來提升對於像我這樣的初學者的學習效率與成果。目標讓每個像我一樣在程式大門前躊躇的人，可以有動力跟獲得相對應的成就感並主動想繼續學習繼續挑戰。", "link": "https://0623devborn.azurewebsites.net", "acct": "", "pw": "", "note": "隨機即可", "members": ["吳佳珊"]}, {"name": "智庫守護者", "cat": "日常工作", "lead": "高聖翔", "dept": "TSU", "ppl": "1人", "tool": "Claude", "tag": "北祥智庫・一入口六模組平台", "brief": "初衷為打造一個北祥智庫生態圈，結合多方資料，將公司散落各處的知識、業務與維運資訊，收斂成一個「一個入口、六大模組」的智慧平台——讓對的人，在對的時間，用最快的方式找到對的答案。", "link": "http://knowledge-guardian-sg.southeastasia.cloudapp.azure.com:8501/", "acct": "", "pw": "", "note": "", "members": ["高聖翔"]}].map((t,i)=>({id:i+1, name:t.name, cat:t.cat, lead:t.lead, dept:t.dept, ppl:t.ppl, tool:t.tool, tag:t.tag, brief:t.brief, link:t.link, acct:t.acct, pw:t.pw, note:t.note, members:t.members, topic:t.tag}));
+let db,auth,TRACK={},PERM={},PINS={},MAIL={},me=null,pIdx=0,adminTab="board",fBucket="",fOwner="",histCache={};
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function extraKeys(){const s=new Set();Object.values(PERM).forEach(c=>{(c.editors||[]).forEach(k=>s.add(k));(c.viewers||[]).forEach(k=>s.add(k));if(c.pm)s.add(c.pm);});PEOPLE.forEach(p=>s.delete(p.k));return [...s];}
+function extraPeople(){return extraKeys().map(k=>({k:k,name:k,role:"collab",extra:true}));}
+function allPeople(){return PEOPLE.concat(extraPeople());}
+function person(k){return allPeople().find(p=>p.k===k)}
+function pmOf(p){return (PERM[p.id]&&PERM[p.id].pm)||p.pm;}
+function pmLabel(p){if(p.team)return p.team.map(k=>person(k)?person(k).name:k).join("·");const k=pmOf(p);return person(k)?person(k).name:k;}
+function stMeta(s){return STATUS.find(x=>x[0]===s)||STATUS[0]}
+function decMeta(d){return DECIDE.find(x=>x[0]===d)||DECIDE[0]}
+function cvar(v){return getComputedStyle(document.documentElement).getPropertyValue(v)||"#888"}
+function pinFor(k){return (PINS&&PINS[k])||DEFAULT_PINS[k]||"8888";}
+function weekKey(d){d=d?new Date(d):new Date();const t=new Date(d);const g=t.getDay();let off;if(g===0)off=1;else if(g===6)off=2;else off=-((g+6)%7);t.setDate(t.getDate()+off);t.setHours(0,0,0,0);return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");}
+function weekLabel(k){const a=k.split("-").map(Number);const s=new Date(a[0],a[1]-1,a[2]);const e=new Date(s);e.setDate(e.getDate()+4);return (s.getMonth()+1)+"/"+s.getDate()+"–"+(e.getMonth()+1)+"/"+e.getDate()+"（一～五）";}
+function editorsOf(p){const c=PERM[p.id];if(c&&c.editors)return c.editors;return [...new Set([pmOf(p),...(p.team||[]),p.lead])];}
+function viewersOf(p){const c=PERM[p.id];return (c&&c.viewers)?c.viewers:[];}
+function canEdit(p){if(!me)return false;if(me.role==="lead"||me.role==="exec")return true;if(me.role==="punk")return false;return editorsOf(p).includes(me.k);}
+function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||me.role==="punk"||me.role==="admin")return true;return editorsOf(p).includes(me.k)||viewersOf(p).includes(me.k);}
+function myProjects(){return PROJECTS.filter(canView)}
+function submittedThisWeek(t){return t&&t.submittedWeek===weekKey()}
+function fmt(ts){try{const d=ts.toDate?ts.toDate():new Date(ts);return (d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(e){return""}}
 
-/* ============================================================
-   ② 程式區 —— 一般不需更動
-   ============================================================ */
-let db=null, auth=null, uid=null, curJudge=null, control={scoringOpen:true,votingOpen:false};
-let myScores={};
-let myNotes={};
-let allScores=[];
-let voteCounts={};
-let voterId=null, voterVoted=null, voteOrder=null, voterName=null;
-let cur=null;
-let awardsList=[];
-let specialAwards=[];
-let honorableCount=5;
-const PINS={}; JUDGES.forEach(j=>PINS[j.id]=j.pin); PINS.admin=ADMIN_PIN;
-const DEFAULT_JUDGES = JUDGES.map(j=>({id:j.id,name:j.name,short:j.short,ini:j.ini,award:j.award,title:j.title}));
-const DEFAULT_PINS = Object.assign({}, PINS);
-
-let navStack=[];
-function go(id, isBack){
-  const c=document.querySelector('.screen.active');
-  if(c && c.id!==id && !isBack) navStack.push(c.id);
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active'); window.scrollTo(0,0);
-  closeDemo();
-  const pr=document.getElementById('pwReminder'); if(pr) pr.style.display='none';
+function init(){
+ try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();auth=firebase.auth();}catch(e){document.getElementById("app").innerHTML="<p style='padding:30px'>Firebase 初始化失敗。</p>";return;}
+ auth.signInAnonymously().catch(e=>console.warn(e));
+ auth.onAuthStateChanged(u=>{if(u)listen();});
+ renderLogin();
 }
-function goBack(){ const prev=navStack.pop(); go(prev||'s-home', true); }
-function banner(msg){const b=document.getElementById('banner'); if(msg){b.textContent=msg; b.style.display='block';} else b.style.display='none';}
-
-function initFirebase(){
-  if(FIREBASE_CONFIG.projectId==="你的專案ID"){
-    banner("⚠ 尚未填入 Firebase 設定，目前無法即時同步（請看教學）"); return false;
-  }
-  try{
-    firebase.initializeApp(FIREBASE_CONFIG);
-    auth=firebase.auth(); db=firebase.firestore();
-    auth.signInAnonymously().catch(e=>banner("登入失敗："+e.message));
-    auth.onAuthStateChanged(u=>{ if(u){uid=u.uid; onReady();} });
-    return true;
-  }catch(e){ banner("Firebase 初始化失敗："+e.message); return false; }
-}
-function onReady(){
-  db.collection('control').doc('state').onSnapshot(d=>{
-    control = d.exists ? d.data() : {scoringOpen:true,votingOpen:false};
-    refreshControlUI();
-  }, ()=>{});
-  db.collection('control').doc('auth').onSnapshot(d=>{
-    if(d.exists){
-      const pp=d.data().pins||{}; JUDGES.forEach(j=>{ if(pp[j.id]) PINS[j.id]=pp[j.id]; }); if(pp.admin) PINS.admin=pp.admin;
-      const nm=d.data().names||{};
-      JUDGES.forEach(j=>{ if(nm[j.id]){ j.name=nm[j.id]; j.short=nm[j.id]; j.ini=(nm[j.id].trim().charAt(0)||j.ini).toUpperCase(); } });
-      const ti=d.data().titles||{};
-      JUDGES.forEach(j=>{ if(j.type==='mystery' && (j.id in ti)) j.title=ti[j.id]; });
-      fillJudgeGrid();
-    }
-    const pb=document.getElementById('pwBox'); if(pb && pb.innerHTML) renderPwForm();
-  }, ()=>{});
-  db.collection('control').doc('special').onSnapshot(d=>{ specialAwards=(d.exists&&Array.isArray(d.data().list))?d.data().list:[]; renderBigscreen(); }, ()=>{});
-  db.collection('control').doc('honorable').onSnapshot(d=>{ honorableCount=(d.exists&&typeof d.data().count==='number')?d.data().count:5; if(document.getElementById('hmNum')) renderHmForm(); renderBigscreen(); }, ()=>{});
+function listen(){
+ db.collection("track").onSnapshot(s=>{TRACK={};s.forEach(d=>TRACK[d.id]=d.data());if(me)renderApp();});
+ db.collection("control").doc("trackperm").onSnapshot(d=>{PERM=(d&&d.exists)?d.data():{};if(me)renderApp();else renderLogin();});
+ db.collection("control").doc("trackauth").onSnapshot(d=>{PINS=(d&&d.exists)?d.data():{};});
+ db.collection("control").doc("trackmail").onSnapshot(d=>{MAIL=(d&&d.exists)?d.data():{};});
 }
 
-/* ---------- 評審登入（5 格選擇） ---------- */
-const JSIL='<svg viewBox="0 0 24 24" width="30" height="30" fill="currentColor"><path d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5Zm0 2c-4.4 0-8 2.2-8 5v3h16v-3c0-2.8-3.6-5-8-5Z"/></svg>';
-let selJudge=null;
-function splitName(s){
-  s=(s||'').trim();
-  const m=s.match(/^([\u4e00-\u9fff・·\u3000]+)\s+(.+)$/);
-  if(m) return '<div>'+m[1]+'</div><div class="en">'+m[2]+'</div>';
-  return s;
+/* ---- login ---- */
+function renderLogin(){
+ const el=document.getElementById("app");
+ el.innerHTML=`<div class="login">
+  <div class="loginhero"><div class="k">★ 後續追蹤</div><h2>北祥黑客松 2026<br>專案追蹤系統</h2><p>打你的名字 → 輸入密碼，就開始</p></div>
+  <div class="loginbody">
+   <label style="font-size:12px;color:var(--mut);font-weight:800">你的名字</label>
+   <input id="who" list="names" autocomplete="off" placeholder="打你的名字（例：WIND、Julia、羅文財、主辦）" oninput="pickWho()" onchange="pickWho()" style="margin-top:5px">
+   <datalist id="names">${allPeople().map(x=>`<option value="${esc(x.name.replace("（隊長）",""))}">`).join("")}</datalist>
+   <div id="whoinfo" class="muted" style="min-height:16px;margin-top:5px;font-size:12px"></div>
+   <div id="pwbox" style="display:none"><input id="pw" type="password" placeholder="密碼（預設 8888，主辦 0000）" onkeydown="if(event.key==='Enter')doLogin()"><button class="btn big" style="margin-top:10px" onclick="doLogin()">登入</button><div class="err" id="lerr"></div></div>
+  </div></div>`;
 }
-function fillJudgeGrid(){
-  const mk=j=>{
-    const myst=j.type==='mystery';
-    const def=DEFAULT_JUDGES.find(d=>d.id===j.id);
-    const named=myst && def && j.short!==def.short && j.short.trim()!=='';
-    const av=myst?`<div class="javatar myst">${JSIL}</div>`:`<div class="javatar">${j.ini}</div>`;
-    const crown=j.vip?'<div class="crown">👑</div>':'';
-    if(!myst){
-      return `<div class="jcard ${j.pos}" onclick="selectJudge('${j.id}')">
-        ${crown}${av}<div class="jname">${splitName(j.name)}</div><div class="jrole">${j.roleHtml||j.role}</div></div>`;
-    }
-    const claprow=named?'<div class="clap">'+(j.icon||'🎉')+'</div>':'';
-    const chip=named?'<div class="jchip vipchip">✨ 特選神秘評審 ✨</div>':'<div class="jchip" style="background:#ff3d8b1a;color:var(--pink)">神秘評審</div>';
-    const titleHtml=(named && j.title)?`<div class="jrole">${j.title}</div>`:'';
-    const hsub='';
-    return `<div class="jcard ${j.pos} mystcard ${named?'honored':''}" onclick="selectJudge('${j.id}')">
-      ${crown}${claprow}${av}<div class="jname">${splitName(j.name)}</div>${titleHtml}${chip}${hsub}</div>`;
-  };
-  document.getElementById('jGridMain').innerHTML=JUDGES.filter(j=>j.type==='main').map(mk).join('');
-  const mysts=JUDGES.filter(j=>{ if(j.type!=='mystery') return false; const d=DEFAULT_JUDGES.find(x=>x.id===j.id); return d && j.short!==d.short && j.short.trim()!==''; });
-  document.getElementById('jGridMyst').innerHTML=mysts.map(mk).join('');
-  const sec=document.getElementById('jsecMyst'); if(sec) sec.style.display=mysts.length?'block':'none';
-  document.getElementById('jGridMyst').style.display=mysts.length?'grid':'none';
-}
-function selectJudge(id){
-  selJudge=JUDGES.find(j=>j.id===id);
-  const nm=selJudge.short;
-  document.getElementById('jPinName').textContent=nm+' · 請輸入專屬密碼';
-  document.getElementById('jPin').value=''; document.getElementById('jErr').textContent='';
-  document.getElementById('jPinBox').style.display='block';
-  document.getElementById('jPin').focus();
-}
-function judgeLogin(){
-  if(!selJudge){ document.getElementById('jErr').textContent="請先點選你的身分"; return; }
-  const pin=document.getElementById('jPin').value.trim();
-  if(pin!==PINS[selJudge.id]){ document.getElementById('jErr').textContent="密碼錯誤，請再試一次"; return; }
-  curJudge=selJudge; document.getElementById('jPin').value=''; document.getElementById('jErr').textContent='';
-  if(PINS[curJudge.id]==='8888'){ forceChangePw(); } else { openJudgeList(); }
-}
-function forceChangePw(){
-  const v=prompt('首次登入，請設定你的新密碼（取代預設 8888）：');
-  if(v===null){ switchJudge(); return; }
-  const nv=v.trim();
-  if(!nv || nv==='8888'){ alert('密碼不可空白、也不能是 8888，請重新設定'); forceChangePw(); return; }
-  PINS[curJudge.id]=nv;
-  if(db) db.collection('control').doc('auth').set({pins:{[curJudge.id]:nv}},{merge:true}).catch(function(){});
-  alert('✓ 已設定新密碼，請牢記：'+nv);
-  openJudgeList();
-}
-function switchJudge(){ curJudge=null; if(typeof selJudge!=='undefined') selJudge=null; navStack=[]; go('s-jlogin'); }
-function changeMyPw(){
-  if(!curJudge) return;
-  const who=(curJudge.type==='mystery'?'神秘評審':curJudge.short);
-  const np=prompt('設定「'+who+'」的新密碼：');
-  if(np===null) return;
-  const v=np.trim();
-  if(!v){ alert('密碼不可空白'); return; }
-  PINS[curJudge.id]=v;
-  if(db){ db.collection('control').doc('auth').set({pins:{[curJudge.id]:v}},{merge:true}).then(function(){ alert('✓ 你的密碼已更新為：'+v); }).catch(function(e){ alert('更新失敗：'+e.message); }); }
-  else alert('離線無法儲存');
-}
-function openJudgeList(){
-  document.getElementById('jTtl').textContent=curJudge.name;
-  const aw=document.getElementById('jAwardWrap');
-  aw.style.display='none';
-  if(db){
-    db.collection('scores').where('judgeId','==',curJudge.id).onSnapshot(s=>{
-      myScores={}; s.forEach(d=>{const v=d.data(); myScores[v.teamId]=v;}); renderJudgeList();
-    },()=>renderJudgeList());
-    db.collection('notes').where('judgeId','==',curJudge.id).onSnapshot(s=>{
-      myNotes={}; s.forEach(d=>{const v=d.data(); myNotes[v.teamId]=v.comment||'';}); renderJudgeList();
-    },()=>{});
-  }
-  renderJudgeList(); go('s-jlist');
-}
-function renderJudgeList(){
-  const notice = !control.scoringOpen ? '<div style="grid-column:1/-1;text-align:center;color:var(--mut);font-size:13px;padding:6px 4px 2px">🔒 評分目前關閉，仍可查看作品連結與帳密；開放後即可打分</div>' : '';
-  document.getElementById('jList').innerHTML=notice+TEAMS.map(t=>{
-    const done=myScores[t.id]; return `
-    <div class="tcard" onclick="openScore(${t.id})">
-      <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
-        <span class="badge ${done?'b-done':(myNotes[t.id]?'b-done':'b-todo')}">${done?('已評 '+done.total):(myNotes[t.id]?'📝 筆記':'待評分')}</span></div>
-      <div class="name">${t.name}</div><div class="topic">${t.tag}</div>
-      <div class="meta2">隊長 ${t.lead}·${t.dept} ｜ ${t.ppl} ｜ ${t.tool}</div>
-      <div class="meta2">隊員：${(t.members||[]).join('、')||'—'}</div>
-      <button class="linkbtn" onclick="event.stopPropagation(); openDemo(${t.id})">🔗 作品＋登入帳密</button>
-    </div>`;}).join('');
-}
-function openMyRank(){
-  const rows=Object.values(myScores).sort((a,b)=>b.total-a.total);
-  const box=document.getElementById('myRankBox');
-  if(!rows.length){ box.innerHTML='<div class="closed">你還沒評分任何一組，先回去打分吧</div>'; }
-  else box.innerHTML=rows.map((s,i)=>`<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
-    <div class="info"><div class="nm">${s.teamName}</div><div class="sub">你給的總分</div></div>
-    <div class="pts">${s.total}</div></div>`).join('');
-  go('s-myrank');
-}
-let myAward=null;
-function openAward(){
-  document.getElementById('awTtl').textContent=curJudge.award+' · 選得主';
-  if(db) db.collection('awards').doc(curJudge.id).onSnapshot(d=>{ myAward=d.exists?d.data().teamId:null; renderAwardPick(); },()=>renderAwardPick());
-  renderAwardPick(); go('s-award');
-}
-function renderAwardPick(){
-  document.getElementById('awList').innerHTML=TEAMS.map(t=>{
-    const picked=myAward===t.id;
-    return `<div class="tcard" onclick="pickAward(${t.id})">
-      <div class="row"><span class="num">#${String(t.id).padStart(2,'0')} · ${t.cat}</span>
-        ${picked?`<span class="badge b-pick">★ ${curJudge.award}</span>`:''}</div>
-      <div class="name">${t.name}</div><div class="topic">${t.tag}</div></div>`;}).join('');
-}
-function pickAward(id){
-  const ref=db?db.collection('awards').doc(curJudge.id):null;
-  if(myAward===id){ myAward=null; if(ref) ref.delete(); }
-  else { myAward=id; if(ref) ref.set({judgeId:curJudge.id, judgeName:curJudge.name, award:curJudge.award, teamId:id, teamName:TEAMS.find(t=>t.id===id).name}); }
-  renderAwardPick();
-}
+let pending=null;
+const ROLEZH={exec:"經營管理層",lead:"主管",pm:"專案負責人",collab:"合作者/隊長",punk:"PUNK 資安"};
+function findAccount(txt){txt=(txt||"").trim();if(!txt)return null;const low=txt.toLowerCase();return allPeople().find(x=>x.k.toLowerCase()===low||x.name.toLowerCase()===low||x.name.replace("（隊長）","").toLowerCase()===low)||((low==="主辦"||low==="主管")?allPeople().find(x=>x.role==="lead"):(low==="後台"||low==="系統")?allPeople().find(x=>x.role==="admin"):(low==="經營管理層"||low==="經管"||low==="經營")?allPeople().find(x=>x.role==="exec"):null);}
+function pickWho(){const v=document.getElementById("who").value;const acc=findAccount(v);pending=acc?acc.k:null;const info=document.getElementById("whoinfo");const box=document.getElementById("pwbox");if(acc){info.innerHTML="身分："+(ROLEZH[acc.role]||"")+"　"+esc(acc.name);box.style.display="block";}else{info.textContent=v?"找不到這個名字，請從提示清單選":"";box.style.display="none";}}
+function doLogin(){if(!pending){document.getElementById("lerr").textContent="請先選擇你的名字";return;}const pw=document.getElementById("pw").value.trim();if(pw!==pinFor(pending)){document.getElementById("lerr").textContent="密碼錯誤";return;}me=person(pending);pIdx=0;if(!PINS||!PINS[me.k]){renderForceChange();}else{renderApp();}}
+function pwError(pw){pw=(pw||"").trim();if(pw.length<8)return "密碼至少 8 碼";let c=0;if(/[a-z]/.test(pw))c++;if(/[A-Z]/.test(pw))c++;if(/[0-9]/.test(pw))c++;if(/[^A-Za-z0-9]/.test(pw))c++;if(c<3)return "需包含大寫、小寫、數字、符號中至少 3 種";return null;}
+function renderForceChange(){const el=document.getElementById("app");el.innerHTML=`<div class="login"><div class="loginhero"><div class="k">首次登入</div><h2>請設定你的新密碼</h2><p>${esc(me.name)} · 為了安全，第一次登入請更改預設密碼</p></div><div class="loginbody"><input id="np1" type="password" placeholder="新密碼：至少 8 碼，含大寫/小寫/數字/符號 ≥3 種"><input id="np2" type="password" placeholder="再輸入一次" style="margin-top:8px"><button class="btn big" style="margin-top:12px" onclick="doForceChange()">設定並進入</button><div class="err" id="fcerr"></div></div></div>`;}
+function doForceChange(){const a=document.getElementById("np1").value.trim(),b=document.getElementById("np2").value.trim();const er=pwError(a);if(er){document.getElementById("fcerr").textContent=er;return;}if(a!==b){document.getElementById("fcerr").textContent="兩次輸入不一致";return;}const patch={};patch[me.k]=a;db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>{renderApp();}).catch(e=>{document.getElementById("fcerr").textContent="失敗："+e.message;});}
+function logout(){me=null;pending=null;renderLogin();}
+function topBar(){const _b=me.role==="admin"?"⚙ 系統後台":me.role==="exec"?"📈 經營管理層":me.role==="lead"?"📊 主管":"★ 追蹤";const _t=me.role==="admin"?"專案追蹤系統 · 後台":"專案追蹤系統";return `<div class="top"><span class="badge">${_b}</span><h1>${_t}</h1><span class="sp"></span><span class="muted">${esc(me.name)}</span><button class="btn gh sm" onclick="changePw()">改密碼</button><button class="btn gh sm" onclick="logout()">登出</button></div>`;}
 
-/* ---------- 打分 ---------- */
-function openScore(id){
-  cur=TEAMS.find(t=>t.id===id); const prev=myScores[id];
-  document.getElementById('scNum').textContent='#'+String(cur.id).padStart(2,'0')+' · '+cur.cat;
-  document.getElementById('scName').textContent=cur.name;
-  document.getElementById('scTopic').textContent=cur.tag;
-  const bf=document.getElementById('scBrief');
-  bf.innerHTML='<div class="bft">隊長 '+cur.lead+'·'+cur.dept+' ｜ '+cur.ppl+' ｜ AI：'+cur.tool+'</div>'+'<div class="bft" style="color:var(--mut);font-weight:400">隊員：'+((cur.members||[]).join('、')||'—')+'</div>';
-  const pre=document.createElement('div'); pre.className='bftext'; pre.textContent=cur.brief||'（無簡介）'; bf.appendChild(pre);
-  document.getElementById('cmt').value=(prev&&prev.comment)?prev.comment:(myNotes[cur.id]||'');
-  document.getElementById('scErr').textContent='';
-  document.getElementById('critBox').innerHTML=CRITERIA.map((c,i)=>{
-    const v=prev?prev.scores[i]:Math.round(c.max*0.7);
-    return `<div class="item"><div class="lbl"><span class="nm">${c.k}</span><span class="w">滿分 ${c.max}</span>
-      <span class="val" id="v${i}">${v} / ${c.max}</span></div>
-      <div style="font-size:11px;color:var(--dim);line-height:1.5">${c.d}</div>
-      <input type="range" min="0" max="${c.max}" step="1" value="${v}" oninput="upd(${i})"></div>`;}).join('');
-  calc(); go('s-score');
-}
-function upd(i){ const r=document.querySelectorAll('#critBox input')[i];
-  document.getElementById('v'+i).textContent=parseInt(r.value)+' / '+CRITERIA[i].max; calc(); }
-function calc(){ let t=0; document.querySelectorAll('#critBox input').forEach(r=>t+=parseInt(r.value));
-  document.getElementById('totalVal').textContent=t+' / 100'; return t; }
-function saveNote(){
-  if(!cur) return;
-  const c=document.getElementById('cmt').value.trim();
-  const err=document.getElementById('scErr');
-  if(!db){ myNotes[cur.id]=c; err.style.color='var(--teal)'; err.textContent='✓ 筆記已存（離線）'; return; }
-  db.collection('notes').doc(curJudge.id+'__'+cur.id).set({judgeId:curJudge.id, judgeName:curJudge.name, teamId:cur.id, teamName:cur.name, comment:c, updatedAt:Date.now()})
-    .then(function(){ err.style.color='var(--teal)'; err.textContent='✓ 筆記已儲存（評分關閉也保留）'; })
-    .catch(function(e){ err.style.color='#ff8080'; err.textContent='存筆記失敗：'+e.message; });
-}
-function submitScore(){
-  if(!control.scoringOpen){ document.getElementById('scErr').textContent='評分已關閉，無法送出'; return; }
-  const scores=[...document.querySelectorAll('#critBox input')].map(r=>parseInt(r.value));
-  const total=scores.reduce((a,b)=>a+b,0);
-  const rec={judgeId:curJudge.id, judgeName:curJudge.name, teamId:cur.id, teamName:cur.name,
-    scores, total, comment:document.getElementById('cmt').value.trim(), updatedAt:Date.now()};
-  if(!db){ myScores[cur.id]=rec; renderJudgeList(); go('s-jlist'); banner("⚠ 離線：分數未同步（請設定 Firebase）"); return; }
-  db.collection('scores').doc(curJudge.id+'__'+cur.id).set(rec)
-    .then(()=>{ go('s-jlist'); })
-    .catch(e=>{ document.getElementById('scErr').textContent="送出失敗："+e.message; });
-}
+function renderApp(){if(!me)return;if(me.role==="lead"||me.role==="exec")renderAdmin();else if(me.role==="admin")renderBackend();else renderPagerView();}
 
-/* ---------- 神秘評審獨立計分（後台呈現） ---------- */
-function renderMystery(){
-  const box=document.getElementById('mysteryBox'); if(!box) return;
-  const ms=JUDGES.filter(j=>j.type==='mystery');
-  box.innerHTML=ms.map(j=>{
-    const ss=allScores.filter(s=>s.judgeId===j.id).sort((a,b)=>b.total-a.total);
-    const top=ss.slice(0,3).map((s,i)=>`${i+1}. ${s.teamName}（${s.total}）`).join('　');
-    return `<div class="lrow"><div class="rk">🕵️</div><div class="info">
-      <div class="nm">${j.name}　·　已評 ${ss.length}/24</div>
-      <div class="sub">${top||'尚未評分'}</div></div></div>`;
-  }).join('');
+/* ---- pager (pm/collab/punk) ---- */
+function renderPagerView(){
+ const el=document.getElementById("app");const ps=myProjects();
+ const done=ps.filter(p=>submittedThisWeek(TRACK[p.id])).length;
+ let banner;
+ if(me.role==="punk")banner=`<div class="banner">🛡 <b>資安 / 權限確認</b>　本週（${weekLabel(weekKey())}）逐案確認每個階段的資安與權限。你看得到全部 ${ps.length} 案。</div>`;
+ else banner=`<div class="banner">📝 <b>本週回報</b>（${weekLabel(weekKey())}）　你負責 <b>${ps.length}</b> 案，填完按「送出本週回報」。本週已送出 <b style="color:${done>=ps.length?'var(--teal)':'var(--warn)'}">${done}/${ps.length}</b>。</div>`;
+ el.innerHTML=topBar()+banner+pager(ps);
 }
-function ceremRows(){
-  const mains=JUDGES.filter(j=>j.type==='main');
-  return TEAMS.map(t=>{ const ss=allScores.filter(s=>s.teamId===t.id&&mains.some(j=>j.id===s.judgeId)); const sum=ss.reduce((a,b)=>a+b.total,0); return {name:t.name,sum};}).sort((a,b)=>b.sum-a.sum);
-}
-let ceremSteps=[], ceremIdx=-1, ceremBusy=false;
-let actx=null, cerMuted=false;
-function audioInit(){ if(!actx){ try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(actx&&actx.state==='suspended') actx.resume(); }
-function beep(freq,dur,type,vol){ if(!actx||cerMuted) return; try{ const o=actx.createOscillator(),g=actx.createGain(); o.type=type||'sine'; o.frequency.value=freq; g.gain.setValueAtTime(vol||0.2,actx.currentTime); g.gain.exponentialRampToValueAtTime(0.001,actx.currentTime+(dur||0.15)); o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime+(dur||0.15)); }catch(e){} }
-function oneClap(t){
-  try{ const dur=0.03, bs=Math.floor(actx.sampleRate*dur), buf=actx.createBuffer(1,bs,actx.sampleRate), d=buf.getChannelData(0);
-    for(let i=0;i<bs;i++){ d[i]=(Math.random()*2-1)*Math.pow(1-i/bs,3); }
-    const src=actx.createBufferSource(); src.buffer=buf;
-    const hp=actx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=900+Math.random()*1100;
-    const g=actx.createGain(); g.gain.value=0.12+Math.random()*0.18;
-    src.connect(hp); hp.connect(g); g.connect(actx.destination); src.start(t);
-  }catch(e){}
-}
-function applauseReal(){
-  if(!actx||cerMuted) return;
-  const now=actx.currentTime;
-  for(let i=0;i<120;i++){ oneClap(now + Math.random()*2.4); }
-}
-function cerSound(kind){
-  if(cerMuted||!actx) return;
-  if(kind==='tick'){ beep(680,0.12,'square',0.18); return; }
-  if(kind==='reveal'){
-    [523,659,784,1047,1319].forEach(function(f,i){ setTimeout(function(){ beep(f,0.45,'triangle',0.28); },i*95); });
-    applauseReal();
-  }
-}
-function toggleMute(){ cerMuted=!cerMuted; const b=document.getElementById('cerMute'); if(b) b.textContent=cerMuted?'🔇':'🔊'; if(!cerMuted) audioInit(); }
-function startCeremony(){
-  const rows=ceremRows();
-  ceremSteps=[];
-  const pops=TEAMS.map(function(t){return {name:t.name,v:voteCounts[t.id]||0};}).sort(function(a,b){return b.v-a.v;});
-  if(pops[0]) ceremSteps.push({cat:'🔥 人氣獎', name:(pops[0].v>0?pops[0].name:'—'), huge:true});
-  rows.slice(3,3+honorableCount).forEach(function(t){ ceremSteps.push({cat:'🏅 佳作', name:t.name}); });
-  if(rows[2]) ceremSteps.push({cat:'🥉 銅賞', name:rows[2].name, huge:true});
-  if(rows[1]) ceremSteps.push({cat:'🥈 銀賞', name:rows[1].name, huge:true});
-  if(rows[0]) ceremSteps.push({cat:'🥇 金賞', name:rows[0].name, huge:true});
-  specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); ceremSteps.push({cat:'🎖 '+a.name+'（評審團特別獎）', name:t?t.name:'（未頒）'}); });
-  ceremIdx=-1;
-  document.getElementById('cerCat').textContent='🎬 頒獎典禮';
-  document.getElementById('cerName').textContent='點一下畫面開始 👏';
-  document.getElementById('cerName').className='cer-name';
-  document.getElementById('cerHint').style.display='block';
-  go('s-ceremony');
-}
-function showCount(n){
-  const nm=document.getElementById('cerName');
-  nm.className='cer-name'; void nm.offsetWidth;
-  nm.textContent=n; nm.className='cer-name countnum';
-  cerSound('tick');
-}
-function ceremNext(){
-  if(ceremBusy) return;
-  audioInit();
-  ceremIdx++;
-  if(ceremIdx>=ceremSteps.length){ ceremFinish(); return; }
-  const s=ceremSteps[ceremIdx];
-  document.getElementById('cerCat').textContent=s.cat;
-  document.getElementById('cerHint').style.display='none';
-  ceremBusy=true;
-  let n=3; showCount(n);
-  const iv=setInterval(function(){
-    n--;
-    if(n>=1){ showCount(n); }
-    else{
-      clearInterval(iv);
-      const nm=document.getElementById('cerName');
-      nm.className='cer-name'; void nm.offsetWidth;
-      nm.textContent=s.name; nm.className='cer-name show'+(s.huge?' huge':'');
-      ceremApplause(); cerSound('reveal');
-      ceremBusy=false;
-      document.getElementById('cerHint').style.display=(ceremIdx>=ceremSteps.length-1)?'none':'block';
-    }
-  },1200);
-}
-function ceremFinish(){
-  document.getElementById('cerCat').textContent='🎉 恭喜所有得獎者 🎉';
-  const nm=document.getElementById('cerName'); nm.textContent='北祥黑客松 2026'; nm.className='cer-name show';
-  document.getElementById('cerHint').style.display='none';
-  ceremApplause(); setTimeout(ceremApplause,600); cerSound('reveal');
-}
-function ceremExit(){ ceremSteps=[]; ceremIdx=-1; go('s-dash'); }
-function ceremApplause(){
-  const ems=['👏','🎉','👏','🎊','👏','✨','🙌','👏','🥳'];
-  for(let i=0;i<80;i++){ const c=document.createElement('div'); c.className='confetti'; c.textContent=ems[i%ems.length];
-    c.style.left=(Math.random()*100)+'vw'; c.style.fontSize=(22+Math.random()*30)+'px'; c.style.animationDuration=(1.1+Math.random()*1.9)+'s'; c.style.animationDelay=(Math.random()*0.6)+'s';
-    document.body.appendChild(c); setTimeout(function(){c.remove();},3600); }
-}
-function openBig(){ renderBigscreen(); go('s-bigscreen'); }
-function renderBigscreen(){
-  const lb=document.getElementById('bigLead'); if(!lb) return;
-  const mains=JUDGES.filter(j=>j.type==='main');
-  const rows=TEAMS.map(t=>{ const ss=allScores.filter(s=>s.teamId===t.id&&mains.some(j=>j.id===s.judgeId)); const sum=ss.reduce((a,b)=>a+b.total,0); return {name:t.name,sum};}).sort((a,b)=>b.sum-a.sum);
-  lb.innerHTML=rows.slice(0,8).map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${['🥇','🥈','🥉'][i]||(i+1+'.')} ${t.name}</span><span class="v">${t.sum}</span></div><div class="bar"><i style="width:${Math.round(t.sum/300*100)}%"></i></div></div>`).join('');
-  const pop=TEAMS.map(t=>({name:t.name,v:voteCounts[t.id]||0})).sort((a,b)=>b.v-a.v).slice(0,8);
-  const mx=Math.max(1,...pop.map(x=>x.v));
-  const pb=document.getElementById('bigPop'); if(pb) pb.innerHTML=pop.map((t,i)=>`<div class="bigrow"><div class="h"><span class="nm">${i+1}. ${t.name}</span><span class="v">${t.v}</span></div><div class="bar"><i style="width:${Math.round(t.v/mx*100)}%"></i></div></div>`).join('');
-  const ab=document.getElementById('bigAward');
-  if(ab){
-    const medals=['🥇 金獎','🥈 銀獎','🥉 銅獎'];
-    let html='<div class="awgrp">評審獎</div>';
-    for(let k=0;k<3;k++){ const tt=rows[k]; html+=`<div class="bigaward"><div class="aw">${medals[k]}</div><div class="tm">${tt&&tt.sum>0?tt.name:'—'}</div></div>`; }
-    specialAwards.forEach(function(a){ const t=TEAMS.find(function(x){return x.id===a.teamId;}); html+=`<div class="bigaward"><div class="aw">🎖 ${a.name}</div><div class="tm">${t?t.name:'未頒'}</div></div>`; });
-    const hms=rows.slice(3,3+honorableCount);
-    if(hms.length){ html+='<div class="awgrp" style="margin-top:10px">佳作</div>'; hms.forEach(function(t){ html+=`<div class="bigaward" style="padding:10px"><div class="tm" style="font-size:20px">${t.name}</div></div>`; }); }
-    const topPop=pop[0];
-    html+='<div class="awgrp" style="margin-top:14px">人氣獎</div>';
-    html+=`<div class="bigaward" style="border-color:var(--pink);border-style:solid"><div class="aw">🔥 人氣獎（觀眾票選）</div><div class="tm" style="color:var(--pink)">${topPop&&topPop.v>0?topPop.name:'—'}</div></div>`;
-    ab.innerHTML=html;
-  }
-}
-function spRowHtml(name,teamId){
-  const opts='<option value="">— 不頒／未定 —</option>'+TEAMS.map(t=>`<option value="${t.id}" ${String(teamId)===String(t.id)?'selected':''}>#${String(t.id).padStart(2,'0')} ${t.name}</option>`).join('');
-  return `<div class="sprow" style="display:flex;gap:8px;margin-bottom:8px;align-items:center">
-    <input type="text" class="spname" placeholder="獎項名稱（例：遺珠獎）" value="${(name||'').replace(/"/g,'&quot;')}" style="flex:1">
-    <select class="spteam" style="flex:1">${opts}</select>
-    <button class="cpy" style="flex:none" onclick="this.closest('.sprow').remove()">✕</button></div>`;
-}
-function renderSpecialForm(){
-  const box=document.getElementById('spBox'); if(!box) return;
-  const list=specialAwards.length?specialAwards:[{name:'',teamId:null}];
-  box.innerHTML=list.map(a=>spRowHtml(a.name,a.teamId)).join('');
-}
-function addSpecial(){ const box=document.getElementById('spBox'); if(box.querySelectorAll('.sprow').length>=5){ alert('最多 5 個特別獎'); return; } box.insertAdjacentHTML('beforeend', spRowHtml('',null)); }
-function saveSpecial(){
-  if(!db){ alert('尚未連線'); return; }
-  const list=[...document.querySelectorAll('#spBox .sprow')].map(function(r){ return { name:r.querySelector('.spname').value.trim(), teamId: r.querySelector('.spteam').value? parseInt(r.querySelector('.spteam').value):null }; }).filter(function(a){ return a.name; });
-  db.collection('control').doc('special').set({list:list}).then(function(){ specialAwards=list; alert('✓ 特別獎已儲存（'+list.length+' 個）'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); });
-}
-function renderHmForm(){
-  const box=document.getElementById('hmBox'); if(!box) return;
-  box.innerHTML='<div style="display:flex;align-items:center;gap:12px">'
-    +'<button class="btn gho" style="margin:0;min-width:52px;font-size:20px" onclick="chHm(-1)">−</button>'
-    +'<div style="font-size:24px;font-weight:900;min-width:44px;text-align:center" id="hmNum">'+honorableCount+'</div>'
-    +'<button class="btn gho" style="margin:0;min-width:52px;font-size:20px" onclick="chHm(1)">＋</button>'
-    +'<button class="btn" style="margin:0;flex:1" onclick="saveHm()">💾 儲存名額</button></div>'
-    +'<div style="font-size:12px;color:var(--mut);margin-top:6px" id="hmHint"></div>';
-  updHmHint();
-}
-function updHmHint(){ const el=document.getElementById('hmHint'); if(el) el.textContent='佳作＝綜合排名第 4～'+(3+honorableCount)+' 名（可減到 0）'; }
-function chHm(d){ honorableCount=Math.max(0,Math.min(20,honorableCount+d)); const n=document.getElementById('hmNum'); if(n) n.textContent=honorableCount; updHmHint(); }
-function saveHm(){ if(!db){alert('尚未連線');return;} db.collection('control').doc('honorable').set({count:honorableCount}).then(function(){ alert('✓ 佳作名額已設為 '+honorableCount+' 名'); renderBigscreen(); }).catch(function(e){ alert('儲存失敗：'+e.message); }); }
-function renderJudgeTops(){
-  const box=document.getElementById('jtopBox'); if(!box) return;
-  const mains=JUDGES.filter(j=>j.type==='main');
-  box.innerHTML=mains.map(j=>{
-    const ss=allScores.filter(s=>s.judgeId===j.id).sort((a,b)=>b.total-a.total).slice(0,3);
-    const t=ss.map((s,i)=>`${i+1}. ${s.teamName}（${s.total}）`).join('　');
-    return `<div class="lrow"><div class="rk">🏅</div><div class="info"><div class="nm">${j.name}</div><div class="sub">${t||'尚未評分'}</div></div></div>`;
-  }).join('');
-}
-function renderAwards(list){
-  const box=document.getElementById('awardBox'); if(!box) return;
-  const ms=JUDGES.filter(j=>j.type==='mystery' && j.award);
-  const sec=document.getElementById('awardSec'); if(sec) sec.style.display=ms.length?'block':'none';
-  box.innerHTML=ms.map(j=>{
-    const a=list.find(x=>x.judgeId===j.id);
-    return `<div class="lrow" style="${a?'':'border-style:dashed'}"><div class="rk" style="color:${a?'#ffd24a':'var(--dim)'}">🏅</div>
-      <div class="info"><div class="nm" style="color:${a?'var(--txt)':'var(--mut)'}">${j.award}：${a?a.teamName:'尚未選定'}</div>
-      <div class="sub">由 ${j.name} 頒發</div></div></div>`;}).join('');
-}
+function pager(list){
+ if(!list.length)return `<div class="banner">目前沒有你可存取的專案</div>`;
+ if(pIdx>=list.length)pIdx=0;if(pIdx<0)pIdx=list.length-1;
+ const p=list[pIdx];const t=TRACK[p.id]||{};const ed=canEdit(p);const punk=me.role==="punk";const dis=ed?"":"disabled";
+ const st=t.status||"idle";const dec=t.decision||"go";const dm=decMeta(dec);const prog=t.progress!=null?t.progress:0;const ms=t.miles||{};const pk=t.punk||{};
+ const sub=submittedThisWeek(t);
+ return `<div class="pgnav"><button class="btn gh" onclick="navP(-1)">‹ 上一個</button><div class="pgcount">${pIdx+1} / ${list.length}</div><button class="btn gh" onclick="navP(1)">下一個 ›</button></div>
+ <div class="one1" id="c-${p.id}">
+  <div class="o1h"><div class="o1n">${esc(p.n)}</div><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n}</span>${p.medal?'<span class="medal">'+esc(p.medal)+'</span>':''}</div>
+  <div class="muted" style="margin-top:5px">隊長 ${esc(p.lead)} · 負責人 ${esc(pmLabel(p))} · 時程 ${esc(p.time)}</div>
+  <div class="o1one">${esc(p.one)}</div>
+  <div style="margin-top:7px"><span class="pillst" style="background:#00e0c622;color:var(--teal);font-size:12px">📅 本週 ${weekLabel(weekKey())} · 回報頻率：每週</span></div>
 
-/* ---------- 主辦後台 ---------- */
-function adminLogin(){
-  if(document.getElementById('aPin').value.trim()!==PINS.admin){ document.getElementById('aErr').textContent="密碼錯誤"; return; }
-  document.getElementById('aPin').value=''; document.getElementById('aErr').textContent='';
-  if(db){
-    db.collection('scores').onSnapshot(s=>{ allScores=[]; s.forEach(d=>allScores.push(d.data())); renderLead(); renderJudgeTops(); renderMystery(); renderBigscreen(); },()=>{});
-    db.collection('votes').onSnapshot(s=>{
-      voteCounts={}; let total=0;
-      s.forEach(doc=>{ const v=doc.data(); voteCounts[v.teamId]=(voteCounts[v.teamId]||0)+1; total++; });
-      const sv=document.getElementById('stVotes'); if(sv) sv.textContent=total;
-      renderPop(); renderBigscreen();
-    },()=>{});
-  }
-  renderLead(); renderJudgeTops(); renderMystery(); renderSpecialForm(); renderHmForm(); renderPop(); renderPwForm(); refreshControlUI(); go('s-dash');
+  ${decBlock(p,t)}
+  ${handlerBlock(p,t)}
+
+  <div class="sec"><div class="sl">目前進度</div>
+   <div class="row" style="align-items:center"><div class="prog"><i style="width:${prog}%"></i></div><span class="bignum" id="pct-${p.id}" style="width:80px;text-align:right">${prog}%</span></div>
+   <div class="row"><label>狀態</label><select ${dis} onchange="save('${p.id}',{status:this.value})">${STATUS.map(s=>`<option value="${s[0]}" ${s[0]===st?'selected':''}>${s[1]}</option>`).join("")}</select></div>
+   ${ed?`<input type="range" min="0" max="100" step="5" value="${prog}" oninput="livePct('${p.id}',this.value)" onchange="save('${p.id}',{progress:+this.value})">`:''}
+  </div>
+
+  <div class="sec"><div class="sl">階段目標（月）<span class="muted" style="font-weight:400">· 專案整體階段，進度每週回報</span></div><div class="miles">${MILES.map(m=>`<span class="mile ${ms[m[0]]?'on':''}" ${ed?`onclick="toggleMile('${p.id}','${m[0]}')"`:''}>${ms[m[0]]?'✓':'○'} ${m[1]}</span>`).join("")}</div></div>
+
+  ${taskBlock(p,t)}
+  ${punkBlock(p,t)}
+
+  <div class="sec"><div class="sl" style="color:var(--navy);font-size:15px">📝 本週回報（每週更新後按下方送出）</div></div>
+  <div class="sec" style="border-top:0;padding-top:4px"><div class="sl" style="color:var(--teal)">✍️ 本週做了什麼</div>${ed?`<textarea style="min-height:74px" onchange="save('${p.id}',{week:this.value})" placeholder="這週的進展、完成了什麼…">${esc(t.week||'')}</textarea>`:`<div class="ro">${esc(t.week||'—')}</div>`}</div>
+  <div class="sec"><div class="sl" style="color:var(--pink)">➡️ 接下來要做什麼</div>${ed?`<textarea style="min-height:56px" onchange="save('${p.id}',{nextStep:this.value})" placeholder="下一步…">${esc(t.nextStep||p.next)}</textarea>`:`<div class="ro">${esc(t.nextStep||p.next)}</div>`}</div>
+  <div class="sec"><div class="sl" style="color:var(--warn)">🚧 卡關 / 需要協助</div>${ed?`<textarea onchange="save('${p.id}',{blocker:this.value})" placeholder="有問題就寫">${esc(t.blocker||'')}</textarea>`:`<div class="ro">${esc(t.blocker||'—')}</div>`}</div>
+  <div class="row" style="margin-top:12px"><label>預期完成</label>${ed?`<input type="date" value="${esc(t.due||'')}" onchange="save('${p.id}',{due:this.value})">`:`<span>${esc(t.due||'—')}</span>`}</div>
+
+  ${ed?`<div class="sec"><button class="btn teal big" onclick="submitWeek('${p.id}')">📤 送出本週回報（${weekLabel(weekKey())}）</button>
+   <div class="muted" style="margin-top:6px;text-align:center">${sub?('✓ 本週已於 '+fmt(t.submittedAt)+' 送出，可再修改後重送'):'尚未送出本週回報'}</div></div>`:''}
+  <div class="upd">${t.updatedAt?('最後更新：'+esc(t.updatedBy||'')+' · '+fmt(t.updatedAt)):'尚未更新'} <span class="saved" id="s-${p.id}">已儲存 ✓</span>
+   <button class="btn gh sm" style="float:right" onclick="showHist('${p.id}')">📜 歷週紀錄</button></div>
+  <div id="hist-${p.id}"></div>
+ </div>`;
 }
-function renderLead(){
-  const mains=JUDGES.filter(j=>j.type==='main');
-  const ids=mains.map(j=>j.id);
-  const rows=TEAMS.map(t=>{
-    const per=mains.map(j=>{ const s=allScores.find(x=>x.judgeId===j.id&&x.teamId===t.id); return {nm:j.short.split(' ')[0], v:s?s.total:null}; });
-    const got=per.filter(p=>p.v!=null);
-    const sum=got.reduce((a,p)=>a+p.v,0);
-    const avg=got.length?sum/got.length:0;
-    return {name:t.name, per, n:got.length, sum, avg};
-  }).sort((a,b)=>b.sum-a.sum);
-  const totalCells=TEAMS.length*ids.length;
-  const filled=allScores.filter(s=>ids.includes(s.judgeId)).length;
-  document.getElementById('stProg').textContent=Math.round(filled/totalCells*100)+'%';
-  document.getElementById('leadBox').innerHTML=rows.map((t,i)=>{
-    const detail=t.per.map(p=>`${p.nm} ${p.v!=null?p.v:'—'}`).join('　');
-    const medal=['🥇','🥈','🥉'][i]||(i+1);
-    const mbadge=['<span class="medal m1">金獎</span>','<span class="medal m2">銀獎</span>','<span class="medal m3">銅獎</span>'][i]||'';
-    return `<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${medal}</div>
-      <div class="info"><div class="nm">${t.name}${mbadge}</div><div class="sub">${detail}</div></div>
-      <div class="pts">${t.sum}<span style="font-size:13px;font-weight:600;color:var(--mut)">/300</span></div></div>`;}).join('');
-  const pf=document.getElementById('progFill'); if(pf) pf.style.width=Math.round(filled/totalCells*100)+'%';
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function taskBlock(p,t){
+ const tasks=t.tasks||[];const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);const canAssign=isLead||isPM(p);
+ const open=tasks.filter(x=>!x.done).length;const noreply=tasks.filter(x=>!x.reply&&!x.done).length;
+ const who=[pmOf(p),...collabList(p)];
+ let h=`<div class="sec"><div class="sl" style="color:var(--navy)">📋 指派任務（指令）${open?` <span class="pillst" style="background:#e83a8618;color:var(--pink)">${open} 未完成</span>`:''}${noreply?` <span class="pillst" style="background:#c07a1218;color:var(--obs)">${noreply} 待回覆</span>`:''}</div>`;
+ h+= tasks.length?tasks.map(tk=>`<div class="taskb ${tk.done?'done':''}">
+   <div style="display:flex;gap:8px;align-items:flex-start"><span class="tck" style="color:${tk.done?'var(--teal)':'var(--mut)'}" ${(ed||isLead)?`onclick="toggleTask('${p.id}','${tk.id}')"`:''}>${tk.done?'✓':'☐'}</span>
+    <div style="flex:1"><div class="tt">${esc(tk.text)}</div><div class="muted" style="font-size:11px">${esc(tk.by||'')} 指派${tk.assignee?' 給 <b style="color:var(--km)">'+esc(pn(tk.assignee))+'</b>':''}${tk.due?' · 期限 '+esc(tk.due):''}${(!tk.reply&&!tk.done)?' · <span style="color:var(--obs);font-weight:800">待回覆</span>':''}${tk.done&&tk.doneBy?' · '+esc(tk.doneBy)+' 完成':''}</div></div>
+    ${canAssign?`<span class="tck" style="color:var(--warn)" onclick="delTask('${p.id}','${tk.id}')">✕</span>`:''}</div>
+   ${tk.reply?`<div class="treply">💬 ${esc(tk.reply)} <span class="muted">— ${esc(tk.replyBy||'')}</span></div>`:''}
+   ${(ed&&!isLead)?`<div class="row" style="margin:7px 0 0 26px;gap:6px"><input id="rp-${p.id}-${tk.id}" placeholder="回覆：收到 / 預計完成 / 有問題…" value="${esc(tk.reply||'')}" style="flex:1"><button class="btn sm gh" onclick="replyTask('${p.id}','${tk.id}')">送出回覆</button></div>`:''}
+  </div>`).join(''):'<div class="muted" style="font-size:13px">尚無指派任務</div>';
+ if(canAssign)h+=`<div style="margin-top:10px"><input id="nt-${p.id}" placeholder="要交付的任務內容（指令）…" style="width:100%"><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap"><label style="width:auto">指派給</label><select id="nta-${p.id}" style="width:auto">${who.map(k=>`<option value="${k}">${esc(pn(k))}${k===pmOf(p)?'（負責人）':'（協作）'}</option>`).join('')}</select><input id="ntd-${p.id}" type="date" style="width:auto"><button class="btn sm" onclick="addTask('${p.id}')">＋ 指派</button></div></div>`;
+ h+=`</div>`;return h;
 }
-function refreshControlUI(){
-  const bs=document.getElementById('btnScore'), bv=document.getElementById('btnVote');
-  if(bs) bs.textContent='評分：'+(control.scoringOpen?'開放中（點擊關閉）':'已關閉（點擊開放）');
-  if(bv) bv.textContent='投票：'+(control.votingOpen?'開放中（點擊關閉）':'已關閉（點擊開放）');
-  renderVote();
-  if(curJudge && document.getElementById('s-jlist').classList.contains('active')) renderJudgeList();
+function addTask(pid){const el=document.getElementById("nt-"+pid);const txt=el?el.value.trim():"";if(!txt)return;const de=document.getElementById("ntd-"+pid);const due=de?de.value:"";const ae=document.getElementById("nta-"+pid);const asg=ae?ae.value:"";const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:txt,by:me.name,at:Date.now(),due:due,assignee:asg,done:false});save(pid,{tasks:tasks});const pp=PROJECTS.find(x=>x.id===pid);const target=asg||handlerOf(pp);notify(target,"【追蹤系統】指派新任務："+pp.n,me.name+" 指派任務給你："+txt+(due?"（期限 "+due+"）":"")+"，請登入追蹤系統回覆。");}
+function toggleTask(pid,tid){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).map(x=>x.id===tid?Object.assign({},x,{done:!x.done,doneBy:!x.done?me.name:"",doneAt:!x.done?Date.now():null}):x);save(pid,{tasks:tasks});}
+function delTask(pid,tid){if(!confirm("刪除這個任務？"))return;const t=TRACK[pid]||{};save(pid,{tasks:(t.tasks||[]).filter(x=>x.id!==tid)});}
+function replyTask(pid,tid){const el=document.getElementById("rp-"+pid+"-"+tid);const r=el?el.value.trim():"";const t=TRACK[pid]||{};const tasks=(t.tasks||[]).map(x=>x.id===tid?Object.assign({},x,{reply:r,replyBy:me.name,replyAt:Date.now()}):x);save(pid,{tasks:tasks});}
+function punkBlock(p,t){
+ const pk=t.punk||{};const punk=me.role==="punk";
+ const lab=v=>v==="ok"?'<span style="color:var(--teal);font-weight:800">✓ 通過</span>':v==="no"?'<span style="color:var(--warn);font-weight:800">✗ 有問題</span>':'<span class="muted">待確認</span>';
+ const sel=(f,v)=>`<select style="width:auto" onchange="savePunk('${p.id}',{${f}:this.value})"><option value="" ${!v?'selected':''}>待確認</option><option value="ok" ${v==='ok'?'selected':''}>通過</option><option value="no" ${v==='no'?'selected':''}>有問題</option></select>`;
+ let h=`<div class="sec"><div class="sl" style="color:var(--obs)">🛡 PUNK 資安 / 權限確認 <span class="muted" style="font-weight:400">· 每月一次</span></div>`;
+ if(punk)h+=`<div class="row"><label>資安</label>${sel("sec",pk.sec)}</div><div class="row"><label>權限</label>${sel("perm",pk.perm)}</div><div style="margin-top:6px"><textarea onchange="savePunk('${p.id}',{advice:this.value})" placeholder="資安/權限建議（可留空）…">${esc(pk.advice||"")}</textarea></div>`;
+ else h+=`<div style="font-size:14px">資安：${lab(pk.sec)}　·　權限：${lab(pk.perm)}</div>${pk.advice?`<div class="treply" style="margin-left:0;margin-top:7px">💬 PUNK 建議：${esc(pk.advice)}</div>`:""}${pk.by?`<div class="muted" style="font-size:11px;margin-top:5px">${esc(pk.by)}${pk.at?" · "+fmt(pk.at):""}</div>`:""}`;
+ h+=`</div>`;return h;
 }
-function toggleCtl(key){
-  control[key]=!control[key];
-  if(db) db.collection('control').doc('state').set(control,{merge:true});
-  refreshControlUI();
+function savePunk(pid,patch){const t=TRACK[pid]||{};const pk=Object.assign({},t.punk||{},patch,{by:me.name,at:Date.now()});save(pid,{punk:pk});}
+function isPM(p){return pmOf(p)===me.k;}
+function canDelegate(p){return me.role==="admin"||me.role==="lead"||isPM(p);}
+function handlerOf(p){const t=TRACK[p.id]||{};return t.handler||pmOf(p);}
+function collabList(p){return editorsOf(p).filter(k=>k!==pmOf(p)&&!(p.team&&p.team.includes(k)));}
+function pn(k){return person(k)?person(k).name.replace("（隊長）",""):k;}
+function handlerBlock(p,t){
+ const cur=t.handler||pmOf(p);const opts=[pmOf(p),...collabList(p)];const del=canDelegate(p);const isC=cur!==pmOf(p)&&!(p.team&&p.team.includes(cur));
+ let h=`<div class="sec"><div class="sl">👤 目前追蹤對象（誰在推進）${isC?' <span class="pillst" style="background:#7c53d61a;color:var(--km)">已分派協作</span>':''}</div>`;
+ if(del){
+  h+=`<div class="row" style="flex-wrap:wrap"><label>由誰推進</label><select style="width:auto" onchange="setHandler('${p.id}',this.value)">${opts.map(k=>`<option value="${k}" ${k===cur?'selected':''}>${esc(pn(k))}${k===pmOf(p)?'（負責人）':'（協作）'}</option>`).join("")}</select>${(isPM(p)||me.role==="admin")?`<button class="btn gh sm" onclick="addCollab('${p.id}')">＋ 指派協作者</button>`:''}</div><div class="muted" style="font-size:11.5px">負責人可把此案分派給協作者；分派後就追協作者。</div>`;
+ }else h+=`<div style="font-size:15px;font-weight:800">${esc(pn(cur))} <span class="muted" style="font-weight:400">${isC?"（協作者）":"（負責人）"}</span></div>`;
+ h+=`</div>`;return h;
+}
+function setHandler(pid,key){save(pid,{handler:key});const pp=PROJECTS.find(x=>x.id===pid);if(pp&&key!==pmOf(pp))notify(key,"【追蹤系統】你被設為追蹤對象："+pp.n,me.name+" 把「"+pp.n+"」交給你推進，請登入更新進度。");}
+function addCollab(pid){const nm=prompt("指派協作者的名字（他用「名字＋8888」登入、首次改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("填他的 Email（收通知用，會一併存到後台；可留空）：")||"";const tk=prompt("要交付給他的任務／工作內容（可留空）：")||"";togPerm(pid,"editors",k);if(em.trim())setMail(k,em.trim());const pp=PROJECTS.find(x=>x.id===pid);if(tk.trim()){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:tk.trim(),by:me.name,at:Date.now(),due:"",assignee:k,done:false});save(pid,{tasks:tasks});}notify(k,"【追蹤系統】你被指派為協作："+(pp?pp.n:""),me.name+" 指派你協作「"+(pp?pp.n:"")+"」"+(tk.trim()?"，任務：「"+tk.trim()+"」":"")+"，請登入追蹤系統。",em);alert("✅ 已加入協作者"+(tk.trim()?"並指派任務":"")+(em.trim()?"、Email 已存後台":"")+"。");}
+function decBlock(p,t){
+ const dec=t.decision||"go";const dm=decMeta(dec);const prop=t.proposal;const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);
+ let h=`<div class="decbar dec-${dec}"><span>導入決策：${dm[1]}</span>`;
+ if(isLead)h+=`<select style="width:auto;margin-left:auto" onchange="setDecision('${p.id}',this.value)">${DECIDE.map(d=>`<option value="${d[0]}" ${d[0]===dec?'selected':''}>${d[1]}</option>`).join("")}</select>`;
+ h+=`</div>`;
+ if(prop){
+  h+=`<div class="decbar dec-${prop.type}" style="margin-top:8px;flex-wrap:wrap"><span>🔔 已建議「${decMeta(prop.type)[1]}」：${esc(prop.reason)} <span class="muted">（${esc(prop.by)}）</span></span>`;
+  if(isLead)h+=`<span style="margin-left:auto;white-space:nowrap"><button class="btn sm" onclick="approveProp('${p.id}')">核准</button> <button class="btn gh sm" onclick="rejectProp('${p.id}')">駁回</button></span>`;
+  else if(ed)h+=`<button class="btn gh sm" style="margin-left:auto" onclick="withdrawProp('${p.id}')">撤回建議</button>`;
+  else h+=`<span class="muted" style="margin-left:auto">等主管裁決</span>`;
+  h+=`</div>`;
+ }else if(ed&&!isLead){
+  h+=`<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:140px">覺得這案不該繼續推？可建議主管裁決：</span><button class="btn gh sm" onclick="propose('${p.id}','hold')">建議暫停</button><button class="btn gh sm" onclick="propose('${p.id}','stop')">建議叫停</button></div>`;
+ }
+ if(dec!=="go")h+=`<div class="sec" style="border:0;padding-top:8px"><div class="sl" style="color:var(--warn)">${dm[1]} 原因（主管裁定）</div>${isLead?`<textarea onchange="save('${p.id}',{decisionReason:this.value})" placeholder="裁定原因…">${esc(t.decisionReason||'')}</textarea>`:`<div class="ro">${esc(t.decisionReason||'—')}</div>`}</div>`;
+ return h;
+}
+function propose(id,type){const r=prompt(type==="stop"?"建議『叫停·不導入』的原因（會送給主管裁決）：":"建議『暫停觀察』的原因（會送給主管裁決）：");if(!r)return;save(id,{proposal:{type:type,reason:r,by:me.name,at:Date.now()}});alert("✅ 已送出建議，主管會在看板收到通知並裁決。");}
+function withdrawProp(id){save(id,{proposal:firebase.firestore.FieldValue.delete()});}
+function approveProp(id){const t=TRACK[id]||{};const pr=t.proposal;if(!pr)return;save(id,{decision:pr.type,decisionReason:pr.reason,proposal:firebase.firestore.FieldValue.delete()});}
+function rejectProp(id){save(id,{proposal:firebase.firestore.FieldValue.delete()});}
+function setDecision(id,v){save(id,{decision:v});}
+function navP(d){pIdx+=d;renderApp();}
+function livePct(id,v){const c=document.getElementById("c-"+id);if(!c)return;const b=c.querySelector(".prog i");if(b)b.style.width=v+"%";const s=document.getElementById("pct-"+id);if(s)s.textContent=v+"%";}
+function toggleMile(id,m){const t=TRACK[id]||{};const ms=Object.assign({},t.miles||{});ms[m]=!ms[m];save(id,{miles:ms});}
+function togglePunk(id,m,f){const t=TRACK[id]||{};const pk=Object.assign({},t.punk||{});pk[m]=Object.assign({},pk[m]||{});pk[m][f]=!pk[m][f];save(id,{punk:pk});}
+function save(id,patch){patch.updatedAt=firebase.firestore.FieldValue.serverTimestamp();patch.updatedBy=me.name;db.collection("track").doc(id).set(patch,{merge:true}).then(()=>{const s=document.getElementById("s-"+id);if(s){s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1200);}}).catch(e=>alert("儲存失敗："+e.message));}
+function notify(key,subj,body,emailOverride){try{if(!NOTIFY_URL)return;const to=(emailOverride&&emailOverride.trim())||(MAIL&&MAIL[key]);if(!to)return;fetch(NOTIFY_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({to:to,subject:subj,body:body})});}catch(e){}}
+function submitWeek(id){
+ const t=TRACK[id]||{};const wk=weekKey();
+ const snap={projId:id,week:wk,weekLabel:weekLabel(wk),status:t.status||"idle",decision:t.decision||"go",decisionReason:t.decisionReason||"",progress:t.progress||0,miles:t.miles||{},work:t.week||"",nextStep:t.nextStep||"",blocker:t.blocker||"",due:t.due||"",submittedBy:me.name,submittedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ db.collection("treports").doc(id+"__"+wk).set(snap).then(()=>{
+   db.collection("track").doc(id).set({submittedWeek:wk,submittedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:me.name},{merge:true});
+   alert("✅ 本週回報已送出！主管即時看到。");
+ }).catch(e=>alert("送出失敗："+e.message));
+}
+function showHist(id){
+ const box=document.getElementById("hist-"+id);if(!box)return;
+ if(box.innerHTML){box.innerHTML="";return;}
+ box.innerHTML='<div class="muted" style="margin-top:8px">載入中…</div>';
+ db.collection("treports").where("projId","==",id).get().then(s=>{
+  const rows=[];s.forEach(d=>rows.push(d.data()));rows.sort((a,b)=>b.week<a.week?-1:1);
+  box.innerHTML='<div class="sl" style="margin-top:12px">📜 歷週回報</div>'+(rows.length?rows.map(r=>`<div class="hist"><b>${esc(r.weekLabel||r.week)}</b> · 進度 ${r.progress||0}% · ${stMeta(r.status)[1]} · ${decMeta(r.decision)[1]} <span class="muted">· ${esc(r.submittedBy||'')} ${r.submittedAt?fmt(r.submittedAt):''}</span>${r.work?'<div style="margin-top:4px">✍️ '+esc(r.work)+'</div>':''}${r.blocker?'<div style="margin-top:3px;color:var(--warn)">🚧 '+esc(r.blocker)+'</div>':''}</div>`).join(""):'<div class="muted">尚無歷週紀錄</div>');
+ }).catch(e=>{box.innerHTML='<div class="muted">讀取失敗：'+esc(e.message)+'</div>';});
+}
+function changePw(){const np=prompt("輸入新密碼（"+me.name+"）\n規則：至少 8 碼，含大寫/小寫/數字/符號 ≥3 種：");if(!np)return;const er=pwError(np.trim());if(er){alert(er);return;}const patch={};patch[me.k]=np.trim();db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>alert("密碼已更新")).catch(e=>alert("失敗："+e.message));}
+
+/* ---- admin (主管) ---- */
+function setTab(t){adminTab=t;pIdx=0;renderAdmin();}
+function renderAdmin(){
+ const el=document.getElementById("app");
+ el.innerHTML=topBar()+`<div class="tabs">
+  <button class="${adminTab==='board'?'on':''}" onclick="setTab('board')">📊 總覽</button>
+  <button class="${adminTab==='pager'?'on':''}" onclick="setTab('pager')">📄 逐案檢視</button>
+  <button class="${adminTab==='week'?'on':''}" onclick="setTab('week')">🗓 本週會議</button>
+  <button class="btn gh sm" style="margin-left:auto" onclick="exportCSV()">⬇ 匯出 CSV</button></div><div id="ab"></div>`;
+ renderAB();
+}
+function renderBackend(){
+ const el=document.getElementById("app");
+ el.innerHTML=topBar()+`<div class="banner">⚙ <b>系統後台</b>　這裡管理：每案<b>負責人／可輸入／可檢視</b>、<b>指定名單外的人</b>、<b>忘記密碼重設</b>。（要看業務進度、裁決、指派任務，請改用「主管」身分登入）</div>`+permView();
+}
+function renderAB(){
+ const b=document.getElementById("ab");if(!b)return;
+ if(adminTab==="week"){b.innerHTML=weekView();return;}
+ if(adminTab==="perm"){b.innerHTML=permView();return;}
+ if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));b.innerHTML=filterBar(true)+pager(ps);return;}
+ // board
+ let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0;
+ PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(submittedThisWeek(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.tasks||[]).filter(x=>!x.done).length);tkr+=((t.tasks||[]).filter(x=>!x.reply&&!x.done).length);});
+ const stats=`<div class="stats">
+  <div class="stat" style="border-color:${rep>=24?'#12b88655':'#ff547055'}"><div class="n" style="color:${rep>=24?'var(--teal)':'var(--warn)'}">${rep}/24</div><div class="l">本週已送出</div></div>
+  <div class="stat"><div class="n">${Math.round(sum/24)}%</div><div class="l">整體平均進度</div></div>
+  <div class="stat"><div class="n" style="color:var(--go)">${cnt.go}</div><div class="l">進行中</div></div>
+  <div class="stat"><div class="n" style="color:var(--warn)">${cnt.warn}</div><div class="l">卡關</div></div>
+  <div class="stat"><div class="n" style="color:var(--ok)">${cnt.ok}</div><div class="l">已完成</div></div>
+  <div class="stat"><div class="n" style="color:var(--stop)">${stop}</div><div class="l">已叫停</div></div>
+  <div class="stat" style="border-color:${pend?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">🔔 ${pend}</div><div class="l">待裁決建議</div></div>
+  <div class="stat"><div class="n" style="color:var(--pink)">${tk}</div><div class="l">指派任務未完成</div></div>
+  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">任務待各組回覆</div></div></div>`;
+ let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));
+ const rows=ps.map(p=>{const t=TRACK[p.id]||{};const sm=stMeta(t.status||"idle");const dm=decMeta(t.decision||"go");const sub=submittedThisWeek(t);
+  return `<tr class="${sub?'':'norep'}"><td><b>${esc(p.n)}</b>${t.proposal?' <span class="pillst" style="background:#e8a33d22;color:var(--obs)">🔔待裁決</span>':''}<div class="muted" style="font-size:11px">${esc(p.lead)}${p.medal?' · '+esc(p.medal):''}</div></td>
+   <td><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n.replace('・產品孵化','')}</span></td>
+   <td>${esc(pmLabel(p))}</td>
+   <td>${(function(){const hk=handlerOf(p);const del=hk!==pmOf(p)&&!(p.team&&p.team.includes(hk));return del?'<span style="color:var(--km);font-weight:800">'+esc(pn(hk))+'</span><div class="muted" style="font-size:10px">協作</div>':'<span class="muted">'+esc(pn(hk))+'</span>';})()}</td>
+   <td>${sub?'<span class="pillst" style="background:#12b88622;color:var(--teal)">已送出</span>':'<span class="pillst" style="background:#ff547022;color:var(--warn)">未送出</span>'}</td>
+   <td><span class="pillst" style="background:${cvar(sm[2])}22;color:${cvar(sm[2])}">${sm[1]}</span></td>
+   <td><span class="pillst" style="background:${t.decision==='stop'?'#ff547022':t.decision==='hold'?'#e8a33d22':'#4c8dff22'};color:${t.decision==='stop'?'var(--stop)':t.decision==='hold'?'var(--hold)':'var(--go)'}">${dm[1]}</span></td>
+   <td><div class="prog" style="min-width:64px"><i style="width:${t.progress||0}%"></i></div><span class="muted">${t.progress||0}%</span></td>
+   <td style="max-width:220px">${esc(t.week||'')||'<span class=muted>—</span>'}</td>
+   <td style="max-width:150px;color:${t.blocker?'var(--warn)':'inherit'}">${esc(t.blocker||'')||'<span class=muted>—</span>'}</td></tr>`;}).join("");
+ b.innerHTML=stats+filterBar(false)+`<div class="tb-wrap"><table><thead><tr><th>專案</th><th>去向</th><th>負責人</th><th>追蹤對象</th><th>本週</th><th>狀態</th><th>決策</th><th>進度</th><th>本週做了什麼</th><th>卡關</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function filterBar(pg){return `<div class="filters"><select onchange="fBucket=this.value;pIdx=0;renderAB()"><option value="">全部去向</option>${Object.keys(BUCKETS).map(k=>`<option value="${k}" ${fBucket===k?'selected':''}>${BUCKETS[k].n}</option>`).join("")}</select><select onchange="fOwner=this.value;pIdx=0;renderAB()"><option value="">全部負責人</option>${MANAGERS.filter(o=>o.role==='pm').map(o=>`<option value="${o.k}" ${fOwner===o.k?'selected':''}>${esc(o.name)}</option>`).join("")}</select>${pg?'<span class="muted">逐案檢視 · 開會一頁一頁看</span>':''}</div>`;}
+function weekView(){
+ const props=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>x.t.proposal);
+ const norep=PROJECTS.filter(p=>!submittedThisWeek(TRACK[p.id]));
+ const upd=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>submittedThisWeek(x.t));
+ const blk=upd.filter(x=>x.t.blocker);const stop=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>(x.t.decision||"go")!=="go");
+ let h=`<div class="banner">🗓 本週 ${weekLabel(weekKey())} · 已送出 ${upd.length}/24</div>`;
+ if(props.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">🔔 待主管裁決（${props.length}）—— 下層建議叫停/暫停，請裁決</div>${props.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> · 建議 ${decMeta(x.t.proposal.type)[1]} <span class="muted">by ${esc(x.t.proposal.by)}</span><div style="margin-top:2px">${esc(x.t.proposal.reason)}</div></div>`).join("")}</div>`;
+ h+=`<div class="wk" style="border-color:${norep.length?'#e8a33d':'#12b886'}"><div class="wn" style="color:${norep.length?'var(--obs)':'var(--teal)'}">📣 本週還沒送出（${norep.length}）</div>${norep.length?'<div style="margin-top:6px;line-height:1.8">'+norep.map(p=>esc(p.n)+' <span class="muted">('+esc(person(p.pm)?person(p.pm).name:p.pm)+')</span>').join('　·　')+'</div>':'<div class="muted" style="margin-top:6px">全部都送出了 🎉</div>'}</div>`;
+ h+=`<div class="wk" style="border-color:var(--warn)"><div class="wn" style="color:var(--warn)">🚧 卡關（${blk.length}）</div>${blk.length?blk.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> <span class="muted">· ${esc(pmLabel(x.p))}</span><div style="color:var(--warn);margin-top:2px">${esc(x.t.blocker)}</div></div>`).join(''):'<div class="muted" style="margin-top:6px">無</div>'}</div>`;
+ if(stop.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">⏸ 暫停/叫停（${stop.length}）</div>${stop.map(x=>`<div style="margin-top:6px"><b>${esc(x.p.n)}</b> · ${decMeta(x.t.decision)[1]} <span class="muted">${x.t.decisionReason?'· '+esc(x.t.decisionReason):''}</span></div>`).join('')}</div>`;
+ h+=`<div class="muted" style="margin:12px 4px 8px;font-weight:800">本週送出內容（${upd.length}）</div>`;
+ h+=upd.length?upd.map(x=>`<div class="wk"><div class="wn">${esc(x.p.n)} <span class="muted" style="font-size:12px">· ${esc(pmLabel(x.p))} · 進度 ${x.t.progress||0}%</span></div>${x.t.week?'<div style="margin-top:5px">✍️ '+esc(x.t.week)+'</div>':''}${x.t.nextStep?'<div style="margin-top:3px;color:var(--mut)">➡️ '+esc(x.t.nextStep)+'</div>':''}</div>`).join(''):'<div class="muted">本週尚無送出</div>';
+ return h;
+}
+function permView(){
+ const ppl=allPeople().filter(x=>x.role==='pm'||x.role==='collab');
+ return `<div class="banner">🔑 <b>角色與權限設定</b>　可調整每案的<b>負責人</b>、<b>可輸入</b>、<b>可檢視</b>；也能<b>指定名單外的人</b>（他用「名字＋8888」登入，首次登入需改密碼）。主管與 PUNK 一律看全部。</div>`+
+ `<div class="wk"><div class="wn">🔑 帳號 · Email · 密碼</div><div class="muted" style="font-size:12px;margin:5px 0 9px">填 email 才能收通知（Email 通知目前：${NOTIFY_URL?'<b style=color:var(--teal)>已啟用</b>':'<b style=color:var(--warn)>未設定，見說明</b>'}）。重設＝把密碼設回 8888，對方下次登入需改新密碼。綠點＝已自訂密碼。</div><div style="display:flex;flex-wrap:wrap;gap:8px">${allPeople().map(x=>`<div style="display:flex;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:6px 9px;font-size:12.5px;margin-bottom:6px;flex-wrap:wrap"><span style="width:8px;height:8px;border-radius:50%;background:${(PINS&&PINS[x.k])?'var(--teal)':'#c3c9d6'};flex:none"></span><b style="min-width:110px">${esc((x.name||'').replace('（隊長）',''))}</b><input placeholder="email（收通知用）" value="${esc((MAIL&&MAIL[x.k])||'')}" onchange="setMail('${x.k}',this.value)" style="flex:1;min-width:160px;padding:6px"><button class="btn gh sm" onclick="resetPw('${x.k}')">重設密碼</button></div>`).join('')}</div></div>`+
+ PROJECTS.map(p=>{const ed=editorsOf(p),vw=viewersOf(p),curpm=pmOf(p);
+  const chips=(field,arr)=>ppl.map(x=>`<span class="chip ${arr.includes(x.k)?'s':'x'}" onclick="togPerm('${p.id}','${field}','${x.k}')">${esc((x.name||'').replace('（隊長）',''))}</span>`).join('')+` <span class="chip s" style="border:1px dashed var(--teal)" onclick="addAssigned('${p.id}','${field}')">＋ 指定他人</span>`;
+  return `<div class="wk"><div class="wn">${esc(p.n)} <span class="muted" style="font-size:12px">· ${BUCKETS[p.bk].n}</span></div>
+   <div class="row"><label>負責人</label>${p.team?'<span style="font-weight:800">RAE · IAN · GIBBY（三人共管）</span>':`<select style="width:auto" onchange="togPM('${p.id}',this.value)">${allPeople().filter(x=>x.role==='pm').map(x=>`<option value="${x.k}" ${x.k===curpm?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`}</div>
+   <div style="margin-top:7px"><span class="muted" style="font-size:11px">可輸入（editors）</span><div style="margin-top:4px">${chips('editors',ed)}</div></div>
+   <div style="margin-top:7px"><span class="muted" style="font-size:11px">可檢視（viewers · 額外開放看的人）</span><div style="margin-top:4px">${chips('viewers',vw)}</div></div>
+  </div>`;}).join("");
+}
+function togPM(pid,key){const cur=Object.assign({},PERM[pid]||{});cur.pm=key;const patch={};patch[pid]=cur;db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
+function addAssigned(pid,field){const nm=prompt("輸入要指定的人的名字（他可用「名字＋8888」登入，首次需改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("順便填他的 Email（收通知用，可留空）：")||"";togPerm(pid,field,k);if(em.trim())setMail(k,em.trim());}
+function resetPw(key){if(!confirm("將「"+key+"」的密碼重設為 8888？對方下次登入需重新設定新密碼。"))return;const patch={};patch[key]=firebase.firestore.FieldValue.delete();db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>alert("✅ 已重設為 8888")).catch(e=>alert("失敗："+e.message));}
+function setMail(key,val){val=(val||"").trim();MAIL[key]=val;const patch={};patch[key]=val;db.collection("control").doc("trackmail").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
+function togPerm(pid,field,key){
+ const cur=Object.assign({},PERM[pid]||{});const p=PROJECTS.find(x=>x.id===pid);
+ let arr=(cur[field]||(field==='editors'?[p.pm,p.lead]:[])).slice();
+ if(arr.includes(key))arr=arr.filter(x=>x!==key);else arr.push(key);
+ cur[field]=arr;const patch={};patch[pid]=cur;
+ db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));
 }
 function exportCSV(){
-  let csv="編號,組名,分類";
-  JUDGES.forEach(j=>csv+=','+j.name);
-  csv+=",具名評審平均,人氣票數\n";
-  const mains=JUDGES.filter(j=>j.type==='main');
-  TEAMS.forEach(t=>{
-    const row=["#"+t.id, '"'+t.name+'"', t.cat];
-    JUDGES.forEach(j=>{ const s=allScores.find(x=>x.judgeId===j.id&&x.teamId===t.id); row.push(s?s.total:''); });
-    let sum=0,c=0;
-    mains.forEach(j=>{ const s=allScores.find(x=>x.judgeId===j.id&&x.teamId===t.id); if(s){sum+=s.total;c++;} });
-    row.push(c?(sum/c).toFixed(1):''); row.push(voteCounts[t.id]||0);
-    csv+=row.join(',')+"\n";
-  });
-  const blob=new Blob(["﻿"+csv],{type:'text/csv'}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='北祥黑客松2026_成績.csv'; a.click();
+ const head=["專案","去向","負責人","追蹤對象","隊長","本週送出","狀態","決策","叫停原因","進度%","本週做了什麼","下一步","卡關","預期完成","更新者","更新時間"];
+ const rows=PROJECTS.map(p=>{const t=TRACK[p.id]||{};return [p.n,BUCKETS[p.bk].n,pmLabel(p),pn(handlerOf(p)),p.lead,submittedThisWeek(t)?"是":"否",stMeta(t.status||"idle")[1],decMeta(t.decision||"go")[1],t.decisionReason||"",t.progress||0,t.week||"",t.nextStep||p.next,t.blocker||"",t.due||"",t.updatedBy||"",t.updatedAt?fmt(t.updatedAt):""];});
+ const csv=[head,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="專案追蹤_"+new Date().toISOString().slice(0,10)+".csv";a.click();
 }
-
-/* ---------- 人氣投票（員編） ---------- */
-function initVote(){ renderVote(); }
-function voteOrderList(){ return TEAMS; }
-function normAcc(s){ return (s||'').toLowerCase().replace(/[^a-z0-9]/g,' ').split(/\s+/).filter(Boolean).sort().join(''); }
-function setVoter(){
-  const acc=normAcc(document.getElementById('empAcc').value);
-  const pw=(document.getElementById('empPw').value||'').trim().toUpperCase();
-  const err=document.getElementById('voteErr'); err.textContent='';
-  if(!acc||!pw){ err.textContent='請輸入帳號與密碼'; voterId=null; renderVote(); return; }
-  const emp=EMPLOYEES.find(e=>normAcc(e.n)===acc && e.p.toUpperCase()===pw);
-  if(!emp){ err.textContent='帳號或密碼錯誤，請再試一次'; voterId=null; renderVote(); return; }
-  voterId=emp.p; voterName=emp.n;
-  if(db){ db.collection('votes').doc(voterId).get().then(d=>{ voterVoted=d.exists?d.data().teamId:null; renderVote(); }).catch(()=>renderVote()); }
-  renderVote();
-}
-function renderVote(){
-  const msg=document.getElementById('voteMsg'), list=document.getElementById('voteList'), idBox=document.getElementById('voteIdBox');
-  if(!list) return;
-  if(!db){ msg.style.display='block'; msg.textContent='⚠ 尚未設定 Firebase，無法投票。'; idBox.style.display='none'; list.innerHTML=''; return; }
-  if(!control.votingOpen){ msg.style.display='block'; msg.textContent='投票尚未開放，敬請期待 🔥'; idBox.style.display='none'; list.innerHTML=''; return; }
-  msg.style.display='none'; idBox.style.display='block';
-  const st=document.getElementById('voterStatus');
-  if(st){
-    if(!voterId) st.textContent='';
-    else if(voterVoted) st.textContent='✓ '+(voterName||voterId)+' 已投票，謝謝你！';
-    else st.textContent='哈囉 '+(voterName||voterId)+'，請選一組投票';
-  }
-  list.innerHTML=voteOrderList().map(t=>{
-    const isV=voterVoted===t.id;
-    const cls=voterVoted?(isV?'voteBtn voted':'voteBtn disabled'):'voteBtn';
-    return `<div class="vbar"><div class="vt"><span class="nm">${t.name}</span></div>
-      <div style="font-size:11px;color:var(--mut);margin-top:3px">${t.tag||''}</div>
-      <div class="${cls}" onclick="castVote(${t.id})">${isV?'✓ 已投這組':'投這組'}</div></div>`;}).join('');
-}
-function castVote(id){
-  if(!control.votingOpen||!db) return;
-  const err=document.getElementById('voteErr'); err.textContent='';
-  if(!voterId){ err.textContent='請先在上方輸入員編並按「確認員編」'; window.scrollTo(0,0); return; }
-  if(voterVoted){ err.textContent='此員編已投過票，無法再投'; return; }
-  db.collection('votes').doc(voterId).set({empId:voterId, name:voterName||'', teamId:id, at:Date.now()})
-    .then(()=>{ voterVoted=id; renderVote(); voteCelebrate(TEAMS.find(t=>t.id===id).name); })
-    .catch(e=>{ err.textContent = (e.code==='permission-denied') ? '此員編已投過或不在名單內' : '投票失敗：'+e.message; });
-}
-function voteCelebrate(name){
-  const o=document.createElement('div'); o.className='vtoast';
-  o.innerHTML=`<div class="vc"><div class="big">🎉🔥</div><div class="t1">投票成功！</div><div class="t2">你投給了 ${name}</div></div>`;
-  document.body.appendChild(o);
-  const ems=['🔥','💖','🎉','⭐','✨','🏆'];
-  for(let i=0;i<26;i++){ const c=document.createElement('div'); c.className='confetti'; c.textContent=ems[i%ems.length];
-    c.style.left=(Math.random()*100)+'vw'; c.style.animationDuration=(1+Math.random()*1.3)+'s'; c.style.animationDelay=(Math.random()*0.35)+'s';
-    document.body.appendChild(c); setTimeout(()=>c.remove(),2800); }
-  setTimeout(()=>o.remove(),1900);
-}
-function renderPop(){
-  const box=document.getElementById('popBox'); if(!box) return;
-  const top=TEAMS.map(t=>({name:t.name,v:voteCounts[t.id]||0})).sort((a,b)=>b.v-a.v).slice(0,5);
-  box.innerHTML=top.map((t,i)=>`<div class="lrow ${i<3?'top'+(i+1):''}"><div class="rk">${i+1}</div>
-    <div class="info"><div class="nm">${t.name}</div></div><div class="pts">${t.v}</div></div>`).join('');
-}
-
-function renderPwForm(){
-  const box=document.getElementById('pwBox'); if(!box) return;
-  let html=JUDGES.map(j=>{
-    const role=(j.type==='mystery'?'神秘評審（填真名才會出現在登入頁）':j.role);
-    const nm=(j.name||'').replace(/"/g,'&quot;');
-    let block=`<div style="margin:14px 0 4px;font-size:12px;color:var(--teal);font-weight:700">${role}</div>
-      <input type="text" id="nm_${j.id}" value="${nm}" placeholder="姓名" style="margin-bottom:6px">
-      <input type="text" id="pw_${j.id}" value="" placeholder="重設密碼（留空＝不變更）">`;
-    if(j.type==='mystery'){
-      const ti=(j.title||'').replace(/"/g,'&quot;');
-      block+=`<input type="text" id="ti_${j.id}" value="${ti}" placeholder="職稱（選填，會顯示在卡片上）" style="margin-top:6px">`;
-    }
-    return block;
-  }).join('');
-  html+=`<div style="margin:14px 0 4px;font-size:12px;color:var(--teal);font-weight:700">主辦後台密碼</div><input type="text" id="pw_admin" value="" placeholder="重設後台密碼（留空＝不變更）">`;
-  html+=`<button class="btn" onclick="savePins()">儲存姓名與密碼</button><div class="err" id="pwErr"></div>`;
-  box.innerHTML=html;
-}
-function savePins(){
-  const pins={}, names={}, titles={};
-  JUDGES.forEach(j=>{ const v=document.getElementById('pw_'+j.id).value.trim(); pins[j.id]= v || PINS[j.id]; const nm=document.getElementById('nm_'+j.id).value.trim(); if(nm) names[j.id]=nm; if(j.type==='mystery'){ const tii=document.getElementById('ti_'+j.id); titles[j.id]= tii? tii.value.trim() : (j.title||''); } });
-  const av=document.getElementById('pw_admin').value.trim(); pins.admin= av || PINS.admin;
-  const err=document.getElementById('pwErr');
-  if(!db){ err.textContent='尚未連線'; return; }
-  db.collection('control').doc('auth').set({pins,names,titles}).then(function(){ err.style.color='var(--teal)'; err.textContent='✓ 已儲存（密碼留空者不變）'; document.querySelectorAll('[id^=pw_]').forEach(function(i){ if(i.id!=='pwErr') i.value=''; }); }).catch(function(e){ err.style.color='#ff8080'; err.textContent='儲存失敗：'+e.message; });
-}
-async function clearCol(col){
-  const snap=await db.collection(col).get();
-  let batch=db.batch(), n=0;
-  for(const d of snap.docs){ batch.delete(d.ref); n++; if(n%400===0){ await batch.commit(); batch=db.batch(); } }
-  await batch.commit();
-}
-async function resetAll(){
-  if(!db){ alert('尚未連線 Firebase'); return; }
-  if(!confirm('⚠ 確定要清除「所有」評審分數與人氣投票嗎？\n此動作無法復原！')) return;
-  const txt=prompt('最後確認：請輸入「清除」兩個字才會執行歸零');
-  if(txt!=='清除'){ alert('已取消，未清除任何資料'); return; }
-  for(const col of ['scores','votes','awards','notes']){ try{ await clearCol(col); }catch(e){} }
-  try{
-    await db.collection('control').doc('auth').set({pins:DEFAULT_PINS, names:{}, titles:{}});
-    try{ await db.collection('control').doc('special').set({list:[]}); specialAwards=[]; }catch(e){}
-    try{ await db.collection('control').doc('honorable').set({count:5}); honorableCount=5; }catch(e){}
-    Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
-    DEFAULT_JUDGES.forEach(function(d){ var j=JUDGES.find(function(x){return x.id===d.id;}); if(j){ j.name=d.name; j.short=d.short; j.ini=d.ini; j.title=d.title; } });
-    fillJudgeGrid();
-    alert('✓ 已全部歸零：分數、投票、得獎、筆記、評審姓名與密碼（密碼回到預設 8888）');
-  }catch(e){ alert('歸零時部分失敗：'+e.message); }
-}
-function resetPwsTo8888(){
-  if(!db){ alert('尚未連線 Firebase'); return; }
-  if(!confirm('將所有評審密碼重設為 8888（後台密碼回 0000）。他們下次登入需設定新密碼。確定？')) return;
-  db.collection('control').doc('auth').set({pins:DEFAULT_PINS},{merge:true}).then(function(){
-    Object.keys(DEFAULT_PINS).forEach(function(k){ PINS[k]=DEFAULT_PINS[k]; });
-    alert('✓ 完成！所有評審密碼已是 8888（後台 0000）。請評審用 8888 登入並設定新密碼。');
-  }).catch(function(e){ alert('重設失敗：'+e.message); });
-}
-let curDemo=null;
-function showCredReminder(t){
-  const el=document.getElementById('pwReminder');
-  let btns='';
-  if(t.acct) btns+='<button class="rbtn" onclick="event.stopPropagation();copyCred(\'acct\',this)">複製帳號 📋</button>';
-  if(t.pw)   btns+='<button class="rbtn" onclick="event.stopPropagation();copyCred(\'pw\',this)">複製密碼 📋</button>';
-  el.innerHTML='<div style="margin-bottom:8px">🔑 '+esc(t.name)+' 登入資料 · 切到作品分頁點欄位長按貼上（點此關閉）</div>'
-    +'<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+btns+'</div>'
-    +'<div style="margin-top:8px;font-size:14px;opacity:.95">帳號：'+esc(t.acct||'(無)')+'　｜　密碼：'+esc(t.pw||'(無)')+'</div>';
-  el.style.display='block';
-}
-function firstAccount(a){ if(!a) return ''; a=String(a).split(/\r?\n/)[0].trim(); if(a.indexOf('://')<0 && a.indexOf('/')>=0) a=a.split('/')[0].trim(); return a; }
-function copyCred(k,btn){ const t=curDemo; if(!t) return; const v=(k==='acct'?firstAccount(t.acct):t.pw)||''; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); const o=btn.textContent; btn.textContent='已複製✓'; setTimeout(function(){btn.textContent=o;},1100); }
-function openDemo(id){
-  const t=TEAMS.find(x=>x.id===id); if(!t) return; curDemo=t;
-  document.getElementById('dmName').textContent='#'+String(t.id).padStart(2,'0')+' '+t.name;
-  const setr=(rowId,valId,v)=>{ const row=document.getElementById(rowId); if(v){ row.style.display='block'; document.getElementById(valId).textContent=v; } else row.style.display='none'; };
-  setr('dmAcctRow','dmAcct',t.acct);
-  setr('dmPwRow','dmPw',t.pw);
-  setr('dmNoteRow','dmNote',t.note);
-  const lk=document.getElementById('dmLink');
-  if(t.link){
-    lk.style.display='block'; lk.href=t.link;
-    if(t.acct||t.pw){
-      lk.textContent='開啟作品（已複製'+(t.acct?'帳號':'密碼')+'）↗';
-      lk.onclick=function(){ var v=t.acct?firstAccount(t.acct):t.pw; if(navigator.clipboard) navigator.clipboard.writeText(v).catch(function(){}); showCredReminder(t); };
-    } else { lk.textContent='開啟作品 ↗'; lk.onclick=null; }
-  } else lk.style.display='none';
-  const pip=('documentPictureInPicture' in window);
-  document.getElementById('dmPinBtn').style.display=(pip&&t.acct)?'block':'none';
-  document.getElementById('dmHint').innerHTML = t.acct
-    ? '按「開啟作品」會自動複製密碼 → 到登入頁貼上密碼；此組<b>有帳號</b>，再切回本頁按「複製帳號」貼一次。'
-    : '✅ 此組免帳號。按「開啟作品」會自動複製密碼，到登入頁長按貼上即可登入。';
-  document.getElementById('demoModal').style.display='block';
-}
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-async function pinDemo(){
-  if(!curDemo) return;
-  const t=curDemo;
-  const html=`<style>body{font-family:-apple-system,"PingFang TC",sans-serif;margin:0;padding:14px;background:#0d0d1c;color:#fff}
-.tt{font-weight:800;font-size:15px;margin-bottom:6px}
-.l{font-size:12px;color:#a7a7c2;margin-top:10px}.v{font-size:19px;font-weight:800;word-break:break-all;white-space:pre-wrap}.v.pw{color:#ff3d8b}
-button{margin-top:6px;font-size:13px;font-weight:700;padding:7px 12px;border-radius:8px;border:1px solid #00e0c6;background:transparent;color:#00e0c6;cursor:pointer}
-a{display:block;margin-top:14px;text-align:center;background:#ff3d8b;color:#fff;text-decoration:none;font-weight:800;padding:11px;border-radius:10px}</style>
-<div class="tt">#${String(t.id).padStart(2,'0')} ${esc(t.name)}</div>
-${t.acct?`<div class="l">登入帳號</div><div class="v" id="a">${esc(t.acct)}</div><button onclick="navigator.clipboard.writeText(document.getElementById('a').innerText)">複製帳號</button>`:''}
-${t.pw?`<div class="l">登入密碼</div><div class="v pw" id="p">${esc(t.pw)}</div><button onclick="navigator.clipboard.writeText(document.getElementById('p').innerText)">複製密碼</button>`:''}
-${t.link?`<a href="${esc(t.link)}" target="_blank" rel="noopener">開啟作品 ↗</a>`:''}`;
-  try{
-    if(window.documentPictureInPicture){
-      const w=await documentPictureInPicture.requestWindow({width:300,height:300});
-      w.document.body.innerHTML=html;
-      closeDemo();
-      return;
-    }
-  }catch(e){}
-  const w=window.open('','_blank','width=320,height=340');
-  if(w){ w.document.write(html); w.document.close(); closeDemo(); }
-  else { alert('瀏覽器擋住了小視窗，請允許彈出視窗後再試，或用 Chrome/Edge。'); }
-}
-function copyBoth(btn){
-  if(!curDemo) return;
-  let s=''; if(curDemo.acct) s+='帳號：'+curDemo.acct+'\n'; if(curDemo.pw) s+='密碼：'+curDemo.pw;
-  if(navigator.clipboard) navigator.clipboard.writeText(s).catch(()=>{});
-  const old=btn.textContent; btn.textContent='✓ 已複製，貼到記事本'; setTimeout(()=>btn.textContent=old,1400);
-}
-function closeDemo(){ document.getElementById('demoModal').style.display='none'; }
-function copyVal(id){
-  const txt=document.getElementById(id).textContent;
-  if(navigator.clipboard){ navigator.clipboard.writeText(txt).catch(()=>{}); }
-  const b=event.target, old=b.textContent; b.textContent='已複製✓'; setTimeout(()=>b.textContent=old,1200);
-}
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  try{ localStorage.setItem('bxTheme', t); }catch(e){}
-  const b=document.getElementById('themeBtn'); if(b) b.textContent = (t==='light') ? '☀️ 大字版' : '🌙 科技版';
-}
-function toggleTheme(){ const cur=document.documentElement.getAttribute('data-theme')||'dark'; applyTheme(cur==='light'?'dark':'light'); }
-(function(){ let t='dark'; try{ t=localStorage.getItem('bxTheme')||'dark'; }catch(e){} applyTheme(t); })();
-fillJudgeGrid();
-initFirebase();
-renderVote();
-</script>
-</body>
-</html>
+init();
+</script></body></html>
