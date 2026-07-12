@@ -1,0 +1,423 @@
+<!DOCTYPE html><html lang="zh-Hant"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>北祥黑客松 2026 · 專案追蹤系統</title>
+<style>
+:root{--bg:#eef1f7;--card:#ffffff;--soft:#f7f9fd;--line:#e5e8f1;--txt:#232a3d;--mut:#6b7280;--pink:#e83a86;--teal:#0ea89a;--navy:#1f3864;
+--opt:#0e9f8e;--plat:#2e6bd6;--km:#7c53d6;--obs:#c07a12;--ok:#12a07f;--go:#2e6bd6;--warn:#e0455f;--idle:#94a0b5;--stop:#e0455f;--hold:#c07a12;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif}
+body{background:var(--bg);color:var(--txt);min-height:100vh}
+.wrap{max-width:1240px;margin:0 auto;padding:16px}
+.top{display:flex;align-items:center;gap:10px;padding:12px 4px;flex-wrap:wrap}
+.top h1{font-size:18px;font-weight:900;color:var(--navy)}.top .sp{flex:1}
+.badge{background:#e83a8618;color:var(--pink);font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;letter-spacing:.5px}
+.btn{background:var(--pink);color:#fff;border:0;border-radius:10px;padding:9px 15px;font-weight:800;font-size:14px;cursor:pointer}
+.btn.gh{background:#fff;border:1px solid var(--line);color:var(--txt)}
+.btn.sm{padding:6px 11px;font-size:12.5px}.btn.big{padding:13px 20px;font-size:16px;width:100%}
+.btn.teal{background:var(--teal);color:#fff}
+.muted{color:var(--mut);font-size:13px}
+.login{max-width:480px;margin:5vh auto;background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 24px 60px -28px #1f386466}
+.loginhero{background:linear-gradient(135deg,#1f3864 0%,#5b3a8f 55%,#e83a86 100%);padding:28px 26px;color:#fff}
+.loginhero .k{font-size:11.5px;letter-spacing:3px;font-weight:800;opacity:.92}
+.loginhero h2{font-size:25px;font-weight:900;margin-top:8px;line-height:1.25}
+.loginhero p{font-size:13px;opacity:.92;margin-top:9px}
+.loginbody{padding:18px 22px 22px}
+.lrole{display:flex;gap:10px;align-items:center;margin:14px 0 6px}
+.ri{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
+.rt{font-weight:900;font-size:14.5px}.rd{font-size:11.5px;color:var(--mut);margin-top:1px}
+.loginbody select{margin-bottom:2px}
+select,input,textarea{background:#fff;border:1px solid #d9dde8;color:var(--txt);border-radius:9px;padding:9px;font-size:14px;width:100%;font-family:inherit}
+select:focus,input:focus,textarea:focus{outline:none;border-color:var(--teal)}
+textarea{resize:vertical;min-height:44px}
+.err{color:var(--warn);font-size:13px;min-height:18px;margin-top:6px}
+.pgnav{display:flex;align-items:center;justify-content:center;gap:14px;margin:2px 0 14px;flex-wrap:wrap}
+.pgcount{font-weight:900;font-size:15px;color:var(--mut);min-width:70px;text-align:center}
+.one1{max-width:820px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 10px 30px -20px #1f386433}
+.o1h{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.o1n{font-size:23px;font-weight:900;color:var(--navy)}
+.tag{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.t-opt{background:#0e9f8e1a;color:var(--opt)}.t-plat{background:#2e6bd61a;color:var(--plat)}.t-km{background:#7c53d61a;color:var(--km)}.t-obs{background:#c07a121a;color:var(--obs)}
+.medal{font-size:10.5px;font-weight:800;color:#b7791f}
+.o1one{color:var(--mut);font-size:13.5px;margin:9px 0 2px;line-height:1.6}
+.decbar{display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;border-radius:11px;font-weight:800}
+.dec-go{background:#2e6bd612;color:var(--go);border:1px solid #2e6bd633}
+.dec-hold{background:#c07a1214;color:var(--hold);border:1px solid #c07a1233}
+.dec-stop{background:#e0455f14;color:var(--stop);border:1px solid #e0455f33}
+.sec{margin-top:15px;border-top:1px solid var(--line);padding-top:13px}
+.sl{font-size:13.5px;font-weight:800;margin-bottom:8px;color:var(--txt)}
+.ro{font-size:15px;line-height:1.65;white-space:pre-wrap;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:10px 12px;min-height:20px}
+.row{display:flex;align-items:center;gap:8px;margin:9px 0}.row label{font-size:12px;color:var(--mut);width:72px;flex:none;font-weight:700}
+.prog{height:12px;background:#e9edf5;border-radius:9px;overflow:hidden;flex:1}.prog i{display:block;height:100%;background:linear-gradient(90deg,var(--teal),var(--pink))}
+input[type=range]{accent-color:var(--teal)}
+.bignum{font-size:28px;font-weight:900;color:var(--navy)}
+.miles{display:flex;gap:6px;flex-wrap:wrap}.mile{display:flex;align-items:center;gap:4px;background:var(--soft);border:1px solid var(--line);border-radius:8px;padding:5px 9px;font-size:12px;cursor:pointer;user-select:none}
+.mile.on{background:#0e9f8e18;border-color:var(--teal);color:var(--teal);font-weight:800}
+.punkgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:6px}
+.pg{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:7px;text-align:center;font-size:11px}
+.pg b{display:block;margin-bottom:4px;color:var(--mut)}
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;padding:2px 6px;border-radius:6px;cursor:pointer;margin:1px}
+.chip.s{background:#0e9f8e1a;color:var(--teal)}.chip.x{background:#e0455f14;color:var(--warn)}
+.saved{font-size:11px;color:var(--teal);opacity:0;transition:.3s}.saved.show{opacity:1}
+.upd{font-size:11px;color:var(--mut);margin-top:10px;border-top:1px solid var(--line);padding-top:9px}
+.banner{background:var(--soft);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin:4px 4px 14px;font-size:14px;line-height:1.6}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.tabs button{background:#fff;border:1px solid var(--line);color:var(--mut);border-radius:10px;padding:8px 13px;font-weight:800;font-size:13px;cursor:pointer}
+.tabs button.on{background:var(--pink);color:#fff;border-color:var(--pink)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:2px 0 14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;box-shadow:0 6px 18px -14px #1f386433}.stat .n{font-size:27px;font-weight:900}.stat .l{font-size:12px;color:var(--mut);margin-top:2px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:center}.filters select{width:auto;min-width:120px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;padding:8px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-size:11.5px;font-weight:800;background:var(--soft)}tr:hover td{background:var(--soft)}.norep td{background:#e0455f0d}
+.tb-wrap{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 12px;overflow:auto;max-height:64vh}
+.pillst{font-size:11.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.wk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}.wk .wn{font-weight:900;font-size:15px}
+.hist{background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:7px;font-size:13px}
+.permrow{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:7px;flex-wrap:wrap}
+.permrow .pn{font-weight:800;min-width:150px}
+@media(max-width:640px){.wrap{padding:10px}.top{gap:6px;padding:10px 2px}.top h1{font-size:15px}.badge{font-size:10px;padding:3px 8px}.login{margin:3vh auto}.loginhero{padding:22px}.loginhero h2{font-size:22px}.one1{padding:16px}.o1n{font-size:20px}.stats{grid-template-columns:repeat(2,1fr);gap:8px}.stat{padding:11px}.stat .n{font-size:22px}.decbar{flex-wrap:wrap}.row label{width:58px;font-size:11px}.sl{font-size:12.5px}.ro{font-size:14px}th,td{padding:6px 6px;font-size:12px}.btn{padding:8px 12px;font-size:13px}.btn.sm{padding:5px 9px;font-size:12px}.filters select{min-width:46%}.tabs button{padding:7px 10px;font-size:12px}.permrow .pn{min-width:100%}}
+.taskb{padding:9px 0;border-bottom:1px dashed var(--line);font-size:14px}.taskb:last-child{border-bottom:0}.taskb.done .tt{text-decoration:line-through;color:var(--mut)}.tt{flex:1;font-weight:600}.tck{cursor:pointer;font-weight:900;font-size:16px}.treply{margin:6px 0 0 26px;background:#0ea89a12;border:1px solid #0ea89a33;border-radius:8px;padding:6px 10px;font-size:13px}
+</style></head>
+<body><div id="app" class="wrap"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const FIREBASE_CONFIG={apiKey:"AIzaSyBKTx8ZiEx-GihLhoSQjFNCsoGQiAEylEE",authDomain:"beixiang-hackathon.firebaseapp.com",projectId:"beixiang-hackathon",storageBucket:"beixiang-hackathon.firebasestorage.app",messagingSenderId:"502853267890",appId:"1:502853267890:web:c5d421c3cf3791f5d0f4ab"};
+const NOTIFY_URL="https://script.google.com/macros/s/AKfycbwolpi_xWRQtA8W6L2bMpw73AQeWDptSYc8bPvXWYrzk9s4lcPqsXEXqnMpvnsJ4okDPw/exec";  /* 貼上你的 Google Apps Script 網址即開啟 Email 通知（見設定說明） */
+const BUCKETS={opt:{n:"流程優化・產品孵化",c:"t-opt"},plat:{n:"中小企業 AI 平台",c:"t-plat"},km:{n:"KM 整合產品",c:"t-km"},obs:{n:"觀察評估",c:"t-obs"}};
+const PROJECTS=[
+ {id:"p1",n:"Felina",lead:"羅文財",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"金賞",one:"集中管理各 AI 工具的設定與技能",next:"個人→部門→全公司納管、做成本看板",time:"7–10月"},
+ {id:"p2",n:"出納實驗室",lead:"邱暐玲",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"銀賞",one:"現金流三視角整合成單一來源",next:"財務試營運、串接 ERP、訂為標準工具",time:"7–10月"},
+ {id:"p3",n:"DIU.gain(100000)",lead:"古鴻澤",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"銅賞",one:"自然語言查 ERP，AI 只建草稿",next:"真實 ERP PoC、確認內控、開放查詢",time:"7–10月"},
+ {id:"p4",n:"三薪二億",lead:"鄭宇真",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"佳作",one:"簽核前自動檢核單據遺漏與金額",next:"接簽核前置檢核、累積規則、擴大單據",time:"7–9月"},
+ {id:"p5",n:"揪 Together",lead:"游佩宣",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"HR",one:"興趣標籤促進跨部門交流",next:"HR 推動員工互動、收集回饋、常態營運",time:"7–10月"},
+ {id:"p6",n:"10萬碳長",lead:"麥育豪",pm:"RAE",team:["RAE","IAN","GIBBY"],bk:"opt",medal:"ESG",one:"ESG 財會自動化、財報轉 GRI",next:"用於自家 ESG 報告、專家審準則",time:"7–10月"},
+ {id:"p7",n:"四娘教子",lead:"彭子育",pm:"Julia",bk:"opt",medal:"",one:"採購倉儲盤點自動化 3 小時→5 分",next:"從個人擴大到部門、全公司採用",time:"7–9月"},
+ {id:"p8",n:"Log分析助理",lead:"張渝閎",pm:"Bryan",bk:"opt",medal:"",one:"用聊天快速分析跨系統 Log",next:"IT 擴大使用、累積問題樣板",time:"7–9月"},
+ {id:"p9",n:"票交覺醒者",lead:"張靖嫆",pm:"Jaguar",bk:"opt",medal:"",one:"給 AI 裝上票交所大腦",next:"確認應用範圍、擴大導入",time:"7–9月"},
+ {id:"p10",n:"我是助理凱粒",lead:"吳佳珊",pm:"Julia",bk:"opt",medal:"",one:"AI 自動核對工時、抓掛錯",next:"校準判斷準確度、擴大到 PM 部門",time:"7–9月"},
+ {id:"p11",n:"PDC木奉木奉",lead:"江釗杰",pm:"Andy",bk:"opt",medal:"人氣獎",one:"報價/歸檔/銷售洞察三合一",next:"補完 30% 功能、選報價線試點、看成效",time:"7–10月"},
+ {id:"p12",n:"招兵買馬",lead:"許智堯",pm:"Julia",bk:"opt",medal:"",one:"履歷變滑卡、一手勢初篩",next:"HR 用起來、評估使用價值",time:"7–9月"},
+ {id:"p13",n:"我帶著工程師的頭銜回來了",lead:"吳佳珊",pm:"Justin",bk:"opt",medal:"佳作",one:"RPG 闖關學 Python，遊戲化學習",next:"用於 HR 教育訓練、擴大同仁學習",time:"7–9月"},
+ {id:"p14",n:"CorpMind",lead:"楊智惟",pm:"Allen",bk:"km",medal:"核心引擎",one:"上傳文件即問即答、附來源、可地端",next:"原7月→Client Zero 對內試、做對外主體",time:"7月–11月"},
+ {id:"p15",n:"智庫守護者",lead:"高聖翔",pm:"Allen",bk:"km",medal:"佳作",one:"一入口六模組內部平台",next:"用核心引擎做對內版、先上線",time:"7–9月"},
+ {id:"p16",n:"我要10萬(Web-GPT)",lead:"方翊宸",pm:"Allen",bk:"km",medal:"",one:"爬網站變 AI 知識庫、LINE 問答",next:"LINE Bot＋爬蟲併入核心入口",time:"9–10月"},
+ {id:"p17",n:"Personal KM Hub",lead:"高卡納",pm:"Allen",bk:"km",medal:"",one:"個人文件變知識圖譜",next:"收斂為個人版、排後續",time:"11月"},
+ {id:"p18",n:"A²PE (On-Site)",lead:"胡慧婕",pm:"WIND",bk:"plat",medal:"佳作·先做",one:"外勤語音一句話，AI 生紀錄回寫 CRM",next:"第一批先做、北祥 Client Zero 試",time:"9–10月"},
+ {id:"p19",n:"好事成雙 (INTELLIGENT)",lead:"張嫻芳",pm:"WIND",bk:"plat",medal:"先做",one:"七視角業務、取代天價 CRM",next:"第一批先做、北祥 Client Zero 試",time:"9–10月"},
+ {id:"p20",n:"DIUDIU (哨兵)",lead:"鄭絲睿",pm:"WIND",bk:"plat",medal:"",one:"AI 生成詐騙情境、員工實戰演練",next:"第二批模組、內部先跑一輪案例",time:"11月"},
+ {id:"p21",n:"快報開麥拉",lead:"張柏珩",pm:"WIND",bk:"plat",medal:"佳作",one:"新聞到短影音一條龍自動製播",next:"第二批模組、內部行銷先用",time:"11月"},
+ {id:"p22",n:"三色豆",lead:"蔡宸豪",pm:"DIU",bk:"obs",medal:"",one:"訊息智慧降噪、只推重要到 LINE",next:"評估自建取代 Make.com",time:"8月"},
+ {id:"p23",n:"小理專",lead:"劉孟函",pm:"DIU",bk:"obs",medal:"",one:"開完會自動生摘要、待辦、決策",next:"找利基或內部先用",time:"8月"},
+ {id:"p24",n:"通知超人",lead:"江村志",pm:"DIU",bk:"obs",medal:"",one:"AI 通知守門員、只在重要時打擾",next:"內部試用看黏著度",time:"8月"},
+];
+const MANAGERS=[
+ {k:"BOSS",name:"主管 / Leadership",role:"lead"},
+ {k:"Janet",name:"Janet",role:"exec"},{k:"Sean",name:"Sean",role:"exec"},
+ {k:"ADMIN",name:"後台 / 系統管理",role:"admin"},
+ {k:"PUNK",name:"PUNK（資安/權限）",role:"punk"},
+ {k:"RAE",name:"RAE",role:"pm"},{k:"IAN",name:"IAN",role:"pm"},{k:"GIBBY",name:"GIBBY",role:"pm"},{k:"WIND",name:"WIND",role:"pm"},{k:"Allen",name:"Allen",role:"pm"},{k:"DIU",name:"DIU",role:"pm"},
+ {k:"Julia",name:"Julia",role:"pm"},{k:"Bryan",name:"Bryan",role:"pm"},{k:"Jaguar",name:"Jaguar",role:"pm"},{k:"Andy",name:"Andy",role:"pm"},{k:"Justin",name:"Justin",role:"pm"},
+];
+// 合作者（隊長）帳號，key=姓名
+const LEADS=[...new Set(PROJECTS.map(p=>p.lead))].map(nm=>({k:nm,name:nm+"（隊長）",role:"collab"}));
+const PEOPLE=[...MANAGERS,...LEADS];
+const DEFAULT_PINS={};PEOPLE.forEach(p=>DEFAULT_PINS[p.k]=(p.role==="lead"||p.role==="admin"||p.role==="exec")?"0000":"8888");
+const STATUS=[["idle","未開始","--idle"],["go","進行中","--go"],["warn","卡關","--warn"],["ok","已完成","--ok"]];
+const DECIDE=[["go","繼續導入","dec-go"],["hold","暫停觀察","dec-hold"],["stop","叫停·不導入","dec-stop"]];
+const MILES=[["m7","7月"],["m8","8月"],["m9","9月"],["m10","10月"],["q4","Q4"]];
+
+let db,auth,TRACK={},PERM={},PINS={},MAIL={},me=null,pIdx=0,adminTab="board",fBucket="",fOwner="",histCache={};
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function extraKeys(){const s=new Set();Object.values(PERM).forEach(c=>{(c.editors||[]).forEach(k=>s.add(k));(c.viewers||[]).forEach(k=>s.add(k));if(c.pm)s.add(c.pm);});PEOPLE.forEach(p=>s.delete(p.k));return [...s];}
+function extraPeople(){return extraKeys().map(k=>({k:k,name:k,role:"collab",extra:true}));}
+function allPeople(){return PEOPLE.concat(extraPeople());}
+function person(k){return allPeople().find(p=>p.k===k)}
+function pmOf(p){return (PERM[p.id]&&PERM[p.id].pm)||p.pm;}
+function pmLabel(p){if(p.team)return p.team.map(k=>person(k)?person(k).name:k).join("·");const k=pmOf(p);return person(k)?person(k).name:k;}
+function stMeta(s){return STATUS.find(x=>x[0]===s)||STATUS[0]}
+function decMeta(d){return DECIDE.find(x=>x[0]===d)||DECIDE[0]}
+function cvar(v){return getComputedStyle(document.documentElement).getPropertyValue(v)||"#888"}
+function pinFor(k){return (PINS&&PINS[k])||DEFAULT_PINS[k]||"8888";}
+function weekKey(d){d=d?new Date(d):new Date();const t=new Date(d);const g=t.getDay();let off;if(g===0)off=1;else if(g===6)off=2;else off=-((g+6)%7);t.setDate(t.getDate()+off);t.setHours(0,0,0,0);return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");}
+function weekLabel(k){const a=k.split("-").map(Number);const s=new Date(a[0],a[1]-1,a[2]);const e=new Date(s);e.setDate(e.getDate()+4);return (s.getMonth()+1)+"/"+s.getDate()+"–"+(e.getMonth()+1)+"/"+e.getDate()+"（一～五）";}
+function editorsOf(p){const c=PERM[p.id];if(c&&c.editors)return c.editors;return [...new Set([pmOf(p),...(p.team||[]),p.lead])];}
+function viewersOf(p){const c=PERM[p.id];return (c&&c.viewers)?c.viewers:[];}
+function canEdit(p){if(!me)return false;if(me.role==="lead"||me.role==="exec")return true;if(me.role==="punk")return false;return editorsOf(p).includes(me.k);}
+function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||me.role==="punk"||me.role==="admin")return true;return editorsOf(p).includes(me.k)||viewersOf(p).includes(me.k);}
+function myProjects(){return PROJECTS.filter(canView)}
+function submittedThisWeek(t){return t&&t.submittedWeek===weekKey()}
+function fmt(ts){try{const d=ts.toDate?ts.toDate():new Date(ts);return (d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(e){return""}}
+
+function init(){
+ try{firebase.initializeApp(FIREBASE_CONFIG);db=firebase.firestore();auth=firebase.auth();}catch(e){document.getElementById("app").innerHTML="<p style='padding:30px'>Firebase 初始化失敗。</p>";return;}
+ auth.signInAnonymously().catch(e=>console.warn(e));
+ auth.onAuthStateChanged(u=>{if(u)listen();});
+ renderLogin();
+}
+function listen(){
+ db.collection("track").onSnapshot(s=>{TRACK={};s.forEach(d=>TRACK[d.id]=d.data());if(me)renderApp();});
+ db.collection("control").doc("trackperm").onSnapshot(d=>{PERM=(d&&d.exists)?d.data():{};if(me)renderApp();else renderLogin();});
+ db.collection("control").doc("trackauth").onSnapshot(d=>{PINS=(d&&d.exists)?d.data():{};});
+ db.collection("control").doc("trackmail").onSnapshot(d=>{MAIL=(d&&d.exists)?d.data():{};});
+}
+
+/* ---- login ---- */
+function renderLogin(){
+ const el=document.getElementById("app");
+ el.innerHTML=`<div class="login">
+  <div class="loginhero"><div class="k">★ 後續追蹤</div><h2>北祥黑客松 2026<br>專案追蹤系統</h2><p>打你的名字 → 輸入密碼，就開始</p></div>
+  <div class="loginbody">
+   <label style="font-size:12px;color:var(--mut);font-weight:800">你的名字</label>
+   <input id="who" list="names" autocomplete="off" placeholder="打你的名字（例：WIND、Julia、羅文財、主辦）" oninput="pickWho()" onchange="pickWho()" style="margin-top:5px">
+   <datalist id="names">${allPeople().map(x=>`<option value="${esc(x.name.replace("（隊長）",""))}">`).join("")}</datalist>
+   <div id="whoinfo" class="muted" style="min-height:16px;margin-top:5px;font-size:12px"></div>
+   <div id="pwbox" style="display:none"><input id="pw" type="password" placeholder="密碼（預設 8888，主辦 0000）" onkeydown="if(event.key==='Enter')doLogin()"><button class="btn big" style="margin-top:10px" onclick="doLogin()">登入</button><div class="err" id="lerr"></div></div>
+  </div></div>`;
+}
+let pending=null;
+const ROLEZH={exec:"經營管理層",lead:"主管",pm:"專案負責人",collab:"合作者/隊長",punk:"PUNK 資安"};
+function findAccount(txt){txt=(txt||"").trim();if(!txt)return null;const low=txt.toLowerCase();return allPeople().find(x=>x.k.toLowerCase()===low||x.name.toLowerCase()===low||x.name.replace("（隊長）","").toLowerCase()===low)||((low==="主辦"||low==="主管")?allPeople().find(x=>x.role==="lead"):(low==="後台"||low==="系統")?allPeople().find(x=>x.role==="admin"):(low==="經營管理層"||low==="經管"||low==="經營")?allPeople().find(x=>x.role==="exec"):null);}
+function pickWho(){const v=document.getElementById("who").value;const acc=findAccount(v);pending=acc?acc.k:null;const info=document.getElementById("whoinfo");const box=document.getElementById("pwbox");if(acc){info.innerHTML="身分："+(ROLEZH[acc.role]||"")+"　"+esc(acc.name);box.style.display="block";}else{info.textContent=v?"找不到這個名字，請從提示清單選":"";box.style.display="none";}}
+function doLogin(){if(!pending){document.getElementById("lerr").textContent="請先選擇你的名字";return;}const pw=document.getElementById("pw").value.trim();if(pw!==pinFor(pending)){document.getElementById("lerr").textContent="密碼錯誤";return;}me=person(pending);pIdx=0;if(!PINS||!PINS[me.k]){renderForceChange();}else{renderApp();}}
+function pwError(pw){pw=(pw||"").trim();if(pw.length<8)return "密碼至少 8 碼";let c=0;if(/[a-z]/.test(pw))c++;if(/[A-Z]/.test(pw))c++;if(/[0-9]/.test(pw))c++;if(/[^A-Za-z0-9]/.test(pw))c++;if(c<3)return "需包含大寫、小寫、數字、符號中至少 3 種";return null;}
+function renderForceChange(){const el=document.getElementById("app");el.innerHTML=`<div class="login"><div class="loginhero"><div class="k">首次登入</div><h2>請設定你的新密碼</h2><p>${esc(me.name)} · 為了安全，第一次登入請更改預設密碼</p></div><div class="loginbody"><input id="np1" type="password" placeholder="新密碼：至少 8 碼，含大寫/小寫/數字/符號 ≥3 種"><input id="np2" type="password" placeholder="再輸入一次" style="margin-top:8px"><button class="btn big" style="margin-top:12px" onclick="doForceChange()">設定並進入</button><div class="err" id="fcerr"></div></div></div>`;}
+function doForceChange(){const a=document.getElementById("np1").value.trim(),b=document.getElementById("np2").value.trim();const er=pwError(a);if(er){document.getElementById("fcerr").textContent=er;return;}if(a!==b){document.getElementById("fcerr").textContent="兩次輸入不一致";return;}const patch={};patch[me.k]=a;db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>{renderApp();}).catch(e=>{document.getElementById("fcerr").textContent="失敗："+e.message;});}
+function logout(){me=null;pending=null;renderLogin();}
+function topBar(){const _b=me.role==="admin"?"⚙ 系統後台":me.role==="exec"?"📈 經營管理層":me.role==="lead"?"📊 主管":"★ 追蹤";const _t=me.role==="admin"?"專案追蹤系統 · 後台":"專案追蹤系統";return `<div class="top"><span class="badge">${_b}</span><h1>${_t}</h1><span class="sp"></span><span class="muted">${esc(me.name)}</span><button class="btn gh sm" onclick="changePw()">改密碼</button><button class="btn gh sm" onclick="logout()">登出</button></div>`;}
+
+function renderApp(){if(!me)return;if(me.role==="lead"||me.role==="exec")renderAdmin();else if(me.role==="admin")renderBackend();else renderPagerView();}
+
+/* ---- pager (pm/collab/punk) ---- */
+function renderPagerView(){
+ const el=document.getElementById("app");const ps=myProjects();
+ const done=ps.filter(p=>submittedThisWeek(TRACK[p.id])).length;
+ let banner;
+ if(me.role==="punk")banner=`<div class="banner">🛡 <b>資安 / 權限確認</b>　本週（${weekLabel(weekKey())}）逐案確認每個階段的資安與權限。你看得到全部 ${ps.length} 案。</div>`;
+ else banner=`<div class="banner">📝 <b>本週回報</b>（${weekLabel(weekKey())}）　你負責 <b>${ps.length}</b> 案，填完按「送出本週回報」。本週已送出 <b style="color:${done>=ps.length?'var(--teal)':'var(--warn)'}">${done}/${ps.length}</b>。</div>`;
+ el.innerHTML=topBar()+banner+pager(ps);
+}
+function pager(list){
+ if(!list.length)return `<div class="banner">目前沒有你可存取的專案</div>`;
+ if(pIdx>=list.length)pIdx=0;if(pIdx<0)pIdx=list.length-1;
+ const p=list[pIdx];const t=TRACK[p.id]||{};const ed=canEdit(p);const punk=me.role==="punk";const dis=ed?"":"disabled";
+ const st=t.status||"idle";const dec=t.decision||"go";const dm=decMeta(dec);const prog=t.progress!=null?t.progress:0;const ms=t.miles||{};const pk=t.punk||{};
+ const sub=submittedThisWeek(t);
+ return `<div class="pgnav"><button class="btn gh" onclick="navP(-1)">‹ 上一個</button><div class="pgcount">${pIdx+1} / ${list.length}</div><button class="btn gh" onclick="navP(1)">下一個 ›</button></div>
+ <div class="one1" id="c-${p.id}">
+  <div class="o1h"><div class="o1n">${esc(p.n)}</div><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n}</span>${p.medal?'<span class="medal">'+esc(p.medal)+'</span>':''}</div>
+  <div class="muted" style="margin-top:5px">隊長 ${esc(p.lead)} · 負責人 ${esc(pmLabel(p))} · 時程 ${esc(p.time)}</div>
+  <div class="o1one">${esc(p.one)}</div>
+  <div style="margin-top:7px"><span class="pillst" style="background:#00e0c622;color:var(--teal);font-size:12px">📅 本週 ${weekLabel(weekKey())} · 回報頻率：每週</span></div>
+
+  ${decBlock(p,t)}
+  ${handlerBlock(p,t)}
+
+  <div class="sec"><div class="sl">目前進度</div>
+   <div class="row" style="align-items:center"><div class="prog"><i style="width:${prog}%"></i></div><span class="bignum" id="pct-${p.id}" style="width:80px;text-align:right">${prog}%</span></div>
+   <div class="row"><label>狀態</label><select ${dis} onchange="save('${p.id}',{status:this.value})">${STATUS.map(s=>`<option value="${s[0]}" ${s[0]===st?'selected':''}>${s[1]}</option>`).join("")}</select></div>
+   ${ed?`<input type="range" min="0" max="100" step="5" value="${prog}" oninput="livePct('${p.id}',this.value)" onchange="save('${p.id}',{progress:+this.value})">`:''}
+  </div>
+
+  <div class="sec"><div class="sl">階段目標（月）<span class="muted" style="font-weight:400">· 專案整體階段，進度每週回報</span></div><div class="miles">${MILES.map(m=>`<span class="mile ${ms[m[0]]?'on':''}" ${ed?`onclick="toggleMile('${p.id}','${m[0]}')"`:''}>${ms[m[0]]?'✓':'○'} ${m[1]}</span>`).join("")}</div></div>
+
+  ${taskBlock(p,t)}
+  ${punkBlock(p,t)}
+
+  <div class="sec"><div class="sl" style="color:var(--navy);font-size:15px">📝 本週回報（每週更新後按下方送出）</div></div>
+  <div class="sec" style="border-top:0;padding-top:4px"><div class="sl" style="color:var(--teal)">✍️ 本週做了什麼</div>${ed?`<textarea style="min-height:74px" onchange="save('${p.id}',{week:this.value})" placeholder="這週的進展、完成了什麼…">${esc(t.week||'')}</textarea>`:`<div class="ro">${esc(t.week||'—')}</div>`}</div>
+  <div class="sec"><div class="sl" style="color:var(--pink)">➡️ 接下來要做什麼</div>${ed?`<textarea style="min-height:56px" onchange="save('${p.id}',{nextStep:this.value})" placeholder="下一步…">${esc(t.nextStep||p.next)}</textarea>`:`<div class="ro">${esc(t.nextStep||p.next)}</div>`}</div>
+  <div class="sec"><div class="sl" style="color:var(--warn)">🚧 卡關 / 需要協助</div>${ed?`<textarea onchange="save('${p.id}',{blocker:this.value})" placeholder="有問題就寫">${esc(t.blocker||'')}</textarea>`:`<div class="ro">${esc(t.blocker||'—')}</div>`}</div>
+  <div class="row" style="margin-top:12px"><label>預期完成</label>${ed?`<input type="date" value="${esc(t.due||'')}" onchange="save('${p.id}',{due:this.value})">`:`<span>${esc(t.due||'—')}</span>`}</div>
+
+  ${ed?`<div class="sec"><button class="btn teal big" onclick="submitWeek('${p.id}')">📤 送出本週回報（${weekLabel(weekKey())}）</button>
+   <div class="muted" style="margin-top:6px;text-align:center">${sub?('✓ 本週已於 '+fmt(t.submittedAt)+' 送出，可再修改後重送'):'尚未送出本週回報'}</div></div>`:''}
+  <div class="upd">${t.updatedAt?('最後更新：'+esc(t.updatedBy||'')+' · '+fmt(t.updatedAt)):'尚未更新'} <span class="saved" id="s-${p.id}">已儲存 ✓</span>
+   <button class="btn gh sm" style="float:right" onclick="showHist('${p.id}')">📜 歷週紀錄</button></div>
+  <div id="hist-${p.id}"></div>
+ </div>`;
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function taskBlock(p,t){
+ const tasks=t.tasks||[];const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);const canAssign=isLead||isPM(p);
+ const open=tasks.filter(x=>!x.done).length;const noreply=tasks.filter(x=>!x.reply&&!x.done).length;
+ const who=[pmOf(p),...collabList(p)];
+ let h=`<div class="sec"><div class="sl" style="color:var(--navy)">📋 指派任務（指令）${open?` <span class="pillst" style="background:#e83a8618;color:var(--pink)">${open} 未完成</span>`:''}${noreply?` <span class="pillst" style="background:#c07a1218;color:var(--obs)">${noreply} 待回覆</span>`:''}</div>`;
+ h+= tasks.length?tasks.map(tk=>`<div class="taskb ${tk.done?'done':''}">
+   <div style="display:flex;gap:8px;align-items:flex-start"><span class="tck" style="color:${tk.done?'var(--teal)':'var(--mut)'}" ${(ed||isLead)?`onclick="toggleTask('${p.id}','${tk.id}')"`:''}>${tk.done?'✓':'☐'}</span>
+    <div style="flex:1"><div class="tt">${esc(tk.text)}</div><div class="muted" style="font-size:11px">${esc(tk.by||'')} 指派${tk.assignee?' 給 <b style="color:var(--km)">'+esc(pn(tk.assignee))+'</b>':''}${tk.due?' · 期限 '+esc(tk.due):''}${(!tk.reply&&!tk.done)?' · <span style="color:var(--obs);font-weight:800">待回覆</span>':''}${tk.done&&tk.doneBy?' · '+esc(tk.doneBy)+' 完成':''}</div></div>
+    ${canAssign?`<span class="tck" style="color:var(--warn)" onclick="delTask('${p.id}','${tk.id}')">✕</span>`:''}</div>
+   ${tk.reply?`<div class="treply">💬 ${esc(tk.reply)} <span class="muted">— ${esc(tk.replyBy||'')}</span></div>`:''}
+   ${(ed&&!isLead)?`<div class="row" style="margin:7px 0 0 26px;gap:6px"><input id="rp-${p.id}-${tk.id}" placeholder="回覆：收到 / 預計完成 / 有問題…" value="${esc(tk.reply||'')}" style="flex:1"><button class="btn sm gh" onclick="replyTask('${p.id}','${tk.id}')">送出回覆</button></div>`:''}
+  </div>`).join(''):'<div class="muted" style="font-size:13px">尚無指派任務</div>';
+ if(canAssign)h+=`<div style="margin-top:10px"><input id="nt-${p.id}" placeholder="要交付的任務內容（指令）…" style="width:100%"><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap"><label style="width:auto">指派給</label><select id="nta-${p.id}" style="width:auto">${who.map(k=>`<option value="${k}">${esc(pn(k))}${k===pmOf(p)?'（負責人）':'（協作）'}</option>`).join('')}</select><input id="ntd-${p.id}" type="date" style="width:auto"><button class="btn sm" onclick="addTask('${p.id}')">＋ 指派</button></div></div>`;
+ h+=`</div>`;return h;
+}
+function addTask(pid){const el=document.getElementById("nt-"+pid);const txt=el?el.value.trim():"";if(!txt)return;const de=document.getElementById("ntd-"+pid);const due=de?de.value:"";const ae=document.getElementById("nta-"+pid);const asg=ae?ae.value:"";const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:txt,by:me.name,at:Date.now(),due:due,assignee:asg,done:false});save(pid,{tasks:tasks});const pp=PROJECTS.find(x=>x.id===pid);const target=asg||handlerOf(pp);notify(target,"【追蹤系統】指派新任務："+pp.n,me.name+" 指派任務給你："+txt+(due?"（期限 "+due+"）":"")+"，請登入追蹤系統回覆。");}
+function toggleTask(pid,tid){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).map(x=>x.id===tid?Object.assign({},x,{done:!x.done,doneBy:!x.done?me.name:"",doneAt:!x.done?Date.now():null}):x);save(pid,{tasks:tasks});}
+function delTask(pid,tid){if(!confirm("刪除這個任務？"))return;const t=TRACK[pid]||{};save(pid,{tasks:(t.tasks||[]).filter(x=>x.id!==tid)});}
+function replyTask(pid,tid){const el=document.getElementById("rp-"+pid+"-"+tid);const r=el?el.value.trim():"";const t=TRACK[pid]||{};const tasks=(t.tasks||[]).map(x=>x.id===tid?Object.assign({},x,{reply:r,replyBy:me.name,replyAt:Date.now()}):x);save(pid,{tasks:tasks});}
+function punkBlock(p,t){
+ const pk=t.punk||{};const punk=me.role==="punk";
+ const lab=v=>v==="ok"?'<span style="color:var(--teal);font-weight:800">✓ 通過</span>':v==="no"?'<span style="color:var(--warn);font-weight:800">✗ 有問題</span>':'<span class="muted">待確認</span>';
+ const sel=(f,v)=>`<select style="width:auto" onchange="savePunk('${p.id}',{${f}:this.value})"><option value="" ${!v?'selected':''}>待確認</option><option value="ok" ${v==='ok'?'selected':''}>通過</option><option value="no" ${v==='no'?'selected':''}>有問題</option></select>`;
+ let h=`<div class="sec"><div class="sl" style="color:var(--obs)">🛡 PUNK 資安 / 權限確認 <span class="muted" style="font-weight:400">· 每月一次</span></div>`;
+ if(punk)h+=`<div class="row"><label>資安</label>${sel("sec",pk.sec)}</div><div class="row"><label>權限</label>${sel("perm",pk.perm)}</div><div style="margin-top:6px"><textarea onchange="savePunk('${p.id}',{advice:this.value})" placeholder="資安/權限建議（可留空）…">${esc(pk.advice||"")}</textarea></div>`;
+ else h+=`<div style="font-size:14px">資安：${lab(pk.sec)}　·　權限：${lab(pk.perm)}</div>${pk.advice?`<div class="treply" style="margin-left:0;margin-top:7px">💬 PUNK 建議：${esc(pk.advice)}</div>`:""}${pk.by?`<div class="muted" style="font-size:11px;margin-top:5px">${esc(pk.by)}${pk.at?" · "+fmt(pk.at):""}</div>`:""}`;
+ h+=`</div>`;return h;
+}
+function savePunk(pid,patch){const t=TRACK[pid]||{};const pk=Object.assign({},t.punk||{},patch,{by:me.name,at:Date.now()});save(pid,{punk:pk});}
+function isPM(p){return pmOf(p)===me.k;}
+function canDelegate(p){return me.role==="admin"||me.role==="lead"||isPM(p);}
+function handlerOf(p){const t=TRACK[p.id]||{};return t.handler||pmOf(p);}
+function collabList(p){return editorsOf(p).filter(k=>k!==pmOf(p)&&!(p.team&&p.team.includes(k)));}
+function pn(k){return person(k)?person(k).name.replace("（隊長）",""):k;}
+function handlerBlock(p,t){
+ const cur=t.handler||pmOf(p);const opts=[pmOf(p),...collabList(p)];const del=canDelegate(p);const isC=cur!==pmOf(p)&&!(p.team&&p.team.includes(cur));
+ let h=`<div class="sec"><div class="sl">👤 目前追蹤對象（誰在推進）${isC?' <span class="pillst" style="background:#7c53d61a;color:var(--km)">已分派協作</span>':''}</div>`;
+ if(del){
+  h+=`<div class="row" style="flex-wrap:wrap"><label>由誰推進</label><select style="width:auto" onchange="setHandler('${p.id}',this.value)">${opts.map(k=>`<option value="${k}" ${k===cur?'selected':''}>${esc(pn(k))}${k===pmOf(p)?'（負責人）':'（協作）'}</option>`).join("")}</select>${(isPM(p)||me.role==="admin")?`<button class="btn gh sm" onclick="addCollab('${p.id}')">＋ 指派協作者</button>`:''}</div><div class="muted" style="font-size:11.5px">負責人可把此案分派給協作者；分派後就追協作者。</div>`;
+ }else h+=`<div style="font-size:15px;font-weight:800">${esc(pn(cur))} <span class="muted" style="font-weight:400">${isC?"（協作者）":"（負責人）"}</span></div>`;
+ h+=`</div>`;return h;
+}
+function setHandler(pid,key){save(pid,{handler:key});const pp=PROJECTS.find(x=>x.id===pid);if(pp&&key!==pmOf(pp))notify(key,"【追蹤系統】你被設為追蹤對象："+pp.n,me.name+" 把「"+pp.n+"」交給你推進，請登入更新進度。");}
+function addCollab(pid){const nm=prompt("指派協作者的名字（他用「名字＋8888」登入、首次改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("填他的 Email（收通知用，會一併存到後台；可留空）：")||"";const tk=prompt("要交付給他的任務／工作內容（可留空）：")||"";togPerm(pid,"editors",k);if(em.trim())setMail(k,em.trim());const pp=PROJECTS.find(x=>x.id===pid);if(tk.trim()){const t=TRACK[pid]||{};const tasks=(t.tasks||[]).slice();tasks.push({id:uid(),text:tk.trim(),by:me.name,at:Date.now(),due:"",assignee:k,done:false});save(pid,{tasks:tasks});}notify(k,"【追蹤系統】你被指派為協作："+(pp?pp.n:""),me.name+" 指派你協作「"+(pp?pp.n:"")+"」"+(tk.trim()?"，任務：「"+tk.trim()+"」":"")+"，請登入追蹤系統。",em);alert("✅ 已加入協作者"+(tk.trim()?"並指派任務":"")+(em.trim()?"、Email 已存後台":"")+"。");}
+function decBlock(p,t){
+ const dec=t.decision||"go";const dm=decMeta(dec);const prop=t.proposal;const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);
+ let h=`<div class="decbar dec-${dec}"><span>導入決策：${dm[1]}</span>`;
+ if(isLead)h+=`<select style="width:auto;margin-left:auto" onchange="setDecision('${p.id}',this.value)">${DECIDE.map(d=>`<option value="${d[0]}" ${d[0]===dec?'selected':''}>${d[1]}</option>`).join("")}</select>`;
+ h+=`</div>`;
+ if(prop){
+  h+=`<div class="decbar dec-${prop.type}" style="margin-top:8px;flex-wrap:wrap"><span>🔔 已建議「${decMeta(prop.type)[1]}」：${esc(prop.reason)} <span class="muted">（${esc(prop.by)}）</span></span>`;
+  if(isLead)h+=`<span style="margin-left:auto;white-space:nowrap"><button class="btn sm" onclick="approveProp('${p.id}')">核准</button> <button class="btn gh sm" onclick="rejectProp('${p.id}')">駁回</button></span>`;
+  else if(ed)h+=`<button class="btn gh sm" style="margin-left:auto" onclick="withdrawProp('${p.id}')">撤回建議</button>`;
+  else h+=`<span class="muted" style="margin-left:auto">等主管裁決</span>`;
+  h+=`</div>`;
+ }else if(ed&&!isLead){
+  h+=`<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:140px">覺得這案不該繼續推？可建議主管裁決：</span><button class="btn gh sm" onclick="propose('${p.id}','hold')">建議暫停</button><button class="btn gh sm" onclick="propose('${p.id}','stop')">建議叫停</button></div>`;
+ }
+ if(dec!=="go")h+=`<div class="sec" style="border:0;padding-top:8px"><div class="sl" style="color:var(--warn)">${dm[1]} 原因（主管裁定）</div>${isLead?`<textarea onchange="save('${p.id}',{decisionReason:this.value})" placeholder="裁定原因…">${esc(t.decisionReason||'')}</textarea>`:`<div class="ro">${esc(t.decisionReason||'—')}</div>`}</div>`;
+ return h;
+}
+function propose(id,type){const r=prompt(type==="stop"?"建議『叫停·不導入』的原因（會送給主管裁決）：":"建議『暫停觀察』的原因（會送給主管裁決）：");if(!r)return;save(id,{proposal:{type:type,reason:r,by:me.name,at:Date.now()}});alert("✅ 已送出建議，主管會在看板收到通知並裁決。");}
+function withdrawProp(id){save(id,{proposal:firebase.firestore.FieldValue.delete()});}
+function approveProp(id){const t=TRACK[id]||{};const pr=t.proposal;if(!pr)return;save(id,{decision:pr.type,decisionReason:pr.reason,proposal:firebase.firestore.FieldValue.delete()});}
+function rejectProp(id){save(id,{proposal:firebase.firestore.FieldValue.delete()});}
+function setDecision(id,v){save(id,{decision:v});}
+function navP(d){pIdx+=d;renderApp();}
+function livePct(id,v){const c=document.getElementById("c-"+id);if(!c)return;const b=c.querySelector(".prog i");if(b)b.style.width=v+"%";const s=document.getElementById("pct-"+id);if(s)s.textContent=v+"%";}
+function toggleMile(id,m){const t=TRACK[id]||{};const ms=Object.assign({},t.miles||{});ms[m]=!ms[m];save(id,{miles:ms});}
+function togglePunk(id,m,f){const t=TRACK[id]||{};const pk=Object.assign({},t.punk||{});pk[m]=Object.assign({},pk[m]||{});pk[m][f]=!pk[m][f];save(id,{punk:pk});}
+function save(id,patch){patch.updatedAt=firebase.firestore.FieldValue.serverTimestamp();patch.updatedBy=me.name;db.collection("track").doc(id).set(patch,{merge:true}).then(()=>{const s=document.getElementById("s-"+id);if(s){s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1200);}}).catch(e=>alert("儲存失敗："+e.message));}
+function notify(key,subj,body,emailOverride){try{if(!NOTIFY_URL)return;const to=(emailOverride&&emailOverride.trim())||(MAIL&&MAIL[key]);if(!to)return;fetch(NOTIFY_URL,{method:"POST",mode:"no-cors",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({to:to,subject:subj,body:body})});}catch(e){}}
+function submitWeek(id){
+ const t=TRACK[id]||{};const wk=weekKey();
+ const snap={projId:id,week:wk,weekLabel:weekLabel(wk),status:t.status||"idle",decision:t.decision||"go",decisionReason:t.decisionReason||"",progress:t.progress||0,miles:t.miles||{},work:t.week||"",nextStep:t.nextStep||"",blocker:t.blocker||"",due:t.due||"",submittedBy:me.name,submittedAt:firebase.firestore.FieldValue.serverTimestamp()};
+ db.collection("treports").doc(id+"__"+wk).set(snap).then(()=>{
+   db.collection("track").doc(id).set({submittedWeek:wk,submittedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:me.name},{merge:true});
+   alert("✅ 本週回報已送出！主管即時看到。");
+ }).catch(e=>alert("送出失敗："+e.message));
+}
+function showHist(id){
+ const box=document.getElementById("hist-"+id);if(!box)return;
+ if(box.innerHTML){box.innerHTML="";return;}
+ box.innerHTML='<div class="muted" style="margin-top:8px">載入中…</div>';
+ db.collection("treports").where("projId","==",id).get().then(s=>{
+  const rows=[];s.forEach(d=>rows.push(d.data()));rows.sort((a,b)=>b.week<a.week?-1:1);
+  box.innerHTML='<div class="sl" style="margin-top:12px">📜 歷週回報</div>'+(rows.length?rows.map(r=>`<div class="hist"><b>${esc(r.weekLabel||r.week)}</b> · 進度 ${r.progress||0}% · ${stMeta(r.status)[1]} · ${decMeta(r.decision)[1]} <span class="muted">· ${esc(r.submittedBy||'')} ${r.submittedAt?fmt(r.submittedAt):''}</span>${r.work?'<div style="margin-top:4px">✍️ '+esc(r.work)+'</div>':''}${r.blocker?'<div style="margin-top:3px;color:var(--warn)">🚧 '+esc(r.blocker)+'</div>':''}</div>`).join(""):'<div class="muted">尚無歷週紀錄</div>');
+ }).catch(e=>{box.innerHTML='<div class="muted">讀取失敗：'+esc(e.message)+'</div>';});
+}
+function changePw(){const np=prompt("輸入新密碼（"+me.name+"）\n規則：至少 8 碼，含大寫/小寫/數字/符號 ≥3 種：");if(!np)return;const er=pwError(np.trim());if(er){alert(er);return;}const patch={};patch[me.k]=np.trim();db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>alert("密碼已更新")).catch(e=>alert("失敗："+e.message));}
+
+/* ---- admin (主管) ---- */
+function setTab(t){adminTab=t;pIdx=0;renderAdmin();}
+function renderAdmin(){
+ const el=document.getElementById("app");
+ el.innerHTML=topBar()+`<div class="tabs">
+  <button class="${adminTab==='board'?'on':''}" onclick="setTab('board')">📊 總覽</button>
+  <button class="${adminTab==='pager'?'on':''}" onclick="setTab('pager')">📄 逐案檢視</button>
+  <button class="${adminTab==='week'?'on':''}" onclick="setTab('week')">🗓 本週會議</button>
+  <button class="btn gh sm" style="margin-left:auto" onclick="exportCSV()">⬇ 匯出 CSV</button></div><div id="ab"></div>`;
+ renderAB();
+}
+function renderBackend(){
+ const el=document.getElementById("app");
+ el.innerHTML=topBar()+`<div class="banner">⚙ <b>系統後台</b>　這裡管理：每案<b>負責人／可輸入／可檢視</b>、<b>指定名單外的人</b>、<b>忘記密碼重設</b>。（要看業務進度、裁決、指派任務，請改用「主管」身分登入）</div>`+permView();
+}
+function renderAB(){
+ const b=document.getElementById("ab");if(!b)return;
+ if(adminTab==="week"){b.innerHTML=weekView();return;}
+ if(adminTab==="perm"){b.innerHTML=permView();return;}
+ if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));b.innerHTML=filterBar(true)+pager(ps);return;}
+ // board
+ let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0;
+ PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(submittedThisWeek(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.tasks||[]).filter(x=>!x.done).length);tkr+=((t.tasks||[]).filter(x=>!x.reply&&!x.done).length);});
+ const stats=`<div class="stats">
+  <div class="stat" style="border-color:${rep>=24?'#12b88655':'#ff547055'}"><div class="n" style="color:${rep>=24?'var(--teal)':'var(--warn)'}">${rep}/24</div><div class="l">本週已送出</div></div>
+  <div class="stat"><div class="n">${Math.round(sum/24)}%</div><div class="l">整體平均進度</div></div>
+  <div class="stat"><div class="n" style="color:var(--go)">${cnt.go}</div><div class="l">進行中</div></div>
+  <div class="stat"><div class="n" style="color:var(--warn)">${cnt.warn}</div><div class="l">卡關</div></div>
+  <div class="stat"><div class="n" style="color:var(--ok)">${cnt.ok}</div><div class="l">已完成</div></div>
+  <div class="stat"><div class="n" style="color:var(--stop)">${stop}</div><div class="l">已叫停</div></div>
+  <div class="stat" style="border-color:${pend?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">🔔 ${pend}</div><div class="l">待裁決建議</div></div>
+  <div class="stat"><div class="n" style="color:var(--pink)">${tk}</div><div class="l">指派任務未完成</div></div>
+  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">任務待各組回覆</div></div></div>`;
+ let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));
+ const rows=ps.map(p=>{const t=TRACK[p.id]||{};const sm=stMeta(t.status||"idle");const dm=decMeta(t.decision||"go");const sub=submittedThisWeek(t);
+  return `<tr class="${sub?'':'norep'}"><td><b>${esc(p.n)}</b>${t.proposal?' <span class="pillst" style="background:#e8a33d22;color:var(--obs)">🔔待裁決</span>':''}<div class="muted" style="font-size:11px">${esc(p.lead)}${p.medal?' · '+esc(p.medal):''}</div></td>
+   <td><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n.replace('・產品孵化','')}</span></td>
+   <td>${esc(pmLabel(p))}</td>
+   <td>${(function(){const hk=handlerOf(p);const del=hk!==pmOf(p)&&!(p.team&&p.team.includes(hk));return del?'<span style="color:var(--km);font-weight:800">'+esc(pn(hk))+'</span><div class="muted" style="font-size:10px">協作</div>':'<span class="muted">'+esc(pn(hk))+'</span>';})()}</td>
+   <td>${sub?'<span class="pillst" style="background:#12b88622;color:var(--teal)">已送出</span>':'<span class="pillst" style="background:#ff547022;color:var(--warn)">未送出</span>'}</td>
+   <td><span class="pillst" style="background:${cvar(sm[2])}22;color:${cvar(sm[2])}">${sm[1]}</span></td>
+   <td><span class="pillst" style="background:${t.decision==='stop'?'#ff547022':t.decision==='hold'?'#e8a33d22':'#4c8dff22'};color:${t.decision==='stop'?'var(--stop)':t.decision==='hold'?'var(--hold)':'var(--go)'}">${dm[1]}</span></td>
+   <td><div class="prog" style="min-width:64px"><i style="width:${t.progress||0}%"></i></div><span class="muted">${t.progress||0}%</span></td>
+   <td style="max-width:220px">${esc(t.week||'')||'<span class=muted>—</span>'}</td>
+   <td style="max-width:150px;color:${t.blocker?'var(--warn)':'inherit'}">${esc(t.blocker||'')||'<span class=muted>—</span>'}</td></tr>`;}).join("");
+ b.innerHTML=stats+filterBar(false)+`<div class="tb-wrap"><table><thead><tr><th>專案</th><th>去向</th><th>負責人</th><th>追蹤對象</th><th>本週</th><th>狀態</th><th>決策</th><th>進度</th><th>本週做了什麼</th><th>卡關</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function filterBar(pg){return `<div class="filters"><select onchange="fBucket=this.value;pIdx=0;renderAB()"><option value="">全部去向</option>${Object.keys(BUCKETS).map(k=>`<option value="${k}" ${fBucket===k?'selected':''}>${BUCKETS[k].n}</option>`).join("")}</select><select onchange="fOwner=this.value;pIdx=0;renderAB()"><option value="">全部負責人</option>${MANAGERS.filter(o=>o.role==='pm').map(o=>`<option value="${o.k}" ${fOwner===o.k?'selected':''}>${esc(o.name)}</option>`).join("")}</select>${pg?'<span class="muted">逐案檢視 · 開會一頁一頁看</span>':''}</div>`;}
+function weekView(){
+ const props=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>x.t.proposal);
+ const norep=PROJECTS.filter(p=>!submittedThisWeek(TRACK[p.id]));
+ const upd=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>submittedThisWeek(x.t));
+ const blk=upd.filter(x=>x.t.blocker);const stop=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>(x.t.decision||"go")!=="go");
+ let h=`<div class="banner">🗓 本週 ${weekLabel(weekKey())} · 已送出 ${upd.length}/24</div>`;
+ if(props.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">🔔 待主管裁決（${props.length}）—— 下層建議叫停/暫停，請裁決</div>${props.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> · 建議 ${decMeta(x.t.proposal.type)[1]} <span class="muted">by ${esc(x.t.proposal.by)}</span><div style="margin-top:2px">${esc(x.t.proposal.reason)}</div></div>`).join("")}</div>`;
+ h+=`<div class="wk" style="border-color:${norep.length?'#e8a33d':'#12b886'}"><div class="wn" style="color:${norep.length?'var(--obs)':'var(--teal)'}">📣 本週還沒送出（${norep.length}）</div>${norep.length?'<div style="margin-top:6px;line-height:1.8">'+norep.map(p=>esc(p.n)+' <span class="muted">('+esc(person(p.pm)?person(p.pm).name:p.pm)+')</span>').join('　·　')+'</div>':'<div class="muted" style="margin-top:6px">全部都送出了 🎉</div>'}</div>`;
+ h+=`<div class="wk" style="border-color:var(--warn)"><div class="wn" style="color:var(--warn)">🚧 卡關（${blk.length}）</div>${blk.length?blk.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> <span class="muted">· ${esc(pmLabel(x.p))}</span><div style="color:var(--warn);margin-top:2px">${esc(x.t.blocker)}</div></div>`).join(''):'<div class="muted" style="margin-top:6px">無</div>'}</div>`;
+ if(stop.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">⏸ 暫停/叫停（${stop.length}）</div>${stop.map(x=>`<div style="margin-top:6px"><b>${esc(x.p.n)}</b> · ${decMeta(x.t.decision)[1]} <span class="muted">${x.t.decisionReason?'· '+esc(x.t.decisionReason):''}</span></div>`).join('')}</div>`;
+ h+=`<div class="muted" style="margin:12px 4px 8px;font-weight:800">本週送出內容（${upd.length}）</div>`;
+ h+=upd.length?upd.map(x=>`<div class="wk"><div class="wn">${esc(x.p.n)} <span class="muted" style="font-size:12px">· ${esc(pmLabel(x.p))} · 進度 ${x.t.progress||0}%</span></div>${x.t.week?'<div style="margin-top:5px">✍️ '+esc(x.t.week)+'</div>':''}${x.t.nextStep?'<div style="margin-top:3px;color:var(--mut)">➡️ '+esc(x.t.nextStep)+'</div>':''}</div>`).join(''):'<div class="muted">本週尚無送出</div>';
+ return h;
+}
+function permView(){
+ const ppl=allPeople().filter(x=>x.role==='pm'||x.role==='collab');
+ return `<div class="banner">🔑 <b>角色與權限設定</b>　可調整每案的<b>負責人</b>、<b>可輸入</b>、<b>可檢視</b>；也能<b>指定名單外的人</b>（他用「名字＋8888」登入，首次登入需改密碼）。主管與 PUNK 一律看全部。</div>`+
+ `<div class="wk"><div class="wn">🔑 帳號 · Email · 密碼</div><div class="muted" style="font-size:12px;margin:5px 0 9px">填 email 才能收通知（Email 通知目前：${NOTIFY_URL?'<b style=color:var(--teal)>已啟用</b>':'<b style=color:var(--warn)>未設定，見說明</b>'}）。重設＝把密碼設回 8888，對方下次登入需改新密碼。綠點＝已自訂密碼。</div><div style="display:flex;flex-wrap:wrap;gap:8px">${allPeople().map(x=>`<div style="display:flex;align-items:center;gap:8px;background:var(--soft);border:1px solid var(--line);border-radius:9px;padding:6px 9px;font-size:12.5px;margin-bottom:6px;flex-wrap:wrap"><span style="width:8px;height:8px;border-radius:50%;background:${(PINS&&PINS[x.k])?'var(--teal)':'#c3c9d6'};flex:none"></span><b style="min-width:110px">${esc((x.name||'').replace('（隊長）',''))}</b><input placeholder="email（收通知用）" value="${esc((MAIL&&MAIL[x.k])||'')}" onchange="setMail('${x.k}',this.value)" style="flex:1;min-width:160px;padding:6px"><button class="btn gh sm" onclick="resetPw('${x.k}')">重設密碼</button></div>`).join('')}</div></div>`+
+ PROJECTS.map(p=>{const ed=editorsOf(p),vw=viewersOf(p),curpm=pmOf(p);
+  const chips=(field,arr)=>ppl.map(x=>`<span class="chip ${arr.includes(x.k)?'s':'x'}" onclick="togPerm('${p.id}','${field}','${x.k}')">${esc((x.name||'').replace('（隊長）',''))}</span>`).join('')+` <span class="chip s" style="border:1px dashed var(--teal)" onclick="addAssigned('${p.id}','${field}')">＋ 指定他人</span>`;
+  return `<div class="wk"><div class="wn">${esc(p.n)} <span class="muted" style="font-size:12px">· ${BUCKETS[p.bk].n}</span></div>
+   <div class="row"><label>負責人</label>${p.team?'<span style="font-weight:800">RAE · IAN · GIBBY（三人共管）</span>':`<select style="width:auto" onchange="togPM('${p.id}',this.value)">${allPeople().filter(x=>x.role==='pm').map(x=>`<option value="${x.k}" ${x.k===curpm?'selected':''}>${esc(x.name)}</option>`).join('')}</select>`}</div>
+   <div style="margin-top:7px"><span class="muted" style="font-size:11px">可輸入（editors）</span><div style="margin-top:4px">${chips('editors',ed)}</div></div>
+   <div style="margin-top:7px"><span class="muted" style="font-size:11px">可檢視（viewers · 額外開放看的人）</span><div style="margin-top:4px">${chips('viewers',vw)}</div></div>
+  </div>`;}).join("");
+}
+function togPM(pid,key){const cur=Object.assign({},PERM[pid]||{});cur.pm=key;const patch={};patch[pid]=cur;db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
+function addAssigned(pid,field){const nm=prompt("輸入要指定的人的名字（他可用「名字＋8888」登入，首次需改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("順便填他的 Email（收通知用，可留空）：")||"";togPerm(pid,field,k);if(em.trim())setMail(k,em.trim());}
+function resetPw(key){if(!confirm("將「"+key+"」的密碼重設為 8888？對方下次登入需重新設定新密碼。"))return;const patch={};patch[key]=firebase.firestore.FieldValue.delete();db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>alert("✅ 已重設為 8888")).catch(e=>alert("失敗："+e.message));}
+function setMail(key,val){val=(val||"").trim();MAIL[key]=val;const patch={};patch[key]=val;db.collection("control").doc("trackmail").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
+function togPerm(pid,field,key){
+ const cur=Object.assign({},PERM[pid]||{});const p=PROJECTS.find(x=>x.id===pid);
+ let arr=(cur[field]||(field==='editors'?[p.pm,p.lead]:[])).slice();
+ if(arr.includes(key))arr=arr.filter(x=>x!==key);else arr.push(key);
+ cur[field]=arr;const patch={};patch[pid]=cur;
+ db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));
+}
+function exportCSV(){
+ const head=["專案","去向","負責人","追蹤對象","隊長","本週送出","狀態","決策","叫停原因","進度%","本週做了什麼","下一步","卡關","預期完成","更新者","更新時間"];
+ const rows=PROJECTS.map(p=>{const t=TRACK[p.id]||{};return [p.n,BUCKETS[p.bk].n,pmLabel(p),pn(handlerOf(p)),p.lead,submittedThisWeek(t)?"是":"否",stMeta(t.status||"idle")[1],decMeta(t.decision||"go")[1],t.decisionReason||"",t.progress||0,t.week||"",t.nextStep||p.next,t.blocker||"",t.due||"",t.updatedBy||"",t.updatedAt?fmt(t.updatedAt):""];});
+ const csv=[head,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="專案追蹤_"+new Date().toISOString().slice(0,10)+".csv";a.click();
+}
+init();
+</script></body></html>
