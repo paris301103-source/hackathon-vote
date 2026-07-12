@@ -7,16 +7,27 @@
 2. 把預設程式碼整段刪掉，貼上這段：
 
 ```javascript
+function doGet(e){
+  try{
+    var p = e.parameter;
+    MailApp.sendEmail(p.to, p.subject, p.body);
+    return ContentService.createTextOutput("ok");
+  }catch(err){
+    return ContentService.createTextOutput("err:" + err);
+  }
+}
 function doPost(e){
   try{
     var d = JSON.parse(e.postData.contents);
-    MailApp.sendEmail({ to: d.to, subject: d.subject, body: d.body });
+    MailApp.sendEmail(d.to, d.subject, d.body);
     return ContentService.createTextOutput("ok");
   }catch(err){
     return ContentService.createTextOutput("err:" + err);
   }
 }
 ```
+
+> 若你之前只貼了 doPost，請整段換成上面（含 doGet），並**重新部署一次**（部署 → 管理部署作業 → 編輯 ✏ → 版本選「新版本」→ 部署）。系統改用 GET 帶參數，比較不會被轉址弄丟。
 
 3. 右上「部署 → 新增部署作業」→ 類型選 **網頁應用程式（Web app）**。
    - 執行身分：**我（你的 Gmail）**
