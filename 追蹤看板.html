@@ -121,7 +121,7 @@ const MANAGERS=[
 // 合作者（隊長）帳號，key=姓名
 const LEADS=[...new Set(PROJECTS.map(p=>p.lead))].map(nm=>({k:nm,name:nm+"（隊長）",role:"collab"}));
 const PEOPLE=[...MANAGERS,...LEADS];
-const DEFAULT_PINS={};PEOPLE.forEach(p=>DEFAULT_PINS[p.k]=(p.role==="lead"||p.role==="admin"||p.role==="exec")?"0000":"8888");
+const DEFAULT_PINS={};PEOPLE.forEach(p=>DEFAULT_PINS[p.k]="8888");
 const STATUS=[["idle","未開始","--idle"],["go","進行中","--go"],["warn","卡關","--warn"],["ok","已完成","--ok"]];
 const DECIDE=[["go","繼續導入","dec-go"],["hold","暫停觀察","dec-hold"],["stop","叫停·不導入","dec-stop"]];
 const MILES=[["m7","7月"],["m8","8月"],["m9","9月"],["m10","10月"],["q4","Q4"]];
@@ -171,7 +171,7 @@ function renderLogin(){
    <input id="who" list="names" autocomplete="off" placeholder="輸入你的名字…" oninput="pickWho()" onchange="pickWho()" style="margin-top:5px">
    <datalist id="names">${allPeople().map(x=>`<option value="${esc(x.name.replace("（隊長）",""))}">`).join("")}</datalist>
    <div id="whoinfo" class="muted" style="min-height:16px;margin-top:5px;font-size:12px"></div>
-   <div id="pwbox" style="display:none"><input id="pw" type="password" placeholder="密碼（預設 8888，主辦 0000）" onkeydown="if(event.key==='Enter')doLogin()"><button class="btn big" style="margin-top:10px" onclick="doLogin()">登入</button><div class="err" id="lerr"></div></div>
+   <div id="pwbox" style="display:none"><input id="pw" type="password" placeholder="密碼（預設 8888）" onkeydown="if(event.key==='Enter')doLogin()"><button class="btn big" style="margin-top:10px" onclick="doLogin()">登入</button><div class="err" id="lerr"></div></div>
   </div></div></div>`;
 }
 let pending=null;
@@ -420,7 +420,7 @@ function togPM(pid,key){const cur=Object.assign({},PERM[pid]||{});cur.pm=key;con
 function quickAdd(pid,field,key){if(!key)return;togPerm(pid,field,key);}
 function addAssigned(pid,field){const nm=prompt("輸入要指定的人的名字（英文不分大小寫；他可用「名字＋8888」登入，首次需改密碼）：");if(!nm)return;const k=nm.trim();const em=prompt("順便填他的 Email（收通知用，可留空）：")||"";togPerm(pid,field,k);if(em.trim())setMail(k,em.trim());}
 function resetPw(key){if(!confirm("將「"+key+"」的密碼重設為 8888？對方下次登入需重新設定新密碼。"))return;const patch={};patch[key]=firebase.firestore.FieldValue.delete();db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>alert("✅ 已重設為 8888")).catch(e=>alert("失敗："+e.message));}
-function resetAllPw(){if(!confirm("確定把「所有帳號」的密碼都重設回預設？\n（清掉所有已改的密碼，大家下次登入需重新設定新密碼）"))return;db.collection("control").doc("trackauth").set({}).then(()=>alert("✅ 已全部重設為預設（其他 8888、經營層/後台 0000）")).catch(e=>alert("失敗："+e.message));}
+function resetAllPw(){if(!confirm("確定把「所有帳號」的密碼都重設回預設？\n（清掉所有已改的密碼，大家下次登入需重新設定新密碼）"))return;db.collection("control").doc("trackauth").set({}).then(()=>alert("✅ 已全部重設為預設 8888")).catch(e=>alert("失敗："+e.message));}
 function setMail(key,val){val=(val||"").trim();MAIL[key]=val;const patch={};patch[key]=val;db.collection("control").doc("trackmail").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));}
 function togPerm(pid,field,key){
  const cur=Object.assign({},PERM[pid]||{});const p=PROJECTS.find(x=>x.id===pid);
