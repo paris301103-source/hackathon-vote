@@ -15,12 +15,13 @@ body{background:var(--bg);color:var(--txt);min-height:100vh}
 .btn.sm{padding:6px 11px;font-size:12.5px}.btn.big{padding:13px 20px;font-size:16px;width:100%}
 .btn.teal{background:var(--teal);color:#fff}
 .muted{color:var(--mut);font-size:13px}
-.login{max-width:480px;margin:5vh auto;background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 24px 60px -28px #1f386466}
-.loginhero{background:linear-gradient(135deg,#1f3864 0%,#5b3a8f 55%,#e83a86 100%);padding:28px 26px;color:#fff}
+.authwrap{min-height:calc(100vh - 36px);display:flex;align-items:center;justify-content:center;padding:12px}
+.login{width:100%;max-width:380px;background:var(--card);border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 24px 60px -28px #1f386455}
+.loginhero{background:linear-gradient(135deg,#1f3864 0%,#5b3a8f 55%,#e83a86 100%);padding:22px 24px;color:#fff}
 .loginhero .k{font-size:11.5px;letter-spacing:3px;font-weight:800;opacity:.92}
-.loginhero h2{font-size:25px;font-weight:900;margin-top:8px;line-height:1.25}
+.loginhero h2{font-size:22px;font-weight:900;margin-top:6px;line-height:1.25}
 .loginhero p{font-size:13px;opacity:.92;margin-top:9px}
-.loginbody{padding:18px 22px 22px}
+.loginbody{padding:18px 20px 20px}
 .lrole{display:flex;gap:10px;align-items:center;margin:14px 0 6px}
 .ri{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex:none}
 .rt{font-weight:900;font-size:14.5px}.rd{font-size:11.5px;color:var(--mut);margin-top:1px}
@@ -164,7 +165,7 @@ function listen(){
 /* ---- login ---- */
 function renderLogin(){
  const el=document.getElementById("app");
- el.innerHTML=`<div class="login">
+ el.innerHTML=`<div class="authwrap"><div class="login">
   <div class="loginhero"><div class="k">★ 後續追蹤</div><h2>北祥黑客松 2026<br>專案追蹤系統</h2><p>打你的名字 → 輸入密碼，就開始</p></div>
   <div class="loginbody">
    <label style="font-size:12px;color:var(--mut);font-weight:800">你的名字</label>
@@ -172,7 +173,7 @@ function renderLogin(){
    <datalist id="names">${allPeople().map(x=>`<option value="${esc(x.name.replace("（隊長）",""))}">`).join("")}</datalist>
    <div id="whoinfo" class="muted" style="min-height:16px;margin-top:5px;font-size:12px"></div>
    <div id="pwbox" style="display:none"><input id="pw" type="password" placeholder="密碼（預設 8888，主辦 0000）" onkeydown="if(event.key==='Enter')doLogin()"><button class="btn big" style="margin-top:10px" onclick="doLogin()">登入</button><div class="err" id="lerr"></div></div>
-  </div></div>`;
+  </div></div></div>`;
 }
 let pending=null;
 const ROLEZH={exec:"經營管理層",lead:"主管",pm:"專案負責人",collab:"合作者/隊長",punk:"PUNK 資安"};
@@ -180,7 +181,7 @@ function findAccount(txt){txt=(txt||"").trim();if(!txt)return null;const low=txt
 function pickWho(){const v=document.getElementById("who").value;const acc=findAccount(v);pending=acc?acc.k:null;const info=document.getElementById("whoinfo");const box=document.getElementById("pwbox");if(acc){info.innerHTML="身分："+(ROLEZH[acc.role]||"")+"　"+esc(acc.name);box.style.display="block";}else{info.textContent=v?"找不到這個名字，請從提示清單選":"";box.style.display="none";}}
 function doLogin(){if(!pending){document.getElementById("lerr").textContent="請先選擇你的名字";return;}const pw=document.getElementById("pw").value.trim();if(pw!==pinFor(pending)){document.getElementById("lerr").textContent="密碼錯誤";return;}me=person(pending);pIdx=0;if(!PINS||!PINS[me.k]){renderForceChange();}else{renderApp();}}
 function pwError(pw){pw=(pw||"").trim();if(pw.length<8)return "密碼至少 8 碼";let c=0;if(/[a-z]/.test(pw))c++;if(/[A-Z]/.test(pw))c++;if(/[0-9]/.test(pw))c++;if(/[^A-Za-z0-9]/.test(pw))c++;if(c<3)return "需包含大寫、小寫、數字、符號中至少 3 種";return null;}
-function renderForceChange(){const el=document.getElementById("app");el.innerHTML=`<div class="login"><div class="loginhero"><div class="k">首次登入</div><h2>請設定你的新密碼</h2><p>${esc(me.name)} · 為了安全，第一次登入請更改預設密碼</p></div><div class="loginbody"><input id="np1" type="password" placeholder="新密碼：至少 8 碼，含大寫/小寫/數字/符號 ≥3 種"><input id="np2" type="password" placeholder="再輸入一次" style="margin-top:8px"><button class="btn big" style="margin-top:12px" onclick="doForceChange()">設定並進入</button><div class="err" id="fcerr"></div></div></div>`;}
+function renderForceChange(){const el=document.getElementById("app");el.innerHTML=`<div class="authwrap"><div class="login"><div class="loginhero"><div class="k">🔒 首次登入</div><h2>設定你的新密碼</h2><p>${esc(me.name)}，為了安全請先改掉預設密碼</p></div><div class="loginbody"><label style="font-size:12px;color:var(--mut);font-weight:800">新密碼</label><input id="np1" type="password" placeholder="至少 8 碼" style="margin-top:5px"><div class="muted" style="font-size:11.5px;margin:5px 2px 10px">需含大寫、小寫、數字、符號中至少 3 種</div><label style="font-size:12px;color:var(--mut);font-weight:800">再輸入一次</label><input id="np2" type="password" placeholder="確認新密碼" style="margin-top:5px"><button class="btn big" style="margin-top:14px" onclick="doForceChange()">設定並進入</button><div class="err" id="fcerr"></div></div></div></div>`;}
 function doForceChange(){const a=document.getElementById("np1").value.trim(),b=document.getElementById("np2").value.trim();const er=pwError(a);if(er){document.getElementById("fcerr").textContent=er;return;}if(a!==b){document.getElementById("fcerr").textContent="兩次輸入不一致";return;}const patch={};patch[me.k]=a;db.collection("control").doc("trackauth").set(patch,{merge:true}).then(()=>{renderApp();}).catch(e=>{document.getElementById("fcerr").textContent="失敗："+e.message;});}
 function logout(){me=null;pending=null;renderLogin();}
 function topBar(){const _b=me.role==="admin"?"⚙ 系統後台":me.role==="exec"?"📈 經營管理層":me.role==="lead"?"📊 主管":"★ 追蹤";const _t=me.role==="admin"?"專案追蹤系統 · 後台":"專案追蹤系統";return `<div class="top"><span class="badge">${_b}</span><h1>${_t}</h1><span class="sp"></span><span class="muted">${esc(me.name)}</span><button class="btn gh sm" onclick="changePw()">改密碼</button><button class="btn gh sm" onclick="logout()">登出</button></div>`;}
