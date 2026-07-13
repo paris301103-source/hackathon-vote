@@ -146,7 +146,8 @@ function viewersOf(p){const c=PERM[p.id];return (c&&c.viewers)?c.viewers:[];}
 function canEdit(p){if(!me)return false;if(me.role==="lead"||me.role==="exec")return true;if(me.role==="punk")return false;return editorsOf(p).includes(me.k);}
 function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||me.role==="punk"||me.role==="admin")return true;return editorsOf(p).includes(me.k)||viewersOf(p).includes(me.k);}
 function myProjects(){return PROJECTS.filter(canView)}
-function reportedToday(t){return t&&t.submittedWeek===weekKey()}
+function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function reportedToday(t){return t&&t.reportedDate===todayKey();}
 function fmt(ts){try{const d=ts.toDate?ts.toDate():new Date(ts);return (d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(e){return""}}
 
 function init(){
