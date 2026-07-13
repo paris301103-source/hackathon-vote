@@ -312,9 +312,10 @@ function dayBlock(p,t){
  }else{
   h+=`<div class="ro" style="margin-top:6px">${esc(t.today||'—')}</div>${t.blocker?`<div class="treply" style="margin-left:0;margin-top:7px;background:#e0455f14;border-color:#e0455f33">🚧 ${esc(t.blocker)}</div>`:''}`;
  }
- h+=`<div class="upd">${t.reportedAt?('最後回報：'+esc(t.updatedBy||'')+' · '+fmt(t.reportedAt)):'尚未回報'} <button class="btn gh sm" style="float:right" onclick="showDayHist('${p.id}')">📜 歷史回報</button></div><div id="dhist-${p.id}"></div>`;
+ h+=`<div class="upd">${t.reportedAt?('最後回報：'+esc(t.updatedBy||'')+' · '+fmt(t.reportedAt)):'尚未回報'} <button class="btn gh sm" style="float:right" onclick="showDayHist('${p.id}')">📜 歷史回報</button>${(me.role==="admin"||me.role==="mgr")?`<button class="btn gh sm" style="float:right;color:var(--warn)" onclick="clearReport('${p.id}')">🗑 清除測試資料</button>`:""}</div><div id="dhist-${p.id}"></div>`;
  h+=`</div>`;return h;
 }
+function clearReport(pid){if(!confirm("清除本案的『進度/今日回報/卡關/本週欄』測試資料？（指派、評語、週計畫不受影響，無法復原）"))return;db.collection("track").doc(pid).set({today:"",week:"",blocker:"",nextStep:"",progress:0,status:"idle",reportedDate:"",updatedBy:me.name},{merge:true}).then(()=>alert("✅ 已清除本案測試資料")).catch(e=>alert("失敗："+e.message));}
 function submitDay(pid){const w=document.getElementById("dw-"+pid),b=document.getElementById("db-"+pid);const today=(w?w.value.trim():"")||"無進度";const blk=b?b.value.trim():"";const tk=todayKey();
  db.collection("dreports").doc(pid+"__"+tk).set({projId:pid,date:tk,today:today,blocker:blk,by:me.name,at:firebase.firestore.FieldValue.serverTimestamp()}).then(()=>{db.collection("track").doc(pid).set({today:today,blocker:blk,reportedDate:tk,reportedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:me.name},{merge:true});alert("✅ 今日回報已送出！");}).catch(e=>alert("送出失敗："+e.message));}
 function showDayHist(id){const box=document.getElementById("dhist-"+id);if(!box)return;if(box.innerHTML){box.innerHTML="";return;}box.innerHTML='<div class="muted" style="margin-top:8px">載入中…</div>';db.collection("dreports").where("projId","==",id).get().then(s=>{const rows=[];s.forEach(d=>rows.push(d.data()));rows.sort((a,b)=>b.date<a.date?-1:1);box.innerHTML='<div class="sl" style="margin-top:10px">📜 歷史每日回報</div>'+(rows.length?rows.slice(0,40).map(r=>`<div class="hist"><b>${esc(r.date)}</b> <span class="muted">· ${esc(r.by||'')}</span><div style="margin-top:3px">${esc(r.today)}</div>${r.blocker?'<div style="margin-top:2px;color:var(--warn)">🚧 '+esc(r.blocker)+'</div>':''}</div>`).join(""):'<div class="muted">尚無紀錄</div>');}).catch(e=>{box.innerHTML='<div class="muted">讀取失敗</div>';});}
@@ -427,9 +428,9 @@ function renderAB(){
    <td><span class="pillst" style="background:${cvar(sm[2])}22;color:${cvar(sm[2])}">${sm[1]}</span></td>
    <td><span class="pillst" style="background:${t.decision==='stop'?'#ff547022':t.decision==='hold'?'#e8a33d22':'#4c8dff22'};color:${t.decision==='stop'?'var(--stop)':t.decision==='hold'?'var(--hold)':'var(--go)'}">${dm[1]}</span></td>
    <td><div class="prog" style="min-width:64px"><i style="width:${t.progress||0}%"></i></div><span class="muted">${t.progress||0}%</span></td>
-   <td style="max-width:220px">${esc(t.week||'')||'<span class=muted>—</span>'}</td>
+   <td style="max-width:220px">${esc(t.today||'')||'<span class=muted>—</span>'}</td>
    <td style="max-width:150px;color:${t.blocker?'var(--warn)':'inherit'}">${esc(t.blocker||'')||'<span class=muted>—</span>'}</td></tr>`;}).join("");
- b.innerHTML=stats+filterBar(false)+`<div class="tb-wrap"><table><thead><tr><th>專案</th><th>去向</th><th>負責人</th><th>追蹤對象</th><th>今日</th><th>狀態</th><th>決策</th><th>進度</th><th>本週做了什麼</th><th>卡關</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+ b.innerHTML=stats+filterBar(false)+`<div class="tb-wrap"><table><thead><tr><th>專案</th><th>去向</th><th>負責人</th><th>追蹤對象</th><th>今日</th><th>狀態</th><th>決策</th><th>進度</th><th>今日回報</th><th>卡關</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function filterBar(pg){return `<div class="filters"><select onchange="fBucket=this.value;pIdx=0;renderAB()"><option value="">全部去向</option>${Object.keys(BUCKETS).map(k=>`<option value="${k}" ${fBucket===k?'selected':''}>${BUCKETS[k].n}</option>`).join("")}</select><select onchange="fOwner=this.value;pIdx=0;renderAB()"><option value="">全部負責人</option>${MANAGERS.filter(o=>o.role==='pm').map(o=>`<option value="${o.k}" ${fOwner===o.k?'selected':''}>${esc(o.name)}</option>`).join("")}</select>${pg?'<span class="muted">逐案檢視 · 開會一頁一頁看</span>':''}</div>`;}
 function weekView(){
