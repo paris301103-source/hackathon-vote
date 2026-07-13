@@ -229,6 +229,8 @@ function pager(list){
 
   ${punkBlock(p,t)}
 
+  ${aiBlock(p,t)}
+
   ${dayBlock(p,t)}
   ${commentBlock(p,t)}
  </div>`;
@@ -338,6 +340,12 @@ function addInstr(pid){const ta=document.getElementById("cm-"+pid);const tx=ta?t
    tos.forEach(k=>{if(((MAIL&&MAIL[k])||"").trim())notify(k,subj,body);});
    if(ta)ta.value="";if(toEl)toEl.value="";alert("✅ 特殊指示已送出"+(sendList.length?"，已通知 "+tos.filter(k=>((MAIL&&MAIL[k])||"").trim()).join("、"):""));
  }).catch(e=>alert("失敗："+e.message));}
+function aiLabel(v){return ({none:"未使用",use:"使用中·保留",off:"可關閉",closed:"已關閉"})[v||"none"];}
+function aiColor(v){return v==="off"?"var(--warn)":v==="use"?"var(--go)":v==="closed"?"var(--mut)":"var(--mut)";}
+function aiSel(cur,field,pid,ed){const O=[["none","未使用"],["use","使用中·需保留"],["off","可關閉"],["closed","已關閉"]];const v=cur||"none";if(!ed){const f=O.find(o=>o[0]===v)||O[0];return `<b style="color:${aiColor(v)}">${f[1]}</b>`;}return `<select onchange="save('${pid}',{${field}:this.value})">${O.map(o=>`<option value="${o[0]}" ${o[0]===v?'selected':''}>${o[1]}</option>`).join('')}</select>`;}
+function aiBlock(p,t){const ed=canEdit(p);let h=`<div class="sec"><div class="sl">🤖 AI 帳號（是否還需要 / 可否關閉）</div><div class="muted" style="font-size:12px;margin:3px 0 7px">標記各組的 Claude / Codex 帳號狀態，方便統一評估關閉、省訂閱費。</div>`;
+ h+=`<div class="row" style="gap:10px;flex-wrap:wrap"><label style="width:auto">Claude</label>${aiSel(t.aiClaude,'aiClaude',p.id,ed)}<label style="width:auto;margin-left:8px">Codex</label>${aiSel(t.aiCodex,'aiCodex',p.id,ed)}</div>`;
+ h+=`</div>`;return h;}
 function decBlock(p,t){
  const dec=t.decision||"go";const dm=decMeta(dec);const prop=t.proposal;const isLead=me.role==="lead"||me.role==="exec";const ed=canEdit(p);
  let h=`<div class="decbar dec-${dec}"><span>導入決策：${dm[1]}</span>`;
@@ -406,8 +414,8 @@ function renderAB(){
  if(adminTab==="perm"){b.innerHTML=permView();return;}
  if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));b.innerHTML=filterBar(true)+pager(ps);return;}
  // board
- let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0,odue=0;
- PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(reportedToday(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.plan||[]).filter(x=>!x.done).length);tkr+=((t.plan||[]).filter(x=>x.assignee&&x.assignee!==pmOf(p)&&!x.reply&&!x.done).length);odue+=((t.plan||[]).filter(x=>!x.done&&x.week<weekKey()).length);});
+ let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0,odue=0,aioff=0;
+ PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(reportedToday(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.plan||[]).filter(x=>!x.done).length);tkr+=((t.plan||[]).filter(x=>x.assignee&&x.assignee!==pmOf(p)&&!x.reply&&!x.done).length);odue+=((t.plan||[]).filter(x=>!x.done&&x.week<weekKey()).length);if(t.aiClaude==="off")aioff++;if(t.aiCodex==="off")aioff++;});
  const stats=`<div class="stats">
   <div class="stat" style="border-color:${rep>=24?'#12b88655':'#ff547055'}"><div class="n" style="color:${rep>=24?'var(--teal)':'var(--warn)'}">${rep}/24</div><div class="l">今日已回報</div></div>
   <div class="stat"><div class="n">${Math.round(sum/24)}%</div><div class="l">整體平均進度</div></div>
@@ -417,7 +425,7 @@ function renderAB(){
   <div class="stat"><div class="n" style="color:var(--stop)">${stop}</div><div class="l">已叫停</div></div>
   <div class="stat" style="border-color:${pend?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">🔔 ${pend}</div><div class="l">待裁決建議</div></div>
   <div class="stat"><div class="n" style="color:var(--pink)">${tk}</div><div class="l">未完成項目</div></div>
-  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">待回覆</div></div>\n  <div class="stat" style="border-color:${odue?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${odue}</div><div class="l">週計畫逾期</div></div></div>`;
+  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">待回覆</div></div>\n  <div class="stat" style="border-color:${odue?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${odue}</div><div class="l">週計畫逾期</div></div><div class="stat" style="border-color:${aioff?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">${aioff}</div><div class="l">可關閉帳號</div></div></div>`;
  let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));
  const rows=ps.map(p=>{const t=TRACK[p.id]||{};const sm=stMeta(t.status||"idle");const dm=decMeta(t.decision||"go");const sub=reportedToday(t);
   return `<tr class="${sub?'':'norep'}"><td><b>${esc(p.n)}</b>${t.proposal?' <span class="pillst" style="background:#e8a33d22;color:var(--obs)">🔔待裁決</span>':''}<div class="muted" style="font-size:11px">${esc(p.lead)}${p.medal?' · '+esc(p.medal):''}</div></td>
@@ -427,10 +435,10 @@ function renderAB(){
    <td>${sub?'<span class="pillst" style="background:#12b88622;color:var(--teal)">已回報</span>':'<span class="pillst" style="background:#ff547022;color:var(--warn)">未回報</span>'}</td>
    <td><span class="pillst" style="background:${cvar(sm[2])}22;color:${cvar(sm[2])}">${sm[1]}</span></td>
    <td><span class="pillst" style="background:${t.decision==='stop'?'#ff547022':t.decision==='hold'?'#e8a33d22':'#4c8dff22'};color:${t.decision==='stop'?'var(--stop)':t.decision==='hold'?'var(--hold)':'var(--go)'}">${dm[1]}</span></td>
-   <td><div class="prog" style="min-width:64px"><i style="width:${t.progress||0}%"></i></div><span class="muted">${t.progress||0}%</span></td>
+   <td><div class="prog" style="min-width:64px"><i style="width:${t.progress||0}%"></i></div><span class="muted">${t.progress||0}%</span></td><td style="font-size:11px;white-space:nowrap;line-height:1.5"><span style="color:${aiColor(t.aiClaude)}">C：${aiLabel(t.aiClaude)}</span><br><span style="color:${aiColor(t.aiCodex)}">Cx：${aiLabel(t.aiCodex)}</span></td>
    <td style="max-width:220px">${esc(t.today||'')||'<span class=muted>—</span>'}</td>
    <td style="max-width:150px;color:${t.blocker?'var(--warn)':'inherit'}">${esc(t.blocker||'')||'<span class=muted>—</span>'}</td></tr>`;}).join("");
- b.innerHTML=stats+filterBar(false)+`<div class="tb-wrap"><table><thead><tr><th>專案</th><th>去向</th><th>負責人</th><th>追蹤對象</th><th>今日</th><th>狀態</th><th>決策</th><th>進度</th><th>今日回報</th><th>卡關</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+ b.innerHTML=stats+filterBar(false)+`<div class="tb-wrap"><table><thead><tr><th>專案</th><th>去向</th><th>負責人</th><th>追蹤對象</th><th>今日</th><th>狀態</th><th>決策</th><th>進度</th><th>AI帳號</th><th>今日回報</th><th>卡關</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 function filterBar(pg){return `<div class="filters"><select onchange="fBucket=this.value;pIdx=0;renderAB()"><option value="">全部去向</option>${Object.keys(BUCKETS).map(k=>`<option value="${k}" ${fBucket===k?'selected':''}>${BUCKETS[k].n}</option>`).join("")}</select><select onchange="fOwner=this.value;pIdx=0;renderAB()"><option value="">全部負責人</option>${MANAGERS.filter(o=>o.role==='pm').map(o=>`<option value="${o.k}" ${fOwner===o.k?'selected':''}>${esc(o.name)}</option>`).join("")}</select>${pg?'<span class="muted">逐案檢視 · 開會一頁一頁看</span>':''}</div>`;}
 function remindNoReport(){const list=PROJECTS.filter(p=>!reportedToday(TRACK[p.id]));const byOwner={};list.forEach(p=>{const k=pmOf(p)||p.pm;if(!k)return;const to=(((MAIL&&MAIL[k])||"").trim());if(!to)return;(byOwner[k]=byOwner[k]||[]).push(p.n);});const owners=Object.keys(byOwner);if(!owners.length){alert("沒有可提醒的對象：未回報的案都還沒指派負責人、或負責人沒有 Email（可到後台或指派時補 Email）。");return;}if(!confirm("要 Email 提醒這 "+owners.length+" 位嗎？每人只寄一封（合併他名下所有未回報案，不會轟炸）：\n\n"+owners.map(k=>pn(k)+"（"+byOwner[k].length+" 案）").join("\n")))return;owners.forEach(k=>{const names=byOwner[k];const body=pn(k)+" 你好，\n\n以下專案今天還沒回報進度，請登入系統回報（沒進度也請填「無進度」）：\n"+names.map((n,idx)=>(idx+1)+". "+n).join("\n")+"\n\n"+SITE_URL;notify(k,"【追蹤系統】今日待回報（"+names.length+" 案）",body);});alert("✅ 已提醒 "+owners.length+" 位（每人一封、合併名下案件）。");}
@@ -478,8 +486,8 @@ function togPerm(pid,field,key){
  db.collection("control").doc("trackperm").set(patch,{merge:true}).catch(e=>alert("失敗："+e.message));
 }
 function exportCSV(){
- const head=["專案","去向","負責人","追蹤對象","隊長","今日回報","狀態","決策","叫停原因","進度%","今日內容","下一步","卡關","預期完成","更新者","更新時間"];
- const rows=PROJECTS.map(p=>{const t=TRACK[p.id]||{};return [p.n,BUCKETS[p.bk].n,pmLabel(p),pn(handlerOf(p)),p.lead,reportedToday(t)?"是":"否",stMeta(t.status||"idle")[1],decMeta(t.decision||"go")[1],t.decisionReason||"",t.progress||0,t.today||"",t.nextStep||p.next,t.blocker||"",t.due||"",t.updatedBy||"",t.updatedAt?fmt(t.updatedAt):""];});
+ const head=["專案","去向","負責人","追蹤對象","隊長","今日回報","狀態","決策","叫停原因","進度%","今日內容","下一步","卡關","預期完成","Claude帳號","Codex帳號","更新者","更新時間"];
+ const rows=PROJECTS.map(p=>{const t=TRACK[p.id]||{};return [p.n,BUCKETS[p.bk].n,pmLabel(p),pn(handlerOf(p)),p.lead,reportedToday(t)?"是":"否",stMeta(t.status||"idle")[1],decMeta(t.decision||"go")[1],t.decisionReason||"",t.progress||0,t.today||"",t.nextStep||p.next,t.blocker||"",t.due||"",aiLabel(t.aiClaude),aiLabel(t.aiCodex),t.updatedBy||"",t.updatedAt?fmt(t.updatedAt):""];});
  const csv=[head,...rows].map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(",")).join("\n");
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["﻿"+csv],{type:"text/csv"}));a.download="專案追蹤_"+new Date().toISOString().slice(0,10)+".csv";a.click();
 }
