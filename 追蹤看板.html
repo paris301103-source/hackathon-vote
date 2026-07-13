@@ -344,18 +344,18 @@ function decBlock(p,t){
  if(isLead)h+=`<select style="width:auto;margin-left:auto" onchange="setDecision('${p.id}',this.value)">${DECIDE.map(d=>`<option value="${d[0]}" ${d[0]===dec?'selected':''}>${d[1]}</option>`).join("")}</select>`;
  h+=`</div>`;
  if(prop){
-  h+=`<div class="decbar dec-${prop.type}" style="margin-top:8px;flex-wrap:wrap"><span>🔔 已建議「${decMeta(prop.type)[1]}」：${esc(prop.reason)} <span class="muted">（${esc(prop.by)}）</span></span>`;
-  if(isLead)h+=`<span style="margin-left:auto;white-space:nowrap"><button class="btn sm" onclick="approveProp('${p.id}')">核准</button> <button class="btn gh sm" onclick="rejectProp('${p.id}')">駁回</button></span>`;
+  h+=`<div class="decbar dec-${prop.type}" style="margin-top:8px;flex-wrap:wrap"><span>🔔 ${prop.type==='other'?'💡 其他建議':'已建議「'+decMeta(prop.type)[1]+'」'}：${esc(prop.reason)} <span class="muted">（${esc(prop.by)}）</span></span>`;
+  if(isLead)h+=`<span style="margin-left:auto;white-space:nowrap">${prop.type==='other'?`<button class="btn gh sm" onclick="rejectProp('${p.id}')">✓ 已讀關閉</button>`:`<button class="btn sm" onclick="approveProp('${p.id}')">核准</button> <button class="btn gh sm" onclick="rejectProp('${p.id}')">駁回</button>`}</span>`;
   else if(ed)h+=`<button class="btn gh sm" style="margin-left:auto" onclick="withdrawProp('${p.id}')">撤回建議</button>`;
   else h+=`<span class="muted" style="margin-left:auto">等主管裁決</span>`;
   h+=`</div>`;
  }else if(ed&&!isLead){
-  h+=`<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:140px">覺得這案不該繼續推？可建議主管裁決：</span><button class="btn gh sm" onclick="propose('${p.id}','hold')">建議暫停</button><button class="btn gh sm" onclick="propose('${p.id}','stop')">建議叫停</button></div>`;
+  h+=`<div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap"><span class="muted" style="flex:1;min-width:140px">對這案有想法？送給主管：</span><button class="btn gh sm" onclick="propose('${p.id}','hold')">建議暫停</button><button class="btn gh sm" onclick="propose('${p.id}','stop')">建議叫停</button><button class="btn gh sm" onclick="propose('${p.id}','other')">其他建議</button></div>`;
  }
  if(dec!=="go")h+=`<div class="sec" style="border:0;padding-top:8px"><div class="sl" style="color:var(--warn)">${dm[1]} 原因（主管裁定）</div>${isLead?`<textarea onchange="save('${p.id}',{decisionReason:this.value})" placeholder="裁定原因…">${esc(t.decisionReason||'')}</textarea>`:`<div class="ro">${esc(t.decisionReason||'—')}</div>`}</div>`;
  return h;
 }
-function propose(id,type){const r=prompt(type==="stop"?"建議『叫停·不導入』的原因（會送給主管裁決）：":"建議『暫停觀察』的原因（會送給主管裁決）：");if(!r)return;save(id,{proposal:{type:type,reason:r,by:me.name,at:Date.now()}});alert("✅ 已送出建議，主管會在看板收到通知並裁決。");}
+function propose(id,type){const label=type==="stop"?"叫停·不導入":type==="hold"?"暫停觀察":"其他建議";const r=prompt("填「"+label+"」的說明（會送給主管）：");if(!r)return;save(id,{proposal:{type:type,reason:r,by:me.name,at:Date.now()}});alert("✅ 已送出建議，主管會在看板『待裁決』集中看到（不逐則寄信、不轟炸）。");}
 function withdrawProp(id){save(id,{proposal:firebase.firestore.FieldValue.delete()});}
 function approveProp(id){const t=TRACK[id]||{};const pr=t.proposal;if(!pr)return;save(id,{decision:pr.type,decisionReason:pr.reason,proposal:firebase.firestore.FieldValue.delete()});}
 function rejectProp(id){save(id,{proposal:firebase.firestore.FieldValue.delete()});}
@@ -441,7 +441,7 @@ function weekView(){
  const upd=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>reportedToday(x.t));
  const blk=upd.filter(x=>x.t.blocker);const stop=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>(x.t.decision||"go")!=="go");
  let h=`<div class="banner">📅 今日 ${todayKey()} · 已回報 ${upd.length}/24（沒進度也要回報「無進度」）</div>`;
- if(props.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">🔔 待主管裁決（${props.length}）—— 下層建議叫停/暫停，請裁決</div>${props.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> · 建議 ${decMeta(x.t.proposal.type)[1]} <span class="muted">by ${esc(x.t.proposal.by)}</span><div style="margin-top:2px">${esc(x.t.proposal.reason)}</div></div>`).join("")}</div>`;
+ if(props.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">🔔 待主管裁決（${props.length}）—— 下層建議叫停/暫停，請裁決</div>${props.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> · ${x.t.proposal.type==='other'?'💡 其他建議':'建議 '+decMeta(x.t.proposal.type)[1]} <span class="muted">by ${esc(x.t.proposal.by)}</span><div style="margin-top:2px">${esc(x.t.proposal.reason)}</div></div>`).join("")}</div>`;
  h+=`<div class="wk" style="border-color:${norep.length?'#e8a33d':'#12b886'}"><div class="wn" style="color:${norep.length?'var(--obs)':'var(--teal)'}">📣 今日還沒回報（${norep.length}）${norep.length?` <button class="btn gh sm" style="margin-left:8px" onclick="remindNoReport()">🔔 提醒全部未回報</button>`:``}</div>${norep.length?'<div style="margin-top:6px;line-height:1.8">'+norep.map(p=>esc(p.n)+' <span class="muted">('+esc(person(p.pm)?person(p.pm).name:p.pm)+')</span>').join('　·　')+'</div>':'<div class="muted" style="margin-top:6px">全部都送出了 🎉</div>'}</div>`;
  h+=`<div class="wk" style="border-color:var(--warn)"><div class="wn" style="color:var(--warn)">🚧 卡關（${blk.length}）</div>${blk.length?blk.map(x=>`<div style="margin-top:7px"><b>${esc(x.p.n)}</b> <span class="muted">· ${esc(pmLabel(x.p))}</span><div style="color:var(--warn);margin-top:2px">${esc(x.t.blocker)}</div><button class="btn gh sm" style="margin-top:5px" onclick="remindBlocker('${x.p.id}')">🔔 追蹤此卡關</button></div>`).join(''):'<div class="muted" style="margin-top:6px">無</div>'}</div>`;
  if(stop.length)h+=`<div class="wk" style="border-color:var(--obs)"><div class="wn" style="color:var(--obs)">⏸ 暫停/叫停（${stop.length}）</div>${stop.map(x=>`<div style="margin-top:6px"><b>${esc(x.p.n)}</b> · ${decMeta(x.t.decision)[1]} <span class="muted">${x.t.decisionReason?'· '+esc(x.t.decisionReason):''}</span></div>`).join('')}</div>`;
