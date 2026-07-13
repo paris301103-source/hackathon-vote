@@ -42,7 +42,8 @@ jobs:
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "/" # App source code path
           api_location: "" # Api source code path - optional
-          output_location: "." # Built app content directory - optional
+          output_location: "" # Built app content directory - optional
+          skip_app_build: true # 純靜態 HTML，不需建置，直接上傳
           github_id_token: ${{ steps.idtoken.outputs.result }}
           ###### End of Repository/Build Configurations ######
 
