@@ -154,6 +154,7 @@ function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||m
 function myProjects(){return PROJECTS.filter(canView)}
 function isActive(k){const p=person(k);if(!p)return false;if(["exec","mgr","admin","punk","lead"].indexOf(p.role)>=0)return true;if(PINS&&PINS[k])return true;for(var i=0;i<PROJECTS.length;i++){var pr=PROJECTS[i];if(editorsOf(pr).indexOf(k)>=0||viewersOf(pr).indexOf(k)>=0)return true;}return false;}
 function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function monthKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function reportedToday(t){return t&&t.reportedDate===todayKey();}
 function fmt(ts){try{const d=ts.toDate?ts.toDate():new Date(ts);return (d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}catch(e){return""}}
 
@@ -203,7 +204,7 @@ function renderPagerView(){
  const el=document.getElementById("app");const ps=myProjects();
  const done=ps.filter(p=>reportedToday(TRACK[p.id])).length;
  let banner;
- if(me.role==="punk")banner=`<div class="banner">🛡 <b>資安 / 權限確認</b>　本週（${weekLabel(weekKey())}）逐案確認每個階段的資安與權限。你看得到全部 ${ps.length} 案。</div>`;
+ if(me.role==="punk")banner=`<div class="banner">🛡 <b>資安 / 權限確認</b>　隨時逐案確認——專案一有進度就檢查資安與權限。你看得到全部 ${ps.length} 案。</div>`;
  else banner=`<div class="banner">📅 <b>今日回報</b>（${todayKey()}）　你負責 <b>${ps.length}</b> 案，每天回報進度（沒進度就寫「無進度」）。今日已回報 <b style="color:${done>=ps.length?'var(--teal)':'var(--warn)'}">${done}/${ps.length}</b>。</div>`;
  el.innerHTML=topBar()+banner+pager(ps);
 }
@@ -215,7 +216,7 @@ function pager(list){
  const sub=reportedToday(t);
  return `<div class="pgnav"><button class="btn gh" onclick="navP(-1)">‹ 上一個</button><div class="pgcount">${pIdx+1} / ${list.length}</div><button class="btn gh" onclick="navP(1)">下一個 ›</button></div>
  <div class="one1" id="c-${p.id}">
-  <div class="o1h"><div class="o1n">${esc(p.n)}</div><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n}</span>${p.medal?'<span class="medal">'+esc(p.medal)+'</span>':''}</div>
+  <div class="o1h"><div class="o1n">${esc(p.n)}</div><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n}</span>${p.medal?'<span class="medal">'+esc(p.medal)+'</span>':''}${(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))?' <span class="pillst" style="background:#e0455f22;color:var(--warn);font-weight:800">🛡 資安未過</span>':''}</div>
   <div class="muted" style="margin-top:5px">隊長 ${esc(p.lead)} · 負責人 ${esc(pmLabel(p))} · 時程 ${esc(p.time)}</div>
   <div class="o1one">${esc(p.one)}</div>
   <div style="margin-top:7px"><span class="pillst" style="background:#00e0c622;color:var(--teal);font-size:12px">📅 ${todayKey()} · 回報頻率：每天</span></div>
@@ -263,12 +264,15 @@ function punkBlock(p,t){
  const pk=t.punk||{};const punk=me.role==="punk";
  const lab=v=>v==="ok"?'<span style="color:var(--teal);font-weight:800">✓ 通過</span>':v==="no"?'<span style="color:var(--warn);font-weight:800">✗ 有問題</span>':'<span class="muted">待確認</span>';
  const sel=(f,v)=>`<select style="width:auto" onchange="savePunk('${p.id}',{${f}:this.value})"><option value="" ${!v?'selected':''}>待確認</option><option value="ok" ${v==='ok'?'selected':''}>通過</option><option value="no" ${v==='no'?'selected':''}>有問題</option></select>`;
- let h=`<div class="sec"><div class="sl" style="color:var(--obs)">🛡 PUNK 資安 / 權限確認 <span class="muted" style="font-weight:400">· 每月一次</span></div>`;
- if(punk)h+=`<div class="row"><label>資安</label>${sel("sec",pk.sec)}</div><div class="row"><label>權限</label>${sel("perm",pk.perm)}</div><div style="margin-top:6px"><textarea onchange="savePunk('${p.id}',{advice:this.value})" placeholder="資安/權限建議（可留空）…">${esc(pk.advice||"")}</textarea></div>`;
+ let h=`<div class="sec"><div class="sl" style="color:var(--obs)">🛡 PUNK 資安 / 權限確認 <span class="muted" style="font-weight:400">· 專案一有進度就確認</span></div>`;
+ if(punk)h+=`<div class="row"><label>資安</label>${sel("sec",pk.sec)}</div><div class="row"><label>權限</label>${sel("perm",pk.perm)}</div><div style="margin-top:6px"><textarea onchange="savePunk('${p.id}',{advice:this.value})" placeholder="資安/權限建議（可留空）…">${esc(pk.advice||"")}</textarea></div><button class="btn teal sm" style="margin-top:8px" onclick="logPunk('${p.id}')">📌 記錄本次確認</button>`;
  else h+=`<div style="font-size:14px">資安：${lab(pk.sec)}　·　權限：${lab(pk.perm)}</div>${pk.advice?`<div class="treply" style="margin-left:0;margin-top:7px">💬 PUNK 建議：${esc(pk.advice)}</div>`:""}${pk.by?`<div class="muted" style="font-size:11px;margin-top:5px">${esc(pk.by)}${pk.at?" · "+fmt(pk.at):""}</div>`:""}`;
+ const _log=(t.punkLog||[]).slice().sort((a,b)=>(b.at||0)-(a.at||0));
+ if(_log.length)h+=`<div class="sl" style="margin-top:10px;font-size:12px;color:var(--mut)">📜 確認紀錄（${_log.length}）</div>`+_log.map(r=>`<div class="hist">資安 ${lab(r.sec)} · 權限 ${lab(r.perm)}${r.advice?`<div style="margin-top:2px">💬 ${esc(r.advice)}</div>`:""}<div class="muted" style="font-size:11px">${esc(r.by||"")}${r.at?" · "+fmt(r.at):""}</div></div>`).join("");
  h+=`</div>`;return h;
 }
 function savePunk(pid,patch){const t=TRACK[pid]||{};const pk=Object.assign({},t.punk||{},patch,{by:me.name,at:Date.now()});save(pid,{punk:pk});}
+function logPunk(pid){const t=TRACK[pid]||{};const pk=t.punk||{};if(!pk.sec&&!pk.perm&&!((pk.advice||"").trim())){alert("請先填資安/權限/建議再記錄");return;}const log=(t.punkLog||[]).slice();log.push({sec:pk.sec||"",perm:pk.perm||"",advice:pk.advice||"",by:me.name,at:Date.now()});save(pid,{punkLog:log});alert("✅ 已記錄本次確認");}
 function isPM(p){const k=pmOf(p);return !!k&&k===me.k;}
 function canDelegate(p){return me.role==="admin"||me.role==="lead"||me.role==="mgr"||isPM(p);}
 function handlerOf(p){return pmOf(p);}
@@ -298,7 +302,7 @@ function planBlock(p,t){
  if(items.length){let lw=null;items.forEach(it=>{
   if(it.week!==lw){lw=it.week;h+=`<div style="font-weight:800;font-size:12.5px;margin:10px 0 3px;color:${it.week===cur?'var(--teal)':'var(--mut)'}">${weekLabel(it.week)}${it.week===cur?' · 本週':''}</div>`;}
   const st=planStatus(it,cur);
-  h+=`<div class="taskb" style="padding:6px 0"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><span class="tck" style="color:${it.done?'var(--teal)':'var(--mut)'}" ${ed?`onclick="togglePlan('${p.id}','${it.id}')"`:''}>${it.done?'✓':'☐'}</span><span class="tt" style="${it.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(it.goal)}</span>${it.assignee&&it.assignee!==pmOf(p)?`<span class="pillst" style="background:#7c53d61a;color:var(--km)">指派給 ${esc(pn(it.assignee))}</span>`:''}<span class="pillst" style="background:${st[2]};color:${st[1]}">${st[0]}</span>${ed?`<span class="tck" style="color:var(--warn)" onclick="delPlan('${p.id}','${it.id}')">✕</span>`:''}</div>${it.reply?`<div class="treply">💬 ${esc(it.reply)} <span class="muted">— ${esc(it.replyBy||'')}</span></div>`:''}${(it.assignee===me.k&&!it.done&&canView(p))?`<div class="row" style="margin:6px 0 0 26px;gap:6px"><input id="rp-${p.id}-${it.id}" placeholder="回覆：收到 / 預計完成 / 有問題…" value="${esc(it.reply||'')}" style="flex:1"><button class="btn sm gh" onclick="replyPlan('${p.id}','${it.id}')">送出回覆</button></div>`:''}</div>`;
+  h+=`<div class="taskb" style="padding:6px 0"><div style="display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><span class="tck" style="color:${it.done?'var(--teal)':'var(--mut)'}" ${(ed||it.assignee===me.k)?`onclick="togglePlan('${p.id}','${it.id}')"`:''}>${it.done?'✓':'☐'}</span><span class="tt" style="${it.done?'text-decoration:line-through;color:var(--mut)':''}">${esc(it.goal)}</span>${it.assignee&&it.assignee!==pmOf(p)?`<span class="pillst" style="background:#7c53d61a;color:var(--km)">指派給 ${esc(pn(it.assignee))}</span>`:''}<span class="pillst" style="background:${st[2]};color:${st[1]}">${st[0]}</span>${ed?`<span class="tck" style="color:var(--warn)" onclick="delPlan('${p.id}','${it.id}')">✕</span>`:''}</div>${it.reply?`<div class="treply">💬 ${esc(it.reply)} <span class="muted">— ${esc(it.replyBy||'')}</span></div>`:''}${(it.assignee===me.k&&!it.done&&canView(p))?`<div class="row" style="margin:6px 0 0 26px;gap:6px"><input id="rp-${p.id}-${it.id}" placeholder="回覆：收到 / 預計完成 / 有問題…" value="${esc(it.reply||'')}" style="flex:1"><button class="btn sm gh" onclick="replyPlan('${p.id}','${it.id}')">送出回覆</button></div>`:''}</div>`;
  });}
  else h+=`<div class="muted" style="font-size:13px">尚未安排項目</div>`;
  if(canAssign){const ws=upcomingWeeks(12);h+=`<div style="margin-top:10px"><input id="pg-${p.id}" placeholder="要完成／交付的項目…" style="width:100%"><div class="row" style="margin-top:6px;gap:6px;flex-wrap:wrap"><label style="width:auto">哪一週</label><select id="pw-${p.id}" style="width:auto">${ws.map(w=>`<option value="${w}">${weekLabel(w)}${w===cur?'（本週）':''}</option>`).join('')}</select><label style="width:auto">指派給</label><select id="pa-${p.id}" style="width:auto">${who.map(k=>`<option value="${esc(k)}">${esc(pn(k))}${k===pmOf(p)?'（負責人）':''}</option>`).join('')}</select><button class="btn sm" onclick="addPlan('${p.id}')">＋ 排入</button></div></div>`;}
@@ -418,8 +422,8 @@ function renderAB(){
  if(adminTab==="perm"){b.innerHTML=permView();return;}
  if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));b.innerHTML=filterBar(true)+pager(ps);return;}
  // board
- let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0,odue=0,aioff=0;
- PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(reportedToday(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.plan||[]).filter(x=>!x.done).length);tkr+=((t.plan||[]).filter(x=>x.assignee&&x.assignee!==pmOf(p)&&!x.reply&&!x.done).length);odue+=((t.plan||[]).filter(x=>!x.done&&x.week<weekKey()).length);if(t.aiClaude==="off")aioff++;if(t.aiCodex==="off")aioff++;});
+ let sum=0,cnt={idle:0,go:0,warn:0,ok:0},rep=0,stop=0,pend=0,tk=0,tkr=0,odue=0,aioff=0,secbad=0;
+ PROJECTS.forEach(p=>{const t=TRACK[p.id]||{};sum+=t.progress||0;cnt[t.status||"idle"]++;if(reportedToday(t))rep++;if((t.decision||"go")==="stop")stop++;if(t.proposal)pend++;tk+=((t.plan||[]).filter(x=>!x.done).length);tkr+=((t.plan||[]).filter(x=>x.assignee&&x.assignee!==pmOf(p)&&!x.reply&&!x.done).length);odue+=((t.plan||[]).filter(x=>!x.done&&x.week<weekKey()).length);if(t.aiClaude==="off")aioff++;if(t.aiCodex==="off")aioff++;if(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))secbad++;});
  const stats=`<div class="stats">
   <div class="stat" style="border-color:${rep>=24?'#12b88655':'#ff547055'}"><div class="n" style="color:${rep>=24?'var(--teal)':'var(--warn)'}">${rep}/24</div><div class="l">今日已回報</div></div>
   <div class="stat"><div class="n">${Math.round(sum/24)}%</div><div class="l">整體平均進度</div></div>
@@ -429,10 +433,10 @@ function renderAB(){
   <div class="stat"><div class="n" style="color:var(--stop)">${stop}</div><div class="l">已叫停</div></div>
   <div class="stat" style="border-color:${pend?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">🔔 ${pend}</div><div class="l">待裁決建議</div></div>
   <div class="stat"><div class="n" style="color:var(--pink)">${tk}</div><div class="l">未完成項目</div></div>
-  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">待回覆</div></div>\n  <div class="stat" style="border-color:${odue?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${odue}</div><div class="l">週計畫逾期</div></div><div class="stat" style="border-color:${aioff?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">${aioff}</div><div class="l">可關閉帳號</div></div></div>`;
+  <div class="stat" style="border-color:${tkr?'#c07a1266':''}"><div class="n" style="color:var(--obs)">${tkr}</div><div class="l">待回覆</div></div>\n  <div class="stat" style="border-color:${odue?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${odue}</div><div class="l">週計畫逾期</div></div><div class="stat" style="border-color:${aioff?'#e8a33d66':''}"><div class="n" style="color:var(--obs)">${aioff}</div><div class="l">可關閉帳號</div></div><div class="stat" style="border-color:${secbad?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${secbad}</div><div class="l">🛡 資安未過</div></div></div>`;
  let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner))));
  const rows=ps.map(p=>{const t=TRACK[p.id]||{};const sm=stMeta(t.status||"idle");const dm=decMeta(t.decision||"go");const sub=reportedToday(t);
-  return `<tr class="${sub?'':'norep'}"><td><b>${esc(p.n)}</b>${t.proposal?' <span class="pillst" style="background:#e8a33d22;color:var(--obs)">🔔待裁決</span>':''}<div class="muted" style="font-size:11px">${esc(p.lead)}${p.medal?' · '+esc(p.medal):''}</div></td>
+  return `<tr class="${sub?'':'norep'}"><td><b>${esc(p.n)}</b>${t.proposal?' <span class="pillst" style="background:#e8a33d22;color:var(--obs)">🔔待裁決</span>':''}${(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))?' <span class="pillst" style="background:#e0455f22;color:var(--warn)">🛡 資安未過</span>':''}<div class="muted" style="font-size:11px">${esc(p.lead)}${p.medal?' · '+esc(p.medal):''}</div></td>
    <td><span class="tag ${BUCKETS[p.bk].c}">${BUCKETS[p.bk].n.replace('・產品孵化','')}</span></td>
    <td>${esc(pmLabel(p))}</td>
    <td>${(function(){const hk=handlerOf(p);const del=hk!==pmOf(p)&&!(p.team&&p.team.includes(hk));return del?'<span style="color:var(--km);font-weight:800">'+esc(pn(hk))+'</span><div class="muted" style="font-size:10px">協作</div>':'<span class="muted">'+esc(pn(hk))+'</span>';})()}</td>
