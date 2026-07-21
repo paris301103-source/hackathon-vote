@@ -521,7 +521,10 @@ function csAck(pid,fid){var t=TRACK[pid]||{};var a=Object.assign({},t.audit||{})
 function csITAck(pid){var t=TRACK[pid]||{};var i=Object.assign({},t.it||{});if(i.cs&&canSign(i.cs)){i.cs=Object.assign({},i.cs,{ok:true,okAt:Date.now(),okBy:myNm()});save(pid,{it:i});}}
 function delFinding(pid,fid){if(!confirm("刪除這筆稽核發現？"))return;const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.findings=(a.findings||[]).filter(function(f){return f.id!==fid;});save(pid,{audit:a});}
 function dts(ms){if(!ms)return"";var d=new Date(ms);var p=function(x){return x<10?"0"+x:""+x;};return (d.getMonth()+1)+"/"+d.getDate()+" "+p(d.getHours())+":"+p(d.getMinutes());}
-function saveFinding(pid){var t=document.getElementById("af-t-"+pid),r=document.getElementById("af-r-"+pid),d=document.getElementById("af-d-"+pid);var tx=((t&&t.value)||"").trim();if(!tx){alert("請先填寫稽核發現內容。");return;}var o=TRACK[pid]||{};var a=Object.assign({},o.audit||{});a.findings=(a.findings||[]).slice();a.findings.push({id:uid(),text:tx,risk:((r&&r.value)||"中"),due:((d&&d.value)||""),by:myNm(),at:Date.now(),done:false});save(pid,{audit:a});if(t)t.value="";if(d)d.value="";}
+function saveFinding(pid){var t=document.getElementById("af-t-"+pid),r=document.getElementById("af-r-"+pid),d=document.getElementById("af-d-"+pid);var tx=((t&&t.value)||"").trim();if(!tx){alert("請先填寫稽核發現內容。");return;}var o=TRACK[pid]||{};var a=Object.assign({},o.audit||{});var rk=((r&&r.value)||"中");var du=((d&&d.value)||"");a.findings=(a.findings||[]).slice();a.findings.push({id:uid(),text:tx,risk:rk,due:du,by:myNm(),at:Date.now(),done:false});save(pid,{audit:a});if(t)t.value="";if(d)d.value="";
+ var pp=PROJECTS.filter(function(x){return x.id===pid;})[0];var ow=pp?pmOf(pp):"";
+ if(ow)notify(ow,"【追蹤系統】"+(rk==="高"?"⚠ 高風險":"")+"稽核發現：需要您改善",myNm()+" 對專案「"+(pp?pp.n:pid)+"」提出稽核發現：\n\n"+tx+"\n風險等級："+rk+(du?"\n改善期限："+du:"")+"\n\n請登入系統查看並回覆改善情形：\n"+SITE_URL);
+ alert("已記錄。"+(ow?"已通知專案負責人 "+pn(ow)+"。":"（此專案尚未指派負責人，未發出通知）")+(rk==="高"?"\n高風險建議接著指定會簽。":""));}
 function toggleFinding(pid,fid){const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.findings=(a.findings||[]).map(function(f){if(f.id!==fid)return f;var nd=!f.done;return Object.assign({},f,{done:nd,doneAt:nd?Date.now():0,doneBy:nd?myNm():""});});save(pid,{audit:a});}
 var csOpen="";
 function openCS(pid,fid){csOpen=pid+"|"+(fid||"");renderAB();}
@@ -534,9 +537,15 @@ function submitCS(pid,fid){var n=document.getElementById("csn"),e=document.getEl
  csOpen="";alert("已指定 "+c.name+" 會簽，通知信已寄出至 "+em);renderAB();}
 function csForm(pid,fid){var key=pid+"|"+(fid||"");if(csOpen!==key)return'';return '<div style="margin-top:6px;background:var(--soft);border-radius:8px;padding:8px 10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center"><span style="font-size:12px;font-weight:600">✍ 指定會簽</span><input id="csn" list="csppl" placeholder="會簽對象姓名" onchange="csFill()" style="flex:1;min-width:130px;font-size:12.5px"><input id="cse" placeholder="Email（不在系統者必填）" style="flex:1.3;min-width:170px;font-size:12.5px"><button class="btn sm" onclick="submitCS(\''+pid+'\',\''+(fid||'')+'\')">送出並通知</button><button class="btn gh sm" onclick="closeCS()">取消</button></div>';}
 function csPeopleList(){return '<datalist id="csppl">'+allPeople().filter(function(x){return x.role!=="admin";}).map(function(x){return '<option value="'+esc(pn(x.k))+'">';}).join('')+'</datalist>';}
+function nextStep(pid,f){var pp=PROJECTS.filter(function(x){return x.id===pid;})[0];var ow=pp?pmOf(pp):"";
+ if(f.done)return "已結案，無待辦";
+ if(!f.cs)return (f.risk==="高"?"高風險 — 請指定會簽（法遵／IT／主管），並由 ":"由 ")+(ow?pn(ow):"未指派負責人")+" 提出改善"+(f.due?"（期限 "+f.due+"）":"");
+ if(!f.cs.ok)return "等待 "+f.cs.name+" 會簽確認"+(f.cs.inSys?"":"（已寄信至 "+f.cs.email+"）");
+ return "已會簽，等待 "+(ow?pn(ow):"專案負責人")+" 完成改善"+(f.due?"（期限 "+f.due+"）":"")+"，改善後由稽核標記已解決";}
 function findingRow(pid,f,ed){var h='<div style="border-left:3px solid '+(f.done?'var(--teal)':'var(--warn)')+';padding:7px 0 7px 10px;margin-top:7px">';
  h+='<div style="font-size:13px;'+(f.done?'opacity:.7':'')+'">'+(f.done?'✅':'🔴')+' <b>'+esc(f.text)+'</b> <span class="pillst" style="background:'+(f.risk==="高"?'#e0455f14;color:var(--warn)':'#eef1f7;color:var(--mut)')+'">'+esc(f.risk||'')+'</span>'+(f.due?' <span class="muted">📅 期限 '+esc(f.due)+'</span>':'')+'</div>';
  h+='<div class="muted" style="font-size:11px;margin-top:3px">🖊 填寫：'+esc(f.by||'')+' '+dts(f.at)+'　｜　✔ 解決：'+(f.done?esc(f.doneBy||'')+' '+dts(f.doneAt):'<span style="color:var(--obs)">尚未解決</span>')+'</div>';
+ h+='<div style="font-size:11.5px;margin-top:3px">➡️ <b>下一步：</b>'+esc(nextStep(pid,f))+'</div>';
  h+=csHtml(f.cs,"csAck(&quot;"+pid+"&quot;,&quot;"+f.id+"&quot;)");
  if(ed)h+='<div style="margin-top:4px;display:flex;gap:8px;font-size:11.5px"><a onclick="toggleFinding(\''+pid+'\',\''+f.id+'\')" style="cursor:pointer;color:var(--teal)">'+(f.done?'重新開啟':'標記已解決')+'</a><a onclick="openCS(\''+pid+'\',\''+f.id+'\')" style="cursor:pointer;color:var(--ink2)">'+(f.cs?'改指定會簽':'指定會簽')+'</a><a onclick="delFinding(\''+pid+'\',\''+f.id+'\')" style="cursor:pointer;color:var(--warn)">刪除</a></div>';
  h+=csForm(pid,f.id);
@@ -544,6 +553,13 @@ function findingRow(pid,f,ed){var h='<div style="border-left:3px solid '+(f.done
 function auditView(){var ed=canAudit();var nochk=0,openf=0,donef=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var any=AUCHK.some(function(c){return auChk(t,c[0]);});if(!any)nochk++;auFind(t).forEach(function(f){if(f.done)donef++;else openf++;});});
  var h='<div class="banner">🔍 <b>稽核專區</b>　各案合規檢核與稽核發現追蹤'+(ed?'（您可直接在下方各專案填寫）':'（唯讀）')+'</div>'+csPeopleList();
  h+='<div class="stats"><div class="stat"><div class="n" style="color:var(--obs)">'+nochk+'</div><div class="l">尚未查核專案</div></div><div class="stat" style="border-color:'+(openf?'#e0455f66':'')+'"><div class="n" style="color:var(--warn)">'+openf+'</div><div class="l">未解決發現</div></div><div class="stat"><div class="n" style="color:var(--teal)">'+donef+'</div><div class="l">已解決發現</div></div></div>';
+ h+='<div style="background:var(--soft);border-radius:10px;padding:9px 12px;font-size:12px;color:var(--ink2);margin-bottom:10px">📋 <b>處理流程</b>　① 稽核填寫發現（自動通知專案負責人）→ ② 高風險指定會簽（法遵／IT／主管，可為系統外人員，會寄信）→ ③ 對方登入按「我要會簽」→ ④ 負責人改善 → ⑤ 稽核標記已解決</div>';
+ var todo=[];PROJECTS.forEach(function(p){auFind(TRACK[p.id]||{}).forEach(function(f){if(!f.done)todo.push([p,f]);});});
+ todo.sort(function(a,b){var r={"高":0,"中":1,"低":2};return (r[a[1].risk]==null?3:r[a[1].risk])-(r[b[1].risk]==null?3:r[b[1].risk]);});
+ if(todo.length){h+='<div class="dcard" style="border-color:#e0455f44"><div class="dc-top"><b class="dc-n" style="cursor:default">⚠️ 待處理發現（'+todo.length+'）— 依風險排序</b></div>';
+  h+=todo.map(function(x){var p=x[0],f=x[1];var ov=f.due&&f.due<todayKey();
+   return '<div style="margin-top:6px;font-size:12.5px;border-left:3px solid '+(f.risk==="高"?"var(--warn)":"#d9dee8")+';padding-left:9px"><b>'+esc(p.n)+'</b> <span class="pillst" style="background:'+(f.risk==="高"?"#e0455f14;color:var(--warn)":"#eef1f7;color:var(--mut)")+'">'+esc(f.risk||"")+'</span> '+esc(f.text)+(f.due?' <span style="color:'+(ov?"var(--warn)":"var(--mut)")+'">📅 '+esc(f.due)+(ov?" 逾期":"")+'</span>':'')+'<div style="font-size:11.5px;color:var(--ink2);margin-top:2px">➡️ '+esc(nextStep(p.id,f))+'</div></div>';}).join('');
+  h+='</div>';}
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var fs=auFind(t);var op=fs.filter(function(f){return !f.done;}).length;
   h+='<div class="dcard"><div class="dc-top"><b class="dc-n" onclick="openProj(\''+p.id+'\')">'+esc(p.n)+'</b>'+(op?'<span class="pillst" style="background:#e0455f14;color:var(--warn)">🔴 '+op+' 項待解決</span>':'')+'</div><div class="dc-chips">';
   AUCHK.forEach(function(c){var v=auChk(t,c[0]);var m=AUST.filter(function(s){return s[0]===v;})[0]||AUST[0];var sg=auBy(t,c[0]);
