@@ -120,7 +120,7 @@ const PROJECTS=[
 const MANAGERS=[
  {k:"Janet",name:"Janet",role:"exec"},{k:"Sean",name:"Sean",role:"exec"},
  {k:"ADMIN",name:"後台 / 系統管理",role:"admin"},
- {k:"PUNK",name:"PUNK（資安/權限）",role:"punk"},
+ {k:"PUNK",name:"PUNK（資安/權限）",role:"punk"},{k:"AUDIT",name:"AUDIT（稽核）",role:"audit"},
  {k:"RAE",name:"RAE",role:"mgr"},{k:"IAN",name:"IAN",role:"member"},{k:"GIBBY",name:"GIBBY",role:"member"},{k:"WIND",name:"WIND",role:"mgr"},{k:"Allen",name:"Allen",role:"member"},{k:"DIU",name:"DIU",role:"member"},
  {k:"Julia",name:"Julia",role:"exec"},{k:"Bryan",name:"Bryan",role:"member"},{k:"Jaguar",name:"Jaguar",role:"member"},{k:"Andy",name:"Andy",role:"member"},{k:"Justin",name:"Justin",role:"member"},
 ];
@@ -137,7 +137,7 @@ const STAGES=[["biz","🟢 商轉開發中","#12b886"],["internal","🟣 內部�
 const FLAGS=[["top","🔴 最高優先","#e0455f"],["hold","⏸ 擱置","#6b7686"]];
 function flagMeta(v){return FLAGS.find(function(x){return x[0]===v;});}
 const PGROUP={};Object.keys(GROUPS).forEach(function(k){GROUPS[k].ids.forEach(function(id){PGROUP[id]=k;});});
-let db,auth,TRACK={},PERM={},PINS={},MAIL={},me=null,pIdx=0,adminTab="board",fBucket="",fOwner="",fGroup="",histCache={},ASSIGN_TPL="",SECTEAM=[],dashStat="";
+let db,auth,TRACK={},PERM={},PINS={},MAIL={},me=null,pIdx=0,adminTab="board",fBucket="",fOwner="",fGroup="",adminTab0=0,histCache={},ASSIGN_TPL="",SECTEAM=[],dashStat="";
 function jesc(s){s=String(s==null?"":s);var B=String.fromCharCode(92),Q=String.fromCharCode(39),o="",i,c;for(i=0;i<s.length;i++){c=s.charAt(i);if(c===B||c===Q)o+=B;o+=(c===String.fromCharCode(10)||c===String.fromCharCode(13))?" ":c;}return o;}
 function esc(s){return (s||"").replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function extraKeys(){const s=new Set();Object.values(PERM).forEach(c=>{(c.editors||[]).forEach(k=>s.add(k));(c.viewers||[]).forEach(k=>s.add(k));if(c.pm)s.add(c.pm);});PEOPLE.forEach(p=>s.delete(p.k));return [...s];}
@@ -155,9 +155,11 @@ function weekLabel(k){const a=k.split("-").map(Number);const s=new Date(a[0],a[1
 function editorsOf(p){const c=PERM[p.id]||{};const t=TRACK[p.id]||{};const arr=[...(c.editors||[])];if(t.handler)arr.push(t.handler);if(c.pm)arr.push(c.pm);return [...new Set(arr.filter(Boolean))];}
 function viewersOf(p){const c=PERM[p.id];return (c&&c.viewers)?c.viewers:[];}
 function canEdit(p){if(!me)return false;if(me.role==="lead"||me.role==="mgr")return true;if(me.role==="punk")return false;return editorsOf(p).includes(me.k);}
-function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||me.role==="mgr"||me.role==="punk"||me.role==="admin")return true;if(SECTEAM&&SECTEAM.indexOf(me.k)>=0)return true;return editorsOf(p).includes(me.k)||viewersOf(p).includes(me.k);}
+function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||me.role==="mgr"||me.role==="punk"||me.role==="admin"||me.role==="audit")return true;if(SECTEAM&&SECTEAM.indexOf(me.k)>=0)return true;return editorsOf(p).includes(me.k)||viewersOf(p).includes(me.k);}
+function canAudit(){return !!me&&(me.k==="PUNK"||me.k==="AUDIT"||me.role==="exec");}
+function canITZ(){return !!me&&(me.k==="Bryan"||me.k==="PUNK"||me.role==="exec");}
 function myProjects(){return PROJECTS.filter(canView)}
-function isActive(k){const p=person(k);if(!p)return false;if(["exec","mgr","admin","punk","lead"].indexOf(p.role)>=0)return true;if(SECTEAM&&SECTEAM.indexOf(k)>=0)return true;if(PINS&&PINS[k])return true;for(var i=0;i<PROJECTS.length;i++){var pr=PROJECTS[i];if(editorsOf(pr).indexOf(k)>=0||viewersOf(pr).indexOf(k)>=0)return true;}return false;}
+function isActive(k){const p=person(k);if(!p)return false;if(["exec","mgr","admin","punk","lead","audit"].indexOf(p.role)>=0)return true;if(SECTEAM&&SECTEAM.indexOf(k)>=0)return true;if(PINS&&PINS[k])return true;for(var i=0;i<PROJECTS.length;i++){var pr=PROJECTS[i];if(editorsOf(pr).indexOf(k)>=0||viewersOf(pr).indexOf(k)>=0)return true;}return false;}
 function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function monthKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function reportedToday(t){return t&&t.reportedDate===todayKey();}
@@ -205,7 +207,7 @@ function restoreOrLogin(){try{const su=localStorage.getItem("trackU");if(su&&per
 function logout(){me=null;pending=null;if(idleTimer){clearTimeout(idleTimer);idleTimer=null;}clearSession();renderLogin();}
 function topBar(){const _b=me.role==="admin"?"⚙ 系統後台":me.role==="exec"?"📈 經營管理層":me.role==="mgr"?"🗂 專案管理":me.role==="lead"?"📊 主管":"★ 追蹤";const _t=me.role==="admin"?"專案追蹤系統 · 後台":"專案追蹤系統";return `<div class="top"><span class="badge">${_b}</span><h1>${_t}</h1><span class="sp"></span><span class="muted">${esc(me.name)}</span><button class="btn gh sm" onclick="changePw()">改密碼</button><button class="btn gh sm" onclick="logout()">登出</button></div>`;}
 
-function renderApp(){if(!me)return;saveSession();resetIdle();if(me.role==="lead"||me.role==="exec"||me.role==="mgr")renderAdmin();else if(me.role==="admin")renderBackend();else renderPagerView();}
+function renderApp(){if(!me)return;saveSession();resetIdle();if(me.role==="lead"||me.role==="exec"||me.role==="mgr"||me.role==="punk"||me.role==="audit"||me.k==="Bryan"){if(me.role==="audit"&&!adminTab0){adminTab="audit";adminTab0=1;}if(me.k==="Bryan"&&!adminTab0){adminTab="it";adminTab0=1;}renderAdmin();}else if(me.role==="admin")renderBackend();else renderPagerView();}
 
 /* ---- pager (pm/collab/punk) ---- */
 function renderPagerView(){
@@ -452,7 +454,7 @@ function renderAdmin(){
  el.innerHTML=topBar()+`<div class="tabs">
   <button class="${adminTab==='board'?'on':''}" onclick="setTab('board')">📊 總覽</button>
   <button class="${adminTab==='pager'?'on':''}" onclick="setTab('pager')">📄 逐案檢視</button>
-  <button class="${adminTab==='dash'?'on':''}" onclick="setTab('dash')">📊 決策儀表板</button>
+  ${(me.role==="exec"||me.role==="mgr"||me.role==="lead")?`<button class="${adminTab==='dash'?'on':''}" onclick="setTab('dash')">📊 決策儀表板</button>`:""}${canAudit()?`<button class="${adminTab==='audit'?'on':''}" onclick="setTab('audit')">🔍 稽核專區</button>`:""}${canITZ()?`<button class="${adminTab==='it'?'on':''}" onclick="setTab('it')">🖥 IT/資安專區</button>`:""}
   <button class="btn gh sm" style="margin-left:auto" onclick="exportCSV()">⬇ 匯出 CSV</button></div><div id="ab"></div>`;
  renderAB();
 }
@@ -465,6 +467,8 @@ function renderAB(){
  const b=document.getElementById("ab");if(!b)return;
  if(adminTab==="week"){b.innerHTML=weekView();return;}
  if(adminTab==="dash"){b.innerHTML=dashView();return;}
+ if(adminTab==="audit"){b.innerHTML=auditView();return;}
+ if(adminTab==="it"){b.innerHTML=itView();return;}
  if(adminTab==="perm"){b.innerHTML=permView();return;}
  if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner)))&&(!fGroup||PGROUP[p.id]===fGroup));b.innerHTML=filterBar(true)+pager(ps);return;}
  // board
@@ -490,6 +494,40 @@ function planStat(t){const arr=(t&&t.plan)||[];const done=arr.filter(function(x)
 function staleDays(t){const ts=t&&(t.reportedAt||t.updatedAt);if(!ts)return null;try{const d=ts.toDate?ts.toDate():new Date(ts);return Math.floor((Date.now()-d.getTime())/86400000);}catch(e){return null;}}
 function saveDash(id){const st=document.getElementById("stg-"+id),ow=document.getElementById("own-"+id),fl=document.getElementById("flg-"+id),nt=document.getElementById("note-"+id);save(id,{stage:st?st.value:"",handler:ow?ow.value:"",flag:fl?fl.value:"",dashNote:nt?nt.value:""});alert("💾 已儲存");}
 function overdueGoals(t){const today=todayKey();let od=0;((t&&t.goals)||[]).forEach(function(g){const gs=(g.subs||[]);const gdone=gs.length>0?gs.every(function(s){return s.done;}):!!g.done;if(g.due&&g.due<today&&!gdone)od++;gs.forEach(function(s){if(s.due&&!s.done&&s.due<today)od++;});});return od;}
+const AUCHK=[["src","資料來源合規"],["pii","個資/敏感資料"],["rec","決策變更留紀錄"],["ai","外部AI使用合規"],["perm","離職者權限回收"]];
+const AUST=[["","⚪ 未查核"],["ok","✅ 通過"],["no","❌ 有問題"],["na","— 不適用"]];
+const ITST=[["","⚪ 未處理"],["wip","🟡 處理中"],["done","✅ 已完成"],["na","— 不需要"]];
+function auChk(t,k){return ((((t&&t.audit)||{}).chk)||{})[k]||"";}
+function auFind(t){return (((t&&t.audit)||{}).findings)||[];}
+function saveAu(pid,k,v){const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.chk=Object.assign({},a.chk||{});a.chk[k]=v;save(pid,{audit:a});}
+function addFinding(pid){const tx=prompt("稽核發現（問題描述）：");if(!tx||!tx.trim())return;const rk=(prompt("風險等級：高／中／低","中")||"中").trim();const du=(prompt("改善期限（YYYY-MM-DD，可留空）：")||"").trim();const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.findings=(a.findings||[]).slice();a.findings.push({id:uid(),text:tx.trim(),risk:rk,due:du,by:me.name,at:Date.now(),done:false});save(pid,{audit:a});}
+function toggleFinding(pid,fid){const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.findings=(a.findings||[]).map(function(f){return f.id===fid?Object.assign({},f,{done:!f.done}):f;});save(pid,{audit:a});}
+function delFinding(pid,fid){if(!confirm("刪除這筆稽核發現？"))return;const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.findings=(a.findings||[]).filter(function(f){return f.id!==fid;});save(pid,{audit:a});}
+function auditView(){var ed=canAudit();var nochk=0,openf=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var any=AUCHK.some(function(c){return auChk(t,c[0]);});if(!any)nochk++;openf+=auFind(t).filter(function(f){return !f.done;}).length;});
+ var h='<div class="banner">🔍 <b>稽核專區</b>　各案合規檢核與稽核發現追蹤'+(ed?'（您可編輯）':'（唯讀）')+'</div><div class="stats"><div class="stat"><div class="n" style="color:var(--obs)">'+nochk+'</div><div class="l">尚未查核</div></div><div class="stat" style="border-color:'+(openf?'#e0455f66':'')+'"><div class="n" style="color:var(--warn)">'+openf+'</div><div class="l">未結案發現</div></div></div>';
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var fs=auFind(t);h+='<div class="dcard"><div class="dc-top"><b class="dc-n" onclick="openProj(\''+p.id+'\')">'+esc(p.n)+'</b></div><div class="dc-chips">';
+  AUCHK.forEach(function(c){var v=auChk(t,c[0]);var m=AUST.filter(function(s){return s[0]===v;})[0]||AUST[0];
+   if(ed){h+='<span style="display:inline-flex;gap:4px;align-items:center"><span style="font-size:11.5px">'+c[1]+'</span><select style="width:auto;font-size:11.5px;padding:3px 6px" onchange="saveAu(\''+p.id+'\',\''+c[0]+'\',this.value)">'+AUST.map(function(s){return '<option value="'+s[0]+'"'+(v===s[0]?' selected':'')+'>'+s[1]+'</option>';}).join('')+'</select></span>';}
+   else{h+='<span style="font-size:11.5px">'+c[1]+'：<b style="color:'+(v==="no"?"var(--warn)":(v==="ok"?"var(--teal)":"var(--mut)"))+'">'+m[1]+'</b></span>';}});
+  h+='</div><div class="dc-goals">';
+  h+=fs.length?fs.map(function(f){return '<div style="margin-top:3px;'+(f.done?'opacity:.55':'')+'">'+(f.done?'✅':'🔴')+' <b>'+esc(f.text)+'</b> <span class="pillst" style="background:#e0455f14;color:var(--warn)">'+esc(f.risk||'')+'</span>'+(f.due?' <span class="muted">📅 '+esc(f.due)+'</span>':'')+' <span class="muted">— '+esc(f.by||'')+'</span>'+(ed?' <a onclick="toggleFinding(\''+p.id+'\',\''+f.id+'\')" style="cursor:pointer;color:var(--teal)">'+(f.done?'重開':'結案')+'</a> <a onclick="delFinding(\''+p.id+'\',\''+f.id+'\')" style="cursor:pointer;color:var(--warn)">刪除</a>':'')+'</div>';}).join(''):'<span class="muted">尚無稽核發現</span>';
+  if(ed)h+='<div style="margin-top:7px"><button class="btn gh sm" onclick="addFinding(\''+p.id+'\')">＋ 新增稽核發現</button></div>';
+  h+='</div></div>';});
+ return h;}
+function itOf(t,f){return ((t&&t.it)||{})[f]||"";}
+function saveIT(pid,f,v){const t=TRACK[pid]||{};const i=Object.assign({},t.it||{});i[f]=v;save(pid,{it:i});}
+function itView(){var ed=canITZ();var ppl=allPeople().filter(function(x){return x.role!=="admin";});var nsys=0,nacc=0,nopen=0;
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.needsSys)nsys++;if(t.aiClaude==="off"||t.aiCodex==="off")nacc++;var st=itOf(t,"status");if(st!=="done"&&st!=="na"&&(t.needsSys||t.aiClaude==="off"||t.aiCodex==="off"||hoPending(t)))nopen++;});
+ var h='<div class="banner">🖥 <b>IT / 資安專區</b>　彙整各案的系統串接、帳號處理、資安狀態與交接收尾'+(ed?'（您可編輯）':'（唯讀）')+'</div><div class="stats"><div class="stat"><div class="n" style="color:#4c8dff">'+nsys+'</div><div class="l">🔗 需串接系統</div></div><div class="stat"><div class="n" style="color:var(--obs)">'+nacc+'</div><div class="l">🤖 可關閉帳號</div></div><div class="stat" style="border-color:'+(nopen?'#b9770f55':'')+'"><div class="n" style="color:#b9770f">'+nopen+'</div><div class="l">🔧 IT 待處理</div></div></div>';
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var r=hoStat(t);var st=itOf(t,"status");var m=ITST.filter(function(s){return s[0]===st;})[0]||ITST[0];var bad=(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"));
+  h+='<div class="dcard"><div class="dc-top"><b class="dc-n" onclick="openProj(\''+p.id+'\')">'+esc(p.n)+'</b>';
+  if(ed){h+='<div class="dc-ctl"><select style="width:auto" onchange="saveIT(\''+p.id+'\',\'status\',this.value)">'+ITST.map(function(s){return '<option value="'+s[0]+'"'+(st===s[0]?' selected':'')+'>'+s[1]+'</option>';}).join('')+'</select><select style="width:auto" onchange="saveIT(\''+p.id+'\',\'owner\',this.value)"><option value="">IT 窗口：未指派</option>'+ppl.map(function(x){return '<option value="'+esc(x.k)+'"'+(itOf(t,"owner")===x.k?' selected':'')+'>'+esc(pn(x.k))+'</option>';}).join('')+'</select></div>';}
+  else{h+='<span class="pillst" style="background:#eef1f7;color:var(--mut)">'+m[1]+'</span>';}
+  h+='</div><div class="dc-chips"><span>🔗 串接：<b>'+(t.needsSys?(t.sysName?esc(t.sysName):'需要'):'不需要')+'</b></span><span>🤖 C:<b style="color:'+aiColor(t.aiClaude)+'">'+aiLabel(t.aiClaude)+'</b>·Cx:<b style="color:'+aiColor(t.aiCodex)+'">'+aiLabel(t.aiCodex)+'</b></span><span>🛡 資安：<b style="color:'+(bad?'var(--warn)':'var(--mut)')+'">'+(bad?'未過':'—')+'</b></span><span>🔄 交接：<b>'+r.done+'/'+r.need+'</b></span>'+(itOf(t,"owner")?'<span>👤 IT 窗口：<b>'+esc(pn(itOf(t,"owner")))+'</b></span>':'')+'</div>';
+  if(ed)h+='<div style="margin-top:7px"><input placeholder="🔧 IT 備註／資源需求（主機、DB、環境…）" value="'+esc(itOf(t,"note"))+'" onchange="saveIT(\''+p.id+'\',\'note\',this.value)" style="width:100%;font-size:12.5px"></div>';
+  else if(itOf(t,"note"))h+='<div style="margin-top:7px;font-size:12.5px;background:var(--soft);border-radius:8px;padding:6px 9px">🔧 '+esc(itOf(t,"note"))+'</div>';
+  h+='</div>';});
+ return h;}
 function classifyBlock(){var cats=[["🔴 最高優先","#e0455f",function(t){return t.flag==="top";}],["🛡 資安疑慮","#7c53d6",function(t){return t.punk&&(t.punk.sec==="no"||t.punk.perm==="no");}],["⏸ 擱置","#6b7686",function(t){return t.flag==="hold";}],["🔗 需串接系統","#4c8dff",function(t){return !!t.needsSys;}]];var h='<div style="margin:2px 2px 15px"><div class="wn" style="margin-bottom:2px">🗂 重點分類</div><div class="clsgrid">';cats.forEach(function(c){var arr=PROJECTS.filter(function(p){return c[2](TRACK[p.id]||{});});h+='<div class="clscard"><div class="clshd" style="background:'+c[1]+'">'+c[0]+' · '+arr.length+'</div><div class="clsbody">';h+=arr.length?arr.map(function(p){var t=TRACK[p.id]||{};var ex=(c[0].indexOf("串接")>=0&&t.sysName)?' <span class="pillst" style="background:#4c8dff18;color:#4c8dff">'+esc(t.sysName)+'</span>':"";return '<div class="clsitem"><a onclick="openProj(\''+p.id+'\')" style="cursor:pointer;color:var(--navy);font-weight:700">'+esc(p.n)+'</a>'+ex+'<div class="muted" style="margin-top:3px;line-height:1.5">'+(t.dashNote?esc(t.dashNote):'<span style="opacity:.5">尚無備註</span>')+'</div></div>';}).join(""):'<div class="muted" style="padding:6px 0">—</div>';h+='</div></div>';});h+='</div></div>';return h;}
 function statProjects(key){var M={biz:["🟢 商轉開發中",function(t){return stageMeta(t)[0]==="biz";}],internal:["🟣 內部使用中",function(t){return stageMeta(t)[0]==="internal";}],prep:["🔵 準備內部導入",function(t){return stageMeta(t)[0]==="prep";}],observe:["🟡 觀察評估中",function(t){return stageMeta(t)[0]==="observe";}],stopped:["⚪ 已叫停",function(t){return stageMeta(t)[0]==="stopped";}],stale:["🔴 停滯(14天)",function(t){var sd=staleDays(t);return stageMeta(t)[0]!=="stopped"&&sd!=null&&sd>=14;}],odue:["⏰ 逾期檢核點",function(t){return stageMeta(t)[0]!=="stopped"&&overdueGoals(t)>0;}],ckeep:["🤖 Claude 需保留",function(t){return t.aiClaude==="use";}],xkeep:["🤖 Codex 需保留",function(t){return t.aiCodex==="use";}],needSys:["🔗 需串接系統",function(t){return !!t.needsSys;}],ho:["🔄 交接未完成",function(t){return hoPending(t);}]};var m=M[key];if(!m)return null;return {lbl:m[0],arr:PROJECTS.filter(function(p){return m[1](TRACK[p.id]||{});})};}
 function statPanel(){var r=statProjects(dashStat);if(!r)return"";return `<div class="wk" style="border:1px solid var(--brand);background:#4457c90a"><div class="wn" style="color:var(--brand)">${r.lbl}（${r.arr.length}）<button class="btn gh sm" style="float:right;padding:2px 9px" onclick="dashStat='';renderAB()">✕ 關閉</button></div><div style="margin-top:7px;font-size:13px;line-height:2">${r.arr.length?r.arr.map(function(p){return `<a onclick="openProj('${p.id}')" style="cursor:pointer;color:var(--navy);font-weight:600">${esc(p.n)}</a>`;}).join("　·　"):`<span class="muted">無</span>`}</div></div>`;}
