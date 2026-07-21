@@ -157,9 +157,10 @@ function viewersOf(p){const c=PERM[p.id];return (c&&c.viewers)?c.viewers:[];}
 function canEdit(p){if(!me)return false;if(me.role==="lead"||me.role==="mgr")return true;if(me.role==="punk")return false;return editorsOf(p).includes(me.k);}
 function canView(p){if(!me)return false;if(me.role==="lead"||me.role==="exec"||me.role==="mgr"||me.role==="punk"||me.role==="admin"||me.role==="audit")return true;if(SECTEAM&&SECTEAM.indexOf(me.k)>=0)return true;return editorsOf(p).includes(me.k)||viewersOf(p).includes(me.k);}
 function canAudit(){return !!me&&(me.k==="PUNK"||me.k==="AUDIT"||me.role==="exec");}
-function canITZ(){return !!me&&(me.k==="Bryan"||me.k==="PUNK"||me.role==="exec");}
+const ITTEAM=["Bryan"];
+function canITZ(){return !!me&&(ITTEAM.indexOf(me.k)>=0||me.k==="PUNK"||me.role==="exec");}
 function myProjects(){return PROJECTS.filter(canView)}
-function isActive(k){const p=person(k);if(!p)return false;if(["exec","mgr","admin","punk","lead","audit"].indexOf(p.role)>=0)return true;if(SECTEAM&&SECTEAM.indexOf(k)>=0)return true;if(PINS&&PINS[k])return true;for(var i=0;i<PROJECTS.length;i++){var pr=PROJECTS[i];if(editorsOf(pr).indexOf(k)>=0||viewersOf(pr).indexOf(k)>=0)return true;}return false;}
+function isActive(k){const p=person(k);if(!p)return false;if(["exec","mgr","admin","punk","lead","audit"].indexOf(p.role)>=0)return true;if(ITTEAM.indexOf(k)>=0)return true;if(SECTEAM&&SECTEAM.indexOf(k)>=0)return true;if(PINS&&PINS[k])return true;for(var i=0;i<PROJECTS.length;i++){var pr=PROJECTS[i];if(editorsOf(pr).indexOf(k)>=0||viewersOf(pr).indexOf(k)>=0)return true;}return false;}
 function todayKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
 function monthKey(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");}
 function reportedToday(t){return t&&t.reportedDate===todayKey();}
@@ -207,7 +208,7 @@ function restoreOrLogin(){try{const su=localStorage.getItem("trackU");if(su&&per
 function logout(){me=null;pending=null;if(idleTimer){clearTimeout(idleTimer);idleTimer=null;}clearSession();renderLogin();}
 function topBar(){const _b=me.role==="admin"?"⚙ 系統後台":me.role==="exec"?"📈 經營管理層":me.role==="mgr"?"🗂 專案管理":me.role==="lead"?"📊 主管":"★ 追蹤";const _t=me.role==="admin"?"專案追蹤系統 · 後台":"專案追蹤系統";return `<div class="top"><span class="badge">${_b}</span><h1>${_t}</h1><span class="sp"></span><span class="muted">${esc(me.name)}</span><button class="btn gh sm" onclick="changePw()">改密碼</button><button class="btn gh sm" onclick="logout()">登出</button></div>`;}
 
-function renderApp(){if(!me)return;saveSession();resetIdle();if(me.role==="lead"||me.role==="exec"||me.role==="mgr"||me.role==="punk"||me.role==="audit"||me.k==="Bryan"){if(me.role==="audit"&&!adminTab0){adminTab="audit";adminTab0=1;}if(me.k==="Bryan"&&!adminTab0){adminTab="it";adminTab0=1;}renderAdmin();}else if(me.role==="admin")renderBackend();else renderPagerView();}
+function renderApp(){if(!me)return;saveSession();resetIdle();if(me.role==="lead"||me.role==="exec"||me.role==="mgr"||me.role==="punk"||me.role==="audit"||ITTEAM.indexOf(me.k)>=0){if(me.role==="audit"&&!adminTab0){adminTab="audit";adminTab0=1;}if(ITTEAM.indexOf(me.k)>=0&&!adminTab0){adminTab="it";adminTab0=1;}renderAdmin();}else if(me.role==="admin")renderBackend();else renderPagerView();}
 
 /* ---- pager (pm/collab/punk) ---- */
 function renderPagerView(){
