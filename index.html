@@ -87,6 +87,19 @@ th{color:var(--mut);font-size:11.5px;font-weight:800;background:var(--soft)}tr:h
 .iap{display:inline-flex;align-items:baseline;gap:5px;font-size:12.5px;margin:0 12px 4px 0}
 .iapl{color:var(--mut);font-size:11.5px}
 @media(max-width:820px){.iabox{grid-template-columns:1fr}}
+.mgsec{margin-bottom:18px}
+.mgh{font-weight:800;color:var(--navy);font-size:14px;margin-bottom:8px}
+.mgstage{font-weight:700;font-size:12.5px;color:var(--mut);margin:12px 0 4px}
+.mrow{background:#fff;border:1px solid #eceef4;border-radius:11px;padding:9px 12px;margin-bottom:7px}
+.mr-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.mr-nm{font-weight:700;font-size:13.5px;flex:0 0 150px;min-width:120px;cursor:pointer}
+.mr-sel{width:auto;font-size:12px;padding:4px 7px}
+.mr-bar{flex:1;min-width:80px;display:flex;align-items:center;gap:6px}
+.mr-pct{font-size:12px;color:var(--mut);width:34px;text-align:right}
+.mr-warn{font-size:11.5px;font-weight:700;color:var(--warn);background:#fdeef1;display:inline-block;padding:3px 9px;border-radius:20px;margin-top:6px}
+.mr-note{font-size:12.5px;background:#fff8e6;border:1px solid #f0e0b3;border-radius:7px;padding:5px 9px;color:#7a5b12;margin-top:5px}
+.mr-add{display:flex;gap:6px;margin-top:6px}
+.mr-noteinput{flex:1;font-size:12px;padding:4px 8px}
 </style></head>
 <body><div id="app" class="wrap"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -736,9 +749,47 @@ function execDash(){
  h+=sec("🟢 已導入使用中",liveArr,"目前沒有已導入使用的案子。");
  h+='<div style="margin-top:6px;font-size:12px;color:var(--mut)">想看每案細節、IT／資安、稽核，請用上方「總覽」與各專區。</div>';
  return '<div class="banner">📊 <b>決策儀表板</b>　各案重點、進度與狀況一覽（唯讀）。</div>'+recentJudge()+h;}
-function dashView(){if(me&&me.role==="exec")return execDash();const cnt={biz:0,prep:0,internal:0,observe:0,stopped:0,undef:0};let stale=0,ckeep=0,xkeep=0,needSys=0,odCk=0,hoPend=0;PROJECTS.forEach(function(p){const t=TRACK[p.id]||{};const m=stageMeta(t);const k=m[0]||"undef";cnt[k]=(cnt[k]||0)+1;const sd=staleDays(t);if(m[0]!=="stopped"&&sd!=null&&sd>=14)stale++;if(t.aiClaude==="use")ckeep++;if(t.aiCodex==="use")xkeep++;if(t.needsSys)needSys++;if(m[0]!=="stopped"&&overdueGoals(t)>0)odCk++;if(hoPending(t))hoPend++;});const canSet=me.role==="mgr"||me.role==="lead";const ppl=allPeople().filter(function(x){return x.role!=="admin";});
- let h=`<div class="banner">📊 <b>決策儀表板</b>　${canSet?"設定每案發展階段與負責人（選完按 💾 儲存）":"各案發展階段、檢核點與停滯狀況一覽（唯讀）"}。</div>${bossBrief()}<div class="stats"><div class="stat" onclick="tglStat('biz')" style="cursor:pointer"><div class="n" style="color:#12b886">${cnt.biz}</div><div class="l">🟢 商轉開發中</div></div><div class="stat" onclick="tglStat('internal')" style="cursor:pointer"><div class="n" style="color:#7c53d6">${cnt.internal}</div><div class="l">🟣 內部使用中</div></div><div class="stat" onclick="tglStat('prep')" style="cursor:pointer"><div class="n" style="color:#4c8dff">${cnt.prep}</div><div class="l">🔵 準備內部導入</div></div><div class="stat" onclick="tglStat('observe')" style="cursor:pointer"><div class="n" style="color:#e8a33d">${cnt.observe}</div><div class="l">🟡 觀察評估中</div></div><div class="stat" onclick="tglStat('stopped')" style="cursor:pointer"><div class="n" style="color:#8a93a6">${cnt.stopped}</div><div class="l">⚪ 已叫停</div></div><div class="stat" onclick="tglStat('stale')" style="cursor:pointer;border-color:${stale?"#e0455f66":""}"><div class="n" style="color:var(--warn)">${stale}</div><div class="l">🔴 停滯(14天)</div></div><div class="stat" onclick="tglStat('odue')" style="cursor:pointer;border-color:${odCk?'#e0455f66':''}"><div class="n" style="color:var(--warn)">${odCk}</div><div class="l">⏰ 逾期檢核點</div></div><div class="stat" onclick="tglStat('ckeep')" style="cursor:pointer"><div class="n" style="color:var(--navy)">${ckeep}</div><div class="l">🤖 Claude 需保留</div></div><div class="stat" onclick="tglStat('xkeep')" style="cursor:pointer"><div class="n" style="color:var(--navy)">${xkeep}</div><div class="l">🤖 Codex 需保留</div></div></div>${dashStat?statPanel():""}${recentJudge()}${itAuditPanel()}`;
- if(canSet)Object.keys(GROUPS).forEach(function(gk){const g=GROUPS[gk];h+=`<div style="margin-top:18px"><div style="font-weight:800;color:var(--navy);font-size:14px">${esc(g.n)} <span class="muted" style="font-weight:400;font-size:12px">（${g.ids.length}）</span></div>`;h+=g.ids.map(function(id){const p=PROJECTS.find(function(x){return x.id===id;});if(!p)return"";const t=TRACK[id]||{};const m=stageMeta(t);const stopped=m[0]==="stopped";const ps=goalSubs(t);const sd=staleDays(t);const isStale=!stopped&&sd!=null&&sd>=14;const owner=pmOf(p);const rep=(sd==null)?`<span class="pillst" style="background:#eef1f7;color:var(--mut)">尚未回報</span>`:`<span class="pillst" style="background:${isStale?"#e0455f22":"#eef1f7"};color:${isStale?"var(--warn)":"var(--mut)"}">最後回報 ${sd} 天前${isStale?" ⚠停滯":""}</span>`;const _od=overdueGoals(t);let row=`<div class="dcard${stopped?" stopped":""}"><div class="dc-top"><b class="dc-n" onclick="openProj('${id}')">${esc(p.n)}</b>${(t.flag&&flagMeta(t.flag))?`<span class="pillst" style="background:${flagMeta(t.flag)[2]}1f;color:${flagMeta(t.flag)[2]}">${flagMeta(t.flag)[1]}</span>`:""}${auBadge(t)}`;if(canSet&&!stopped){row+=`<div class="dc-ctl"><select id="stg-${id}" style="width:auto">${STAGES.map(function(s){return `<option value="${s[0]}" ${t.stage===s[0]?"selected":""}>${s[1]}</option>`;}).join("")}<option value="" ${!t.stage?"selected":""}>⚪ 未定位</option></select><select id="own-${id}" style="width:auto"><option value="">負責人：未指派</option>${ppl.map(function(x){return `<option value="${esc(x.k)}" ${owner===x.k?"selected":""}>${esc(pn(x.k))}</option>`;}).join("")}</select><select id="flg-${id}" style="width:auto"><option value="">標記：無</option>${FLAGS.map(function(f){return `<option value="${f[0]}" ${t.flag===f[0]?"selected":""}>${f[1]}</option>`;}).join("")}</select><button class="btn teal sm" onclick="saveDash('${id}')">💾 儲存</button></div>`;}else{row+=`<span class="pillst" style="background:${m[2]}22;color:${m[2]}">${m[1]}</span>`;}row+=`</div><div class="dc-chips"><span>👤 <b>${owner?esc(pn(owner)):"未指派"}</b></span><span>進度 <b>${effProg(t)}%</b></span><span>交接 <b>${hoStat(t).done}/${hoStat(t).need}</b></span><span>檢核點 <b>${ps.done}/${ps.total}</b>${ps.total?"（"+ps.pct+"%）":""}</span>${_od?`<span style="color:var(--warn);font-weight:700">⏰ 逾期 ${_od}</span>`:""}${rep}<span>🤖 C:<b style="color:${aiColor(t.aiClaude)}">${aiLabel(t.aiClaude)}</b>·Cx:<b style="color:${aiColor(t.aiCodex)}">${aiLabel(t.aiCodex)}</b></span>${t.needsSys?`<span class="pillst" style="background:#4c8dff22;color:#4c8dff">🔗 ${t.sysName?esc(t.sysName):"串接"}</span>`:""}</div>${(function(){const ns=dashNotes(t);let o="";if(ns.length)o+=`<div style="margin-top:7px">`+ns.map(function(nn){return `<div style="font-size:12.5px;background:#fff8e6;border:1px solid #f0e0b3;border-radius:8px;padding:6px 9px;color:#7a5b12;margin-top:4px">📝 ${esc(nn.text)}<div style="font-size:11px;color:#a08a4a;margin-top:2px">— ${esc(nn.by||"")}${nn.at?" "+dts(nn.at):""}${(canSet&&!stopped&&!nn.legacy)?` · <a onclick="delNote('${sid(id)}','${sid(nn.id)}')" style="cursor:pointer;color:var(--warn)">刪除</a>`:""}</div></div>`;}).join("")+`</div>`;if(canSet&&!stopped)o+=`<div style="margin-top:7px"><input id="note-${id}" placeholder="📝 新增特殊註記（狀態／原因，選填，按上面 💾 儲存；不會蓋掉舊註記）" value="" style="width:100%;font-size:12.5px"></div>`;return o;})()}${(t.goals&&t.goals.length)?`<div class="dc-goals">`+(t.goals||[]).map(function(g){const gs=(g.subs||[]);const gd=gs.filter(function(s){return s.done;}).length;const ga=gs.length;const gok2=ga>0?(gd===ga):!!g.done;const gover=g.due&&g.due<todayKey()&&!gok2;return `<div style="margin-top:3px">${gok2?"✅":gover?"🔴":"🎯"} ${esc(g.title)}${ga>0?` <span class="muted">（${gd}/${ga}）</span>`:""}${g.due?` · <span style="color:${gover?"var(--warn)":"var(--mut)"}">📅 ${esc(g.due)}${gover?" 逾期":""}</span>`:""}${(gover&&g.delayNote)?` <span style="color:var(--warn)">⚠ ${esc(g.delayNote)}</span>`:""}</div>`;}).join("")+`</div>`:""}</div>`;return row;}).join("");h+=`</div>`;});return h;}
+function dashView(){if(me&&me.role==="exec")return execDash();return mgrDash();}
+function mgrRow(p){var t=TRACK[p.id]||{};var prog=effProg(t);var owner=pmOf(p);var m=stageMeta(t);
+ var probs=[];var st0=m[0];var sd=staleDays(t);
+ if(st0!=="stopped"&&sd!=null&&sd>=14)probs.push("停滯"+sd+"天");
+ if(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))probs.push("資安未過");
+ var hi=auOpen(t).filter(function(f){return f.risk==="高";}).length;if(hi)probs.push("高風險"+hi);
+ var od=overdueGoals(t);if(od&&st0!=="stopped")probs.push("逾期"+od);
+ if(t.proposal)probs.push("待裁決");
+ var ppl=allPeople().filter(function(x){return x.role!=="admin";});
+ var notes=dashNotes(t);
+ var h='<div class="mrow"><div class="mr-top"><b class="dc-n mr-nm" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</b>'
+  +'<select id="stg-'+p.id+'" class="mr-sel">'+STAGES.map(function(s){return '<option value="'+s[0]+'"'+(t.stage===s[0]?' selected':'')+'>'+s[1]+'</option>';}).join('')+'<option value=""'+(!t.stage?' selected':'')+'>⚪ 未定位</option></select>'
+  +'<select id="own-'+p.id+'" class="mr-sel"><option value="">負責人：未指派</option>'+ppl.map(function(x){return '<option value="'+esc(x.k)+'"'+(owner===x.k?' selected':'')+'>'+esc(pn(x.k))+'</option>';}).join('')+'</select>'
+  +'<div class="mr-bar"><div class="prog" style="flex:1"><i style="width:'+prog+'%"></i></div><span class="mr-pct">'+prog+'%</span></div>'
+  +'<button class="btn teal sm" onclick="saveDash(\''+sid(p.id)+'\')">💾</button></div>'
+  +(probs.length?'<div class="mr-warn">⚠ '+esc(probs.join("・"))+'</div>':'')
+  +notes.map(function(nn){return '<div class="mr-note">📝 '+esc(nn.text)+' <span class="muted" style="font-size:11px">— '+esc(nn.by||'')+(nn.at?' '+dts(nn.at):'')+(!nn.legacy?' · <a onclick="delNote(\''+sid(p.id)+'\',\''+sid(nn.id)+'\')" style="cursor:pointer;color:var(--warn)">刪除</a>':'')+'</span></div>';}).join('')
+  +'<div class="mr-add"><input id="note-'+p.id+'" placeholder="＋ 特殊註記（選填，按 💾 儲存）" class="mr-noteinput"><select id="flg-'+p.id+'" class="mr-sel"><option value="">標記：無</option>'+FLAGS.map(function(f){return '<option value="'+f[0]+'"'+(t.flag===f[0]?' selected':'')+'>'+f[1]+'</option>';}).join('')+'</select></div>';
+ return h+'</div>';}
+function mgrDash(){
+ var running=0,live=0,trouble=0,important=0;var trb=[];var byStage={biz:[],internal:[],prep:[],observe:[],stopped:[],undef:[]};
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var st=stageMeta(t)[0]||"undef";byStage[st]=byStage[st]||[];byStage[st].push(p);
+  var probs=[];var sd=staleDays(t);
+  if(st!=="stopped"&&sd!=null&&sd>=14)probs.push(1);
+  if(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))probs.push(1);
+  if(auOpen(t).some(function(f){return f.risk==="高";}))probs.push(1);
+  if(st!=="stopped"&&overdueGoals(t)>0)probs.push(1);
+  if(t.proposal)probs.push(1);
+  if(st==="internal"||st==="biz")live++;
+  if(st!=="stopped"&&st!=="internal"&&st!=="biz")running++;
+  if(probs.length){trouble++;trb.push(p);}
+  if(t.flag==="top")important++;});
+ var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
+ var h='<div class="banner">📊 <b>決策儀表板</b>　設定每案發展階段與負責人（選完按 💾），並掌握全局。</div>'+recentJudge();
+ h+='<div class="stats" style="margin-bottom:16px">'+stat(important,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(running,"🔵 進行中","#4c8dff")+stat(live,"🟢 已導入","#12b886")+'</div>';
+ if(trb.length){h+='<div class="mgsec"><div class="mgh" style="color:var(--warn)">⚠️ 需要注意（'+trb.length+'）</div>'+trb.map(mgrRow).join('')+'</div>';}
+ var order=[["biz","🟢 商轉開發中"],["internal","🟣 內部使用中"],["prep","🔵 準備內部導入"],["observe","🟡 觀察評估中"],["stopped","⚪ 已叫停"],["undef","◽ 未定位"]];
+ h+='<div class="mgsec"><div class="mgh">全部專案（依發展階段）</div>';
+ order.forEach(function(o){var arr=byStage[o[0]]||[];if(!arr.length)return;
+  h+='<div class="mgstage">'+o[1]+' · '+arr.length+'</div>'+arr.map(mgrRow).join('');});
+ h+='</div>';return h;}
 function weekView(){
  const props=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>x.t.proposal);
  const norep=PROJECTS.filter(p=>!reportedToday(TRACK[p.id]));
