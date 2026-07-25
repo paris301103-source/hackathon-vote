@@ -735,6 +735,7 @@ function aiPriority(p,t){t=t||{};var pr=[];
  var sd=staleDays(t);if(((t.decision)||"go")!=="stop"&&sd!=null&&sd>=14)pr.push("停滯"+sd+"天");
  if(t.proposal)pr.push("待裁決");
  return pr;}
+function clearAllStages(){if(!confirm("將清除所有案子的『發展階段』設定（包含先前 AI 套用的），清除後階段會顯示為『未設』，可再手動設定。\n\n此動作只清階段，不影響進度、負責人、回報。確定清除？"))return;var n=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.stage){save(p.id,{stage:firebase.firestore.FieldValue.delete()});n++;}});alert("已清除 "+n+" 個案子的階段設定。");}
 function applyAiStages(){if(!confirm("將由系統依每案的回報內容與進度，自動推斷『尚未設定階段』的案子並填入建議階段。\\n\\n（已手動設過的不會被覆蓋，可事後自行修改）確定套用？"))return;var n=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.stage||((t.decision)||"go")==="stop")return;var g=aiStage(p,t);if(g.k){save(p.id,{stage:g.k});n++;}});alert("已套用 AI 建議階段到 "+n+" 個尚未定位的案子。你可以在任一案自行修改。");}
 var GMETA={g1:"#4457c9",g2:"#12b886",g3:"#4c8dff",g4:"#e8a33d",g5:"#d6539c",g6:"#7c53d6"};
 function realStageKey(t){if(t&&((t.decision)||"go")==="stop")return "stopped";return (t&&t.stage)||"undef";}
@@ -768,14 +769,17 @@ function execDash(extra){
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板</b>　依大項目分組，卡片內為該組專案與進度。</div>'+(extra||'')+recentJudge();
  h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>';
- var seen={};
+ var seen={},stopped=[];var isStop=function(id){return ((TRACK[id]&&TRACK[id].decision)||"go")==="stop";};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
-  arr.forEach(function(id){seen[id]=1;});
-  var rows=arr.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return execRow(p,TRACK[id]||{});}).join('');
-  h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+esc(g.n)+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span></div><div class="stcard-b">'+(rows||'<div class="muted" style="font-size:12.5px;padding:6px 0">此組目前無專案</div>')+'</div></div>';});
+  arr.forEach(function(id){seen[id]=1;if(isStop(id))stopped.push(id);});
+  var live=arr.filter(function(id){return !isStop(id);});
+  var rows=live.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return execRow(p,TRACK[id]||{});}).join('');
+  h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+esc(g.n)+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+live.length+' 案</span></div><div class="stcard-b">'+(rows||'<div class="muted" style="font-size:12.5px;padding:6px 0">此組目前無進行中專案</div>')+'</div></div>';});
  var other=PROJECTS.filter(function(p){return !seen[p.id];});
- if(other.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+other.length+' 案</span></div><div class="stcard-b">'+other.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div></div>';
+ var otherLive=other.filter(function(p){return !isStop(p.id);});other.forEach(function(p){if(isStop(p.id))stopped.push(p.id);});
+ if(otherLive.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+otherLive.length+' 案</span></div><div class="stcard-b">'+otherLive.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div></div>';
+ if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已叫停／結案</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return execRow(p,TRACK[id]||{});}).join('')+'</div></div>';
  h+='<div style="margin-top:4px;font-size:12px;color:var(--mut)">🔴＝最高優先　⚠＝有狀況。階段小標為已設定的發展階段。</div>';
  return h;}
 var editDash=false;
@@ -807,16 +811,19 @@ function mgrDash(){
   if(auOpen(t).some(function(f){return f.risk==="高";}))pr=1;if(!st&&overdueGoals(t)>0)pr=1;if(t.proposal)pr=1;
   if(pr)trouble++;});
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
- var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button></div>'+recentJudge();
+ var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button><button class="btn gh sm" onclick="clearAllStages()">🧹 清除全部階段（重設）</button></div>'+recentJudge();
  h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>';
- var seen={};
+ var seen={},stopped=[];var isStop=function(id){return ((TRACK[id]&&TRACK[id].decision)||"go")==="stop";};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
-  arr.forEach(function(id){seen[id]=1;});
-  var rows=arr.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return mgrRow(p);}).join('');
-  h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+esc(g.n)+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span></div><div class="stcard-b">'+rows+'</div></div>';});
+  arr.forEach(function(id){seen[id]=1;if(isStop(id))stopped.push(id);});
+  var live=arr.filter(function(id){return !isStop(id);});
+  var rows=live.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return mgrRow(p);}).join('');
+  h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+esc(g.n)+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+live.length+' 案</span></div><div class="stcard-b">'+rows+'</div></div>';});
  var other=PROJECTS.filter(function(p){return !seen[p.id];});
- if(other.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+other.length+' 案</span></div><div class="stcard-b">'+other.map(mgrRow).join('')+'</div></div>';
+ var otherLive=other.filter(function(p){return !isStop(p.id);});other.forEach(function(p){if(isStop(p.id))stopped.push(p.id);});
+ if(otherLive.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+otherLive.length+' 案</span></div><div class="stcard-b">'+otherLive.map(mgrRow).join('')+'</div></div>';
+ if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已叫停／結案</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return mgrRow(p);}).join('')+'</div></div>';
  return h;}
 function weekView(){
  const props=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>x.t.proposal);
