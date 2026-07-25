@@ -719,7 +719,7 @@ function aiStage(p,t){t=t||{};
  var has=function(arr){return arr.some(function(w){return txt.indexOf(w)>=0;});};
  if(has(["擱置","暫停","不做","終止","停止"]))return {k:"observe",why:"回報提到擱置/暫停"};
  if(has(["商轉","客戶","銷售","對外","poc","客戶端","賣","報價","商業化"]))return {k:"biz",why:"回報提到客戶/商轉"};
- if(prog>=90||has(["正式使用","已上線","日常使用","內部使用","已導入","全公司使用","上線中"]))return {k:"internal",why:prog>=90?"進度≥90%且已使用":"回報提到已上線/內部使用"};
+ if(has(["正式使用","已上線","日常使用","內部使用","已導入","全公司使用","上線中","上線了"]))return {k:"internal",why:"回報明確提到已上線/內部使用"};
  if(has(["準備導入","部署","驗收","試用","上線前","測試中","佈署","試辦","導入中"])||prog>=55)return {k:"prep",why:prog>=55?"進度過半、接近導入":"回報提到準備導入/測試"};
  if(has(["評估","觀察","研究","訪談","需求","討論","規劃","調研"])||prog<30)return {k:"observe",why:prog<30?"進度偏低、仍在前期":"回報提到評估/需求討論"};
  return {k:"prep",why:"依進度推估"};}
@@ -748,7 +748,7 @@ function execRow(p,t){var prog=effProg(t);var m=stageMeta(t);var owner=pmOf(p);v
   +'</div>';}
 function execSec(title,color,arr,empty){var b='<div style="margin-bottom:18px"><div style="font-weight:800;color:var(--navy);font-size:14px;margin-bottom:2px;display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:'+color+';display:inline-block"></span>'+title+' <span class="muted" style="font-weight:400;font-size:12px">'+arr.length+'</span></div>';
  b+=arr.length?arr.map(function(p){return execRow(p,TRACK[p.id]||{});}).join(''):'<div class="muted" style="font-size:12.5px;padding:6px 0">'+empty+'</div>';return b+'</div>';}
-function execDash(){
+function execDash(extra){
  var B={biz:[],internal:[],prep:[],observe:[],stopped:[],undef:[]};var imp=[],trouble=0;
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var st=effStageKey(p,t)||"undef";(B[st]=B[st]||[]).push(p);
   if(t.flag==="top")imp.push(p);
@@ -759,10 +759,10 @@ function execDash(){
   if(st!=="stopped"&&overdueGoals(t)>0)pr=1;
   if(t.proposal)pr=1;
   if(pr)trouble++;});
- var live=B.internal.length+B.biz.length;var running=B.biz.length+B.prep.length+B.observe.length;
+ var live=B.internal.length;var running=B.biz.length+B.prep.length+B.observe.length;
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
- var h='<div class="banner">📊 <b>決策儀表板</b>　各案狀態、進度與時程一覽（唯讀）。</div>'+recentJudge();
- h+='<div class="stats" style="margin-bottom:18px">'+stat(imp.length,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(running,"🔵 進行中","#4c8dff")+stat(live,"🟢 已導入","#12b886")+'</div>';
+ var h='<div class="banner">📊 <b>決策儀表板</b>　各案狀態、進度與時程一覽。</div>'+(extra||'')+recentJudge();
+ h+='<div class="stats" style="margin-bottom:18px">'+stat(imp.length,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(running,"🔵 開發／進行中","#4c8dff")+stat(live,"🟢 內部已使用","#12b886")+'</div>';
  h+=execSec("🔴 重要案子（最高優先）","#e0455f",imp,"目前沒有標記最高優先的案子。");
  h+=execSec("🟢 內部已使用中","#12b886",B.internal,"目前沒有內部使用中的案子。");
  h+=execSec("🟩 商轉開發中","#0fa678",B.biz,"目前沒有商轉開發中的案子。");
@@ -772,7 +772,8 @@ function execDash(){
  if(B.undef.length)h+=execSec("◽ 尚未定位","#b0b7c5",B.undef,"");
  h+='<div style="margin-top:4px;font-size:12px;color:var(--mut)">每行可點進看細節；IT／資安、稽核在各專區。</div>';
  return h;}
-function dashView(){if(me&&me.role==="exec")return execDash();return mgrDash();}
+var editDash=false;
+function dashView(){if(me&&me.role==="exec")return execDash("");if(editDash)return mgrDash();return execDash('<div style="margin:0 0 12px"><button class="btn sm" onclick="editDash=true;renderAB()">✏️ 編輯階段／負責人</button> <span class="muted" style="font-size:11.5px">切到可編輯版</span></div>');}
 function mgrRow(p){var t=TRACK[p.id]||{};var prog=effProg(t);var owner=pmOf(p);var m=stageMeta(t);
  var probs=[];var st0=m[0];var sd=staleDays(t);
  if(st0!=="stopped"&&sd!=null&&sd>=14)probs.push("停滯"+sd+"天");
@@ -806,7 +807,7 @@ function mgrDash(){
   if(probs.length){trouble++;trb.push(p);}
   if(t.flag==="top")important++;});
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
- var h='<div class="banner">📊 <b>決策儀表板</b>　設定每案發展階段與負責人（選完按 💾），並掌握全局。</div>'+'<div style="margin:0 0 12px"><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未定位的案子）</button> <span class="muted" style="font-size:11.5px">系統依回報內容與進度推斷，可事後修改</span></div>'+recentJudge();
+ var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　改完按 💾 儲存；完成後可回乾淨檢視。</div>'+'<div style="margin:0 0 12px"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button></div>'+'<div style="margin:0 0 12px"><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未定位的案子）</button> <span class="muted" style="font-size:11.5px">系統依回報內容與進度推斷，可事後修改</span></div>'+recentJudge();
  h+='<div class="stats" style="margin-bottom:16px">'+stat(important,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(running,"🔵 進行中","#4c8dff")+stat(live,"🟢 已導入","#12b886")+'</div>';
  if(trb.length){h+='<div class="mgsec"><div class="mgh" style="color:var(--warn)">⚠️ 需要注意（'+trb.length+'）</div>'+trb.map(mgrRow).join('')+'</div>';}
  var order=[["internal","🟢 內部已使用中"],["biz","🟩 商轉開發中"],["prep","🔵 準備內部導入"],["observe","🟡 觀察評估中（尚未正式啟動）"],["stopped","⚪ 已停止／叫停"],["undef","◽ 尚未定位"]];
