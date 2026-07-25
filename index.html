@@ -103,6 +103,9 @@ th{color:var(--mut);font-size:11.5px;font-weight:800;background:var(--soft)}tr:h
 .stcard{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .stcard-h{font-weight:800;font-size:13.5px;padding-left:9px;margin-bottom:2px}
 .stcard-b{margin-top:2px}
+.mr-stgs{display:inline-flex;gap:3px;flex-wrap:wrap}
+.stgchip{font-size:11px;padding:3px 7px;border-radius:14px;border:1px solid var(--line);background:#f4f6fa;color:var(--mut);cursor:pointer;white-space:nowrap}
+.stgchip.on{font-weight:700}
 </style></head>
 <body><div id="app" class="wrap"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -561,8 +564,8 @@ function stageMeta(t){if(((t&&t.decision)||"go")==="stop")return ["stopped","⚪
 function planStat(t){const arr=(t&&t.plan)||[];const done=arr.filter(function(x){return x.done;}).length;return {done:done,total:arr.length,pct:arr.length?Math.round(done/arr.length*100):0};}
 function staleDays(t){const ts=t&&(t.reportedAt||t.updatedAt);if(!ts)return null;try{const d=ts.toDate?ts.toDate():new Date(ts);return Math.floor((Date.now()-d.getTime())/86400000);}catch(e){return null;}}
 function dashNotes(t){var t2=t||{};var arr=(t2.notes||[]).slice();if(t2.dashNote&&!arr.some(function(x){return x.legacy;}))arr.unshift({id:"legacy",text:t2.dashNote,by:t2.updatedBy||"",at:0,legacy:true});return arr;}
-function saveDash(id){const st=document.getElementById("stg-"+id),ow=document.getElementById("own-"+id),fl=document.getElementById("flg-"+id),nt=document.getElementById("note-"+id);
- const patch={stage:st?st.value:"",handler:ow?ow.value:"",flag:fl?fl.value:""};
+function saveDash(id){const ow=document.getElementById("own-"+id),fl=document.getElementById("flg-"+id),nt=document.getElementById("note-"+id);
+ const patch={handler:ow?ow.value:"",flag:fl?fl.value:""};
  const txt=((nt&&nt.value)||"").trim();
  if(txt){const t=TRACK[id]||{};let arr=(t.notes||[]).slice();
   if(t.dashNote&&!arr.length){arr.push({id:uid(),text:t.dashNote,by:t.updatedBy||"",at:0});}
@@ -735,9 +738,14 @@ function aiPriority(p,t){t=t||{};var pr=[];
  var sd=staleDays(t);if(((t.decision)||"go")!=="stop"&&sd!=null&&sd>=14)pr.push("停滯"+sd+"天");
  if(t.proposal)pr.push("待裁決");
  return pr;}
-function clearAllStages(){if(!confirm("將清除所有案子的『發展階段』設定（包含先前 AI 套用的），清除後階段會顯示為『未設』，可再手動設定。\n\n此動作只清階段，不影響進度、負責人、回報。確定清除？"))return;var n=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.stage){save(p.id,{stage:firebase.firestore.FieldValue.delete()});n++;}});alert("已清除 "+n+" 個案子的階段設定。");}
-function applyAiStages(){if(!confirm("將由系統依每案的回報內容與進度，自動推斷『尚未設定階段』的案子並填入建議階段。\\n\\n（已手動設過的不會被覆蓋，可事後自行修改）確定套用？"))return;var n=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.stage||((t.decision)||"go")==="stop")return;var g=aiStage(p,t);if(g.k){save(p.id,{stage:g.k});n++;}});alert("已套用 AI 建議階段到 "+n+" 個尚未定位的案子。你可以在任一案自行修改。");}
+function clearAllStages(){if(!confirm("將清除所有案子的『發展階段』設定（包含先前 AI 套用的），清除後階段會顯示為『未設』，可再手動設定。\n\n此動作只清階段，不影響進度、負責人、回報。確定清除？"))return;var n=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(stagesOf(t).length){save(p.id,{stages:firebase.firestore.FieldValue.delete(),stage:firebase.firestore.FieldValue.delete()});n++;}});alert("已清除 "+n+" 個案子的階段設定。");}
+function applyAiStages(){if(!confirm("將由系統依每案的回報內容與進度，自動推斷『尚未設定階段』的案子並填入建議階段。\\n\\n（已手動設過的不會被覆蓋，可事後自行修改）確定套用？"))return;var n=0;PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(stagesOf(t).length||((t.decision)||"go")==="stop")return;var g=aiStage(p,t);if(g.k){save(p.id,{stages:[g.k],stage:firebase.firestore.FieldValue.delete()});n++;}});alert("已套用 AI 建議階段到 "+n+" 個尚未定位的案子。你可以在任一案自行修改。");}
 var GMETA={g1:"#4457c9",g2:"#12b886",g3:"#4c8dff",g4:"#e8a33d",g5:"#d6539c",g6:"#7c53d6"};
+function stgList(){return [["biz","🟢 商轉","#12b886"],["internal","🟣 內部使用","#7c53d6"],["prep","🔵 準備導入","#4c8dff"],["observe","🟡 觀察","#e8a33d"]];}
+function stgMeta2(k){var a=stgList().filter(function(x){return x[0]===k;});return a[0]||null;}
+function stagesOf(t){if(t&&t.stages&&t.stages.length)return t.stages.slice();if(t&&t.stage)return [t.stage];return [];}
+function toggleStage(pid,k){var t=TRACK[pid]||{};var arr=stagesOf(t);var i=arr.indexOf(k);if(i>=0)arr.splice(i,1);else arr.push(k);save(pid,{stages:arr,stage:firebase.firestore.FieldValue.delete()});}
+function stagePills(p,t){if(((t.decision)||"go")==="stop")return '<span class="pillst" style="background:#eef1f7;color:var(--mut)">⚪ 已叫停</span>';var sk=stagesOf(t);if(!sk.length)return '<span class="pillst" style="background:#eef1f7;color:var(--mut)">階段未設</span>';return sk.map(function(k){var m=stgMeta2(k);return m?'<span class="pillst" style="background:'+m[2]+'18;color:'+m[2]+';white-space:nowrap">'+m[1]+'</span>':'';}).join(' ');}
 function realStageKey(t){if(t&&((t.decision)||"go")==="stop")return "stopped";return (t&&t.stage)||"undef";}
 function execRow(p,t){var prog=effProg(t);var owner=pmOf(p);var probs=[];
  if(((t.decision)||"go")!=="stop"){var sd=staleDays(t);if(sd!=null&&sd>=14)probs.push("停滯"+sd+"天");}
@@ -745,11 +753,10 @@ function execRow(p,t){var prog=effProg(t);var owner=pmOf(p);var probs=[];
  var hi=auOpen(t).filter(function(f){return f.risk==="高";}).length;if(hi)probs.push("高風險"+hi);
  var od=overdueGoals(t);if(od&&((t.decision)||"go")!=="stop")probs.push("逾期"+od);
  if(t.proposal)probs.push("待裁決");
- var sp=(t.stage||((t.decision)||"go")==="stop")?stageMeta(t):null;
  return '<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px solid var(--line);flex-wrap:wrap">'
   +(t.flag==="top"?'<span title="最高優先">🔴</span>':'')
   +'<b class="dc-n" style="flex:0 0 140px;min-width:110px;cursor:pointer;font-size:13px" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</b>'
-  +'<span style="flex:0 0 118px;display:flex">'+(sp?'<span class="pillst" style="background:'+sp[2]+'18;color:'+sp[2]+';white-space:nowrap">'+sp[1]+'</span>':'<span class="pillst" style="background:#eef1f7;color:var(--mut);white-space:nowrap">階段未設</span>')+'</span>'
+  +'<span style="flex:0 0 150px;display:flex;flex-wrap:wrap;gap:3px">'+stagePills(p,t)+'</span>'
   +'<div style="flex:1;min-width:90px;display:flex;align-items:center;gap:6px"><div class="prog" style="flex:1"><i style="width:'+prog+'%"></i></div><span class="muted" style="font-size:11.5px;width:34px;text-align:right">'+prog+'%</span></div>'
   +'<span class="muted" style="width:56px;font-size:11.5px;text-align:right">'+(owner?esc(pn(owner)):"—")+'</span>'
   +'<span class="muted" style="width:58px;font-size:11px;text-align:right">🗓 '+esc(p.time||"—")+'</span>'
@@ -768,7 +775,7 @@ function execDash(extra){
   if(pr)trouble++;});
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板</b>　依大項目分組，卡片內為該組專案與進度。</div>'+(extra||'')+recentJudge();
- h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>';
+ h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⚠️ <b>有狀況</b>＝停滯14天／資安未過／高風險稽核／檢核點逾期／待裁決　任一即列入。階段可複選。</div>';
  var seen={},stopped=[];var isStop=function(id){return ((TRACK[id]&&TRACK[id].decision)||"go")==="stop";};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
@@ -794,7 +801,7 @@ function mgrRow(p){var t=TRACK[p.id]||{};var prog=effProg(t);var owner=pmOf(p);v
  var ppl=allPeople().filter(function(x){return x.role!=="admin";});
  var notes=dashNotes(t);
  var h='<div class="mrow"><div class="mr-top"><b class="dc-n mr-nm" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</b>'
-  +'<select id="stg-'+p.id+'" class="mr-sel">'+(function(){var aiK=(!t.stage&&((t.decision)||"go")!=="stop")?aiStage(p,t).k:"";return STAGES.map(function(s){return '<option value="'+s[0]+'"'+(t.stage===s[0]?' selected':'')+'>'+s[1]+(s[0]===aiK?' 🤖':'')+'</option>';}).join('')+'<option value=""'+(!t.stage?' selected':'')+'>⚪ 未定位</option>';})()+'</select>'
+  +'<span class="mr-stgs">'+stgList().map(function(sm){var on=stagesOf(t).indexOf(sm[0])>=0;return '<span class="stgchip'+(on?' on':'')+'" style="'+(on?'background:'+sm[2]+';color:#fff;border-color:'+sm[2]:'')+'" onclick="toggleStage(\''+sid(p.id)+'\',\''+sm[0]+'\')">'+sm[1]+'</span>';}).join('')+'</span>'
   +'<select id="own-'+p.id+'" class="mr-sel"><option value="">負責人：未指派</option>'+ppl.map(function(x){return '<option value="'+esc(x.k)+'"'+(owner===x.k?' selected':'')+'>'+esc(pn(x.k))+'</option>';}).join('')+'</select>'
   +'<div class="mr-bar"><div class="prog" style="flex:1"><i style="width:'+prog+'%"></i></div><span class="mr-pct">'+prog+'%</span></div>'
   +'<span class="muted" style="font-size:11px;white-space:nowrap">🗓 '+esc(p.time||"—")+'</span>'
@@ -812,7 +819,7 @@ function mgrDash(){
   if(pr)trouble++;});
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button><button class="btn gh sm" onclick="clearAllStages()">🧹 清除全部階段（重設）</button></div>'+recentJudge();
- h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>';
+ h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(trouble,"⚠️ 有狀況","#e8a33d")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⚠️ <b>有狀況</b>＝停滯14天／資安未過／高風險稽核／檢核點逾期／待裁決　任一即列入。階段點一下切換、可複選（例：同時商轉＋內部使用）。</div>';
  var seen={},stopped=[];var isStop=function(id){return ((TRACK[id]&&TRACK[id].decision)||"go")==="stop";};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
