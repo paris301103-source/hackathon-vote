@@ -753,7 +753,7 @@ function overdueNodes(t){var today=todayKey();var r=[];((t&&t.goals)||[]).forEac
  gs.forEach(function(s){if(s.due&&!s.done&&s.due<today)r.push({name:g.title+" ▸ "+s.text,due:s.due,note:(s.delayNote||"").trim()});});});return r;}
 function stuckLine(p,t,indent){if(((t.decision)||"go")==="stop")return"";var nodes=overdueNodes(t);var hasBlk=(t.blocker||"").trim();
  if(!nodes.length&&!hasBlk)return"";
- var parts=nodes.map(function(n){return '卡在「'+esc(n.name)+'」'+(n.note?'：'+esc(n.note):'')+' <span class="muted">逾期 '+esc(n.due)+'</span>';});
+ var parts=nodes.map(function(n){return '待推進「'+esc(n.name)+'」'+(n.note?'：'+esc(n.note):'')+' <span class="muted">逾期 '+esc(n.due)+'</span>';});
  if(hasBlk)parts.push('卡關：'+esc(t.blocker));
  return '<div style="margin:1px 0 5px '+(indent||"0")+';font-size:11.5px;color:var(--warn);line-height:1.6">🚧 '+parts.join('　｜　')+'</div>';}
 function realStageKey(t){if(t&&((t.decision)||"go")==="stop")return "stopped";return (t&&t.stage)||"undef";}
