@@ -596,7 +596,8 @@ function saveFinding(pid){var t=document.getElementById("af-t-"+pid),r=document.
  if(ow)notify(ow,"【追蹤系統】"+(rk==="高"?"⚠ 高風險":"")+"稽核發現：需要您改善",myNm()+" 對專案「"+(pp?pp.n:pid)+"」提出稽核發現：\n\n"+tx+"\n風險等級："+rk+(du?"\n改善期限："+du:"")+"\n\n請登入系統查看並回覆改善情形：\n"+SITE_URL);
  alert("已記錄。"+(ow?"已通知專案負責人 "+pn(ow)+"。":"（此專案尚未指派負責人，未發出通知）")+(rk==="高"?"\n高風險建議接著指定會簽。":""));}
 function toggleFinding(pid,fid){const t=TRACK[pid]||{};const a=Object.assign({},t.audit||{});a.findings=(a.findings||[]).map(function(f){if(f.id!==fid)return f;var nd=!f.done;return Object.assign({},f,{done:nd,doneAt:nd?Date.now():0,doneBy:nd?myNm():""});});save(pid,{audit:a});}
-var csOpen="",itOnly=false;
+var csOpen="",itOnly=false,itFilter="";
+function itFilterToggle(k){itFilter=(itFilter===k)?"":k;renderAB();}
 function openCS(pid,fid){csOpen=pid+"|"+(fid||"");renderAB();}
 function closeCS(){csOpen="";renderAB();}
 function csFind(nm){var k="";allPeople().forEach(function(x){if(!k&&(String(x.k).toLowerCase()===String(nm).toLowerCase()||pn(x.k)===nm))k=x.k;});return k;}
@@ -664,12 +665,15 @@ function itView(){var ed=canITZ();var ppl=allPeople().filter(function(x){return 
   var au=(t.audit||{});var ac=au.chk||{};var secbad=(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))||["pii","ai","perm","src"].some(function(k){return ac[k]==="no";})||(au.findings||[]).some(function(f){return !f.done;});
   if(secbad)nsec++;var st=itOf(t,"status");if(st!=="done"&&st!=="na"&&(t.needsSys||t.aiClaude==="off"||t.aiCodex==="off"||hoPending(t)||secbad))nopen++;});
  var h='<div class="banner">🖥 <b>IT / 資安專區</b>　彙整系統中已填寫的 IT／資安相關資料：串接需求、AI 帳號、PUNK 資安確認、交接收尾、稽核提出事項'+(ed?'（您可編輯 IT 狀態）':'（唯讀）')+'</div>'+csPeopleList();
- h+='<div class="stats"><div class="stat"><div class="n" style="color:#4c8dff">'+nsys+'</div><div class="l">🔗 需串接系統</div></div><div class="stat"><div class="n" style="color:var(--obs)">'+nacc+'</div><div class="l">🤖 可關閉帳號</div></div><div class="stat" style="border-color:'+(nsec?'#e0455f66':'')+'"><div class="n" style="color:var(--warn)">'+nsec+'</div><div class="l">🛡 資安待處理</div></div><div class="stat" style="border-color:'+(nopen?'#b9770f55':'')+'"><div class="n" style="color:#b9770f">'+nopen+'</div><div class="l">🔧 IT 待處理</div></div></div>';
+ var itk=function(k,n,lbl,c){return '<div class="stat" style="cursor:pointer'+(itFilter===k?';outline:2px solid '+c:'')+'" onclick="itFilterToggle(\''+k+'\')"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+lbl+'</div></div>';};
+ h+='<div class="stats">'+itk("sys",nsys,"🔗 需串接系統","#4c8dff")+itk("acc",nacc,"🤖 可關閉帳號","#b9770f")+itk("sec",nsec,"🛡 資安待處理","#e0455f")+itk("open",nopen,"🔧 IT 待處理","#b9770f")+'</div>'+(itFilter?'<div style="margin:6px 0;font-size:12px;color:var(--mut)">已篩選：'+({sys:"需串接系統",acc:"可關閉帳號",sec:"資安待處理",open:"IT 待處理"}[itFilter])+'　<a onclick="itFilter=\'\';renderAB()" style="cursor:pointer;color:var(--brand)">✕ 清除</a></div>':'');
  h+='<div style="margin:0 0 10px"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;cursor:pointer"><input type="checkbox" '+(itOnly?'checked':'')+' onchange="itOnly=this.checked;renderAB();" style="width:auto"> 只顯示有 IT／資安事項的專案</label></div>';
  var shown=0;
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};var body=itSecRows(p,t);var st=itOf(t,"status");var m=ITST.filter(function(s){return s[0]===st;})[0]||ITST[0];
-  var au0=(t.audit||{});var ac0=au0.chk||{};var has=!!(t.needsSys||t.aiClaude==="off"||t.aiCodex==="off"||itOf(t,"note")||hoPending(t)||(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))||["pii","ai","perm","src"].some(function(k){return ac0[k]==="no";})||(au0.findings||[]).some(function(f){return !f.done;}));
-  if(itOnly&&!has)return;shown++;
+  var au0=(t.audit||{});var ac0=au0.chk||{};var m_sec=(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))||["pii","ai","perm","src"].some(function(k){return ac0[k]==="no";})||(au0.findings||[]).some(function(f){return !f.done;});var m_acc=(t.aiClaude==="off"||t.aiCodex==="off");var st_=itOf(t,"status");var m_open=(st_!=="done"&&st_!=="na"&&(t.needsSys||m_acc||hoPending(t)||m_sec));var has=!!(t.needsSys||m_acc||itOf(t,"note")||hoPending(t)||m_sec);
+  if(itOnly&&!has)return;
+  if(itFilter==="sys"&&!t.needsSys)return;if(itFilter==="acc"&&!m_acc)return;if(itFilter==="sec"&&!m_sec)return;if(itFilter==="open"&&!m_open)return;
+  shown++;
   h+='<div class="dcard"><div class="dc-top"><b class="dc-n" onclick="openProj(\''+p.id+'\')">'+esc(p.n)+'</b>';
   if(ed){h+='<div class="dc-ctl"><select style="width:auto" onchange="saveIT(\''+p.id+'\',\'status\',this.value)">'+ITST.map(function(s){return '<option value="'+s[0]+'"'+(st===s[0]?' selected':'')+'>'+s[1]+'</option>';}).join('')+'</select><select style="width:auto" onchange="saveIT(\''+p.id+'\',\'owner\',this.value)"><option value="">IT 窗口：未指派</option>'+ppl.map(function(x){return '<option value="'+esc(x.k)+'"'+(itOf(t,"owner")===x.k?' selected':'')+'>'+esc(pn(x.k))+'</option>';}).join('')+'</select></div>';}
   else{h+='<span class="pillst" style="background:#eef1f7;color:var(--mut)">'+m[1]+'</span>';}
@@ -776,13 +780,40 @@ function execCard(title,color,arr,empty){if(!arr.length&&!empty)return"";
  var b='<div class="stcard"><div class="stcard-h" style="border-left:4px solid '+color+'"><span style="color:'+color+'">'+title+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span></div>';
  b+=arr.length?'<div class="stcard-b">'+arr.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div>':'<div class="stcard-b"><div class="muted" style="font-size:12.5px;padding:6px 0">'+empty+'</div></div>';
  return b+'</div>';}
+var kpiView="";
+function kpiToggle(k){kpiView=(kpiView===k)?"":k;renderAB();}
+function kpiPanel(){if(!kpiView)return"";var arc=function(t){return ((t&&t.decision)||"go")==="stop"||(t&&t.flag==="hold");};
+ var arr=[],lbl="",col="#2b3550";
+ if(kpiView==="active"){lbl="追蹤中的案子";col="#2b3550";arr=PROJECTS.filter(function(p){return !arc(TRACK[p.id]||{});});}
+ else if(kpiView==="imp"){lbl="🔴 重要案（最高優先）";col="#e0455f";arr=PROJECTS.filter(function(p){var t=TRACK[p.id]||{};return t.flag==="top"&&!arc(t);});}
+ else if(kpiView==="arc"){lbl="⏹ 已終止／暫停";col="#8a93a8";arr=PROJECTS.filter(function(p){return arc(TRACK[p.id]||{});});}
+ else if(kpiView==="prog"){lbl="追蹤中・依進度由低到高";col="#12b886";arr=PROJECTS.filter(function(p){return !arc(TRACK[p.id]||{});}).sort(function(a,b){return effProg(TRACK[a.id]||{})-effProg(TRACK[b.id]||{});});}
+ var rows=arr.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')||'<div class="muted" style="font-size:12.5px;padding:6px 0">無</div>';
+ return '<div class="stcard" style="border:1px solid '+col+'55;background:'+col+'08;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+lbl+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span> <a onclick="kpiView=\'\';renderAB()" style="cursor:pointer;color:var(--mut);font-weight:400;font-size:12px;float:right">✕ 收起</a></div><div class="stcard-b">'+rows+'</div></div>';}
+function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ((t&&t.decision)||"go")==="stop"||(t&&t.flag==="hold");};
+ var imp=[],upd=[],dly=[],aud=[];
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;
+  if(t.flag==="top")imp.push(p);
+  (t.notes||[]).forEach(function(n){if(n.at&&n.at>=wk)upd.push({p:p,txt:esc(n.text),by:esc(n.by||"")});});
+  (t.props||[]).forEach(function(r){if(r.decAt&&r.decAt>=wk)upd.push({p:p,txt:"裁決「"+esc(r.type==="other"?"其他建議":decMeta(r.type)[1])+"」"+(r.result==="approve"?"核准":r.result==="reject"?"駁回":"已讀"),by:esc(r.decBy||"")});});
+  ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(f.at&&f.at>=wk&&!f.done)upd.push({p:p,txt:"稽核發現："+esc(f.text),by:esc(f.by||"")});});
+  var nodes=overdueNodes(t);if(nodes.length)dly.push({p:p,nodes:nodes});
+  ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});});
+ aud.sort(function(a,b){var r={"高":0,"中":1,"低":2};return (r[a.f.risk]==null?3:r[a.f.risk])-(r[b.f.risk]==null?3:r[b.f.risk]);});
+ var sec=function(title,col,inner){return '<div style="margin-top:10px"><div style="font-weight:800;font-size:12.5px;color:'+col+';margin-bottom:3px">'+title+'</div>'+inner+'</div>';};
+ var impH=imp.length?imp.map(function(p){var t=TRACK[p.id]||{};var prog=effProg(t);return '<div style="display:flex;align-items:center;gap:8px;padding:3px 0;font-size:12.5px;flex-wrap:wrap"><b class="dc-n" style="flex:0 0 150px;min-width:110px;cursor:pointer" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</b><div style="flex:1;min-width:100px;display:flex;align-items:center;gap:6px"><div class="prog" style="flex:1"><i style="width:'+prog+'%"></i></div><span class="muted" style="width:34px;text-align:right;font-size:11.5px">'+prog+'%</span></div>'+(overdueGoals(t)>0?'<span class="pillst" style="background:#e0455f14;color:var(--warn)">⚠ 逾期</span>':'')+'</div>';}).join(''):'<div class="muted" style="font-size:12px">目前沒有最高優先案子</div>';
+ var updH=upd.length?upd.slice(0,10).map(function(u){return '<div style="font-size:12.5px;padding:2px 0"><b class="dc-n" style="cursor:pointer" onclick="openProj(\''+sid(u.p.id)+'\')">'+esc(u.p.n)+'</b>：'+u.txt+(u.by?' <span class="muted">— '+u.by+'</span>':'')+'</div>';}).join('')+(upd.length>10?'<div class="muted" style="font-size:11.5px">…另有 '+(upd.length-10)+' 筆</div>':''):'<div class="muted" style="font-size:12px">本週尚無新增紀錄</div>';
+ var dlyH=dly.length?dly.map(function(d){return '<div style="font-size:12.5px;padding:2px 0;color:var(--warn)"><b class="dc-n" style="cursor:pointer;color:var(--navy)" onclick="openProj(\''+sid(d.p.id)+'\')">'+esc(d.p.n)+'</b>：'+d.nodes.map(function(n){return '待推進「'+esc(n.name)+'」'+(n.note?'（'+esc(n.note)+'）':'')+' 逾期 '+esc(n.due);}).join('　｜　')+'</div>';}).join(''):'<div class="muted" style="font-size:12px">目前沒有逾期項目 👍</div>';
+ var audH=aud.length?aud.slice(0,8).map(function(a){var f=a.f;var cs=f.cs;return '<div style="font-size:12.5px;padding:2px 0">'+(f.risk==="高"?'🔴':'🟠')+' <b class="dc-n" style="cursor:pointer" onclick="openProj(\''+sid(a.p.id)+'\')">'+esc(a.p.n)+'</b>：'+esc(f.text)+' <span class="pillst" style="background:#7c53d61a;color:#7c53d6">'+esc(f.risk||"")+'</span>'+(f.due?' <span class="muted">📅 '+esc(f.due)+'</span>':'')+' <span class="muted">— '+esc(f.by||"")+'</span>'+(cs?(cs.ok?' <span style="color:var(--teal)">✅ '+esc(cs.name)+' 已會簽</span>':' <span style="color:var(--obs)">⏳ 待 '+esc(cs.name)+' 會簽</span>'):'')+'</div>';}).join('')+(aud.length>8?'<div class="muted" style="font-size:11.5px">…另有 '+(aud.length-8)+' 項，詳見稽核專區</div>':''):'<div class="muted" style="font-size:12px">目前沒有未結案的稽核事項 👍</div>';
+ return '<div class="stcard" style="border:1px solid var(--brand)55;background:#4457c908;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid var(--brand)"><span style="color:var(--brand)">📌 本週重點（主管速覽）</span></div><div class="stcard-b">'+sec("🔴 重要案進度","#e0455f",impH)+sec("🆕 本週新增／更新","#12b886",updH)+sec("⏰ 逾期・待推進（DELAY）","#e0455f",dlyH)+sec("🔍 稽核重要提醒","#7c53d6",audH)+'</div></div>';}
 function execDash(extra){
  var isArc=function(t){return ((t&&t.decision)||"go")==="stop"||(t&&t.flag==="hold");};
  var active=0,imp=0,sump=0,arc=0;
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(isArc(t)){arc++;return;}active++;if(t.flag==="top")imp++;sump+=effProg(t);});
- var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
+ var stat=function(n,l,c,key){return '<div class="stat"'+(key?' style="cursor:pointer" onclick="kpiToggle(\''+key+'\')"':'')+'><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板</b>　依大項目分組，卡片內為該組專案與進度。</div>'+(extra||'')+recentJudge();
- h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(arc,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置，<b>不列入追蹤</b>（不計進度、移到最下方）。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段可複選。</div>';
+ h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550","active")+stat(imp,"🔴 重要案","#e0455f","imp")+stat(arc,"⏹ 已終止／暫停","#8a93a8","arc")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886","prog")+'</div>'+kpiPanel()+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">點上方數字可展開清單。⏹ <b>已終止／暫停</b>不列入追蹤。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段可複選。</div>';
+ h+=weekPanel();
  var seen={},stopped=[];var isStop=function(id){return isArc(TRACK[id]||{});};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
@@ -821,9 +852,10 @@ function mgrDash(){
  var isArc=function(t){return ((t&&t.decision)||"go")==="stop"||(t&&t.flag==="hold");};
  var active=0,imp=0,sump=0,arc=0;
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(isArc(t)){arc++;return;}active++;if(t.flag==="top")imp++;sump+=effProg(t);});
- var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
+ var stat=function(n,l,c,key){return '<div class="stat"'+(key?' style="cursor:pointer" onclick="kpiToggle(\''+key+'\')"':'')+'><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button><button class="btn gh sm" onclick="clearAllStages()">🧹 清除全部階段（重設）</button></div>'+recentJudge();
  h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(arc,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段點一下切換、可複選（例：同時商轉＋內部使用）。</div>';
+ h+=weekPanel();
  var seen={},stopped=[];var isStop=function(id){return isArc(TRACK[id]||{});};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
