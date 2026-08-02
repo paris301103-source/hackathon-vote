@@ -777,16 +777,13 @@ function execCard(title,color,arr,empty){if(!arr.length&&!empty)return"";
  b+=arr.length?'<div class="stcard-b">'+arr.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div>':'<div class="stcard-b"><div class="muted" style="font-size:12.5px;padding:6px 0">'+empty+'</div></div>';
  return b+'</div>';}
 function execDash(extra){
- var total=PROJECTS.length,imp=0,trouble=0,sump=0,stp=0;
- PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.flag==="top")imp++;sump+=effProg(t);if(((t.decision)||"go")==="stop"||t.flag==="hold")stp++;
-  var pr=0;var st=((t.decision)||"go")==="stop";var sd=staleDays(t);
-  if(!st&&sd!=null&&sd>=14)pr=1;if(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))pr=1;
-  if(auOpen(t).some(function(f){return f.risk==="高";}))pr=1;if(!st&&overdueGoals(t)>0)pr=1;if(t.proposal)pr=1;
-  if(pr)trouble++;});
+ var isArc=function(t){return ((t&&t.decision)||"go")==="stop"||(t&&t.flag==="hold");};
+ var active=0,imp=0,sump=0,arc=0;
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(isArc(t)){arc++;return;}active++;if(t.flag==="top")imp++;sump+=effProg(t);});
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板</b>　依大項目分組，卡片內為該組專案與進度。</div>'+(extra||'')+recentJudge();
- h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(stp,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置。　行末 ⚠ 標記＝停滯／資安未過／高風險／逾期／待裁決。階段可複選。</div>';
- var seen={},stopped=[];var isStop=function(id){return ((TRACK[id]&&TRACK[id].decision)||"go")==="stop";};
+ h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(arc,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置，<b>不列入追蹤</b>（不計進度、移到最下方）。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段可複選。</div>';
+ var seen={},stopped=[];var isStop=function(id){return isArc(TRACK[id]||{});};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
   arr.forEach(function(id){seen[id]=1;if(isStop(id))stopped.push(id);});
@@ -796,7 +793,7 @@ function execDash(extra){
  var other=PROJECTS.filter(function(p){return !seen[p.id];});
  var otherLive=other.filter(function(p){return !isStop(p.id);});other.forEach(function(p){if(isStop(p.id))stopped.push(p.id);});
  if(otherLive.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+otherLive.length+' 案</span></div><div class="stcard-b">'+otherLive.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div></div>';
- if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已叫停／結案</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return execRow(p,TRACK[id]||{});}).join('')+'</div></div>';
+ if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已終止／暫停（不列入追蹤）</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return execRow(p,TRACK[id]||{});}).join('')+'</div></div>';
  h+='<div style="margin-top:4px;font-size:12px;color:var(--mut)">🔴＝最高優先　⚠＝有狀況。階段小標為已設定的發展階段。</div>';
  return h;}
 var editDash=false;
@@ -821,16 +818,13 @@ function mgrRow(p){var t=TRACK[p.id]||{};var prog=effProg(t);var owner=pmOf(p);v
   +'<div class="mr-add"><input id="note-'+p.id+'" placeholder="＋ 特殊註記（選填，按 💾 儲存）" class="mr-noteinput"><select id="flg-'+p.id+'" class="mr-sel"><option value="">標記：無</option>'+FLAGS.map(function(f){return '<option value="'+f[0]+'"'+(t.flag===f[0]?' selected':'')+'>'+f[1]+'</option>';}).join('')+'</select></div>';
  return h+'</div>';}
 function mgrDash(){
- var total=PROJECTS.length,imp=0,trouble=0,sump=0,stp=0;
- PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(t.flag==="top")imp++;sump+=effProg(t);if(((t.decision)||"go")==="stop"||t.flag==="hold")stp++;
-  var pr=0;var st=((t.decision)||"go")==="stop";var sd=staleDays(t);
-  if(!st&&sd!=null&&sd>=14)pr=1;if(t.punk&&(t.punk.sec==="no"||t.punk.perm==="no"))pr=1;
-  if(auOpen(t).some(function(f){return f.risk==="高";}))pr=1;if(!st&&overdueGoals(t)>0)pr=1;if(t.proposal)pr=1;
-  if(pr)trouble++;});
+ var isArc=function(t){return ((t&&t.decision)||"go")==="stop"||(t&&t.flag==="hold");};
+ var active=0,imp=0,sump=0,arc=0;
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(isArc(t)){arc++;return;}active++;if(t.flag==="top")imp++;sump+=effProg(t);});
  var stat=function(n,l,c){return '<div class="stat"><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
  var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button><button class="btn gh sm" onclick="clearAllStages()">🧹 清除全部階段（重設）</button></div>'+recentJudge();
- h+='<div class="stats" style="margin-bottom:16px">'+stat(total,"專案總數","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(stp,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(total||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段點一下切換、可複選（例：同時商轉＋內部使用）。</div>';
- var seen={},stopped=[];var isStop=function(id){return ((TRACK[id]&&TRACK[id].decision)||"go")==="stop";};
+ h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(arc,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段點一下切換、可複選（例：同時商轉＋內部使用）。</div>';
+ var seen={},stopped=[];var isStop=function(id){return isArc(TRACK[id]||{});};
  Object.keys(GROUPS).forEach(function(gk){var g=GROUPS[gk];var col=GMETA[gk]||"#8a93a8";
   var arr=g.ids.filter(function(id){return PROJECTS.some(function(p){return p.id===id;});});
   arr.forEach(function(id){seen[id]=1;if(isStop(id))stopped.push(id);});
@@ -840,7 +834,7 @@ function mgrDash(){
  var other=PROJECTS.filter(function(p){return !seen[p.id];});
  var otherLive=other.filter(function(p){return !isStop(p.id);});other.forEach(function(p){if(isStop(p.id))stopped.push(p.id);});
  if(otherLive.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+otherLive.length+' 案</span></div><div class="stcard-b">'+otherLive.map(mgrRow).join('')+'</div></div>';
- if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已叫停／結案</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return mgrRow(p);}).join('')+'</div></div>';
+ if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已終止／暫停（不列入追蹤）</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return mgrRow(p);}).join('')+'</div></div>';
  return h;}
 function weekView(){
  const props=PROJECTS.map(p=>({p,t:TRACK[p.id]||{}})).filter(x=>x.t.proposal);
