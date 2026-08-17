@@ -525,7 +525,7 @@ function renderAdmin(){
  el.innerHTML=topBar()+`<div class="tabs">
   <button class="${adminTab==='board'?'on':''}" onclick="setTab('board')">📊 總覽</button>
   <button class="${adminTab==='pager'?'on':''}" onclick="setTab('pager')">📄 逐案檢視</button>
-  ${(me.role==="exec"||me.role==="mgr"||me.role==="lead")?`<button class="${adminTab==='dash'?'on':''}" onclick="setTab('dash')">📊 決策儀表板</button>`:""}${canAudit()?`<button class="${adminTab==='audit'?'on':''}" onclick="setTab('audit')">🔍 稽核專區</button>`:""}${canITView()?`<button class="${adminTab==='it'?'on':''}" onclick="setTab('it')">🖥 IT/資安專區</button>`:""}
+  ${(me.role==="exec"||me.role==="mgr"||me.role==="lead")?`<button class="${adminTab==='dash'?'on':''}" onclick="setTab('dash')">📊 決策儀表板</button>`:""}${(me.role==="exec"||me.role==="mgr"||me.role==="lead")?`<button class="${adminTab==='usage'?'on':''}" onclick="setTab('usage')">🟢 上線追蹤</button>`:""}${canAudit()?`<button class="${adminTab==='audit'?'on':''}" onclick="setTab('audit')">🔍 稽核專區</button>`:""}${canITView()?`<button class="${adminTab==='it'?'on':''}" onclick="setTab('it')">🖥 IT/資安專區</button>`:""}
   <button class="btn gh sm" style="margin-left:auto" onclick="exportCSV()">⬇ 匯出 CSV</button></div><div id="ab"></div>`;
  renderAB();
 }
@@ -540,6 +540,7 @@ function renderAB(){
  if(adminTab==="dash"){b.innerHTML=dashView();return;}
  if(adminTab==="audit"){b.innerHTML=auditView();return;}
  if(adminTab==="it"){b.innerHTML=itView();return;}
+ if(adminTab==="usage"){b.innerHTML=usageView();return;}
  if(adminTab==="perm"){b.innerHTML=permView();return;}
  if(adminTab==="pager"){let ps=PROJECTS.filter(p=>(!fBucket||p.bk===fBucket)&&(!fOwner||pmOf(p)===fOwner||(p.team&&p.team.includes(fOwner)))&&(!fGroup||PGROUP[p.id]===fGroup));b.innerHTML=filterBar(true)+pager(ps);return;}
  // board
@@ -781,6 +782,31 @@ function execCard(title,color,arr,empty){if(!arr.length&&!empty)return"";
  b+=arr.length?'<div class="stcard-b">'+arr.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div>':'<div class="stcard-b"><div class="muted" style="font-size:12.5px;padding:6px 0">'+empty+'</div></div>';
  return b+'</div>';}
 var kpiView="";
+function usageView(){var ed=(me&&(me.role==="mgr"||me.role==="lead"));var body=usageCard(ed);return '<div class="banner">🟢 <b>上線追蹤</b>　已內部使用的案子，記錄使用人數與是否需要改版；幾個月沒變動會標示 🟢 穩定'+(ed?'（可編輯）':'（唯讀）')+'</div>'+(body||'<div class="dcard"><span class="muted">目前沒有標記為「內部使用中」的上線案子。請在決策儀表板編輯模式，把已上線的案子階段勾「🟣 內部使用」。</span></div>');}
+function usageOf(t){return (t&&t.usage)||{};}
+function mmddTs(ms){if(!ms)return"";var d=new Date(ms);return (d.getMonth()+1)+"/"+d.getDate();}
+function saveUsage(pid,f,v){if(!db)return;var t=TRACK[pid]||{};var cur=Object.assign({},t.usage||{});cur[f]=v;cur.by=myNm();cur.at=Date.now();var log=((t.usageLog)||[]).slice();
+ if(f==="users"){var prev=(t.usage||{}).users;if(String(prev==null?"":prev)!==String(v)){cur.usersAt=Date.now();log.push({users:v,at:Date.now(),by:myNm()});}}
+ try{db.collection("track").doc(pid).set({usage:cur,usageLog:log},{merge:true});t.usage=cur;t.usageLog=log;TRACK[pid]=t;}catch(e){}}
+function usageStable(t){var u=usageOf(t);if(u.users==null||u.users===""||u.revise==="yes")return false;var last=u.usersAt||((t.usageLog&&t.usageLog.length)?t.usageLog[t.usageLog.length-1].at:u.at);if(!last)return false;return (Date.now()-last)>=60*86400000;}
+function usageTrend(t){var log=(t&&t.usageLog)||[];if(log.length<2)return"";return log.slice(-6).map(function(e){return esc(String(e.users))+'人('+mmddTs(e.at)+')';}).join(" → ");}
+function launched(t){return stagesOf(t).indexOf("internal")>=0&&((t.decision)||"go")!=="stop";}
+function usageCard(ed){var arr=PROJECTS.filter(function(p){return launched(TRACK[p.id]||{});});if(!arr.length)return"";
+ var REV=[["","待評估"],["no","不需改版"],["yes","需要改版"]];
+ var need=0,stab=0;arr.forEach(function(p){var t=TRACK[p.id]||{};var u=usageOf(t);if(!u.by)need++;if(usageStable(t))stab++;});
+ var h='<div class="stcard" style="border:1px solid #12b88655;background:#12b8860a;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid #12b886"><span style="color:#0f9e78">🟢 已上線追蹤</span> <span class="muted" style="font-weight:400;font-size:12px">'+arr.length+' 案已內部使用'+(need?'，'+need+' 案尚未填':'')+(stab?'，🟢 '+stab+' 案穩定':'')+'</span></div><div class="stcard-b">';
+ h+=arr.map(function(p){var t=TRACK[p.id]||{};var u=usageOf(t);var rv=REV.filter(function(x){return x[0]===(u.revise||"");})[0]||REV[0];var stable=usageStable(t);
+  var row='<div style="padding:7px 0;border-top:1px solid var(--line)"><div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><b class="dc-n" style="flex:0 0 150px;min-width:110px;cursor:pointer" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</b>'+(stable?'<span class="pillst" style="background:#12b88622;color:var(--teal);font-weight:700">🟢 穩定</span>':'');
+  if(ed){row+='<span style="font-size:12px">👥 使用人數 <input type="number" min="0" value="'+(u.users!=null?esc(String(u.users)):"")+'" onchange="saveUsage(\''+sid(p.id)+'\',\'users\',this.value)" style="width:70px;font-size:12px"></span>'
+   +'<select onchange="saveUsage(\''+sid(p.id)+'\',\'revise\',this.value)" style="width:auto;font-size:12px">'+REV.map(function(x){return '<option value="'+x[0]+'"'+((u.revise||"")===x[0]?' selected':'')+'>改版：'+x[1]+'</option>';}).join('')+'</select>';}
+  else{row+='<span style="font-size:12.5px">👥 <b>'+(u.users!=null&&u.users!==""?esc(String(u.users))+' 人':'—')+'</b></span><span class="pillst" style="background:'+(u.revise==="yes"?"#e0455f14;color:var(--warn)":u.revise==="no"?"#12b88614;color:var(--teal)":"#eef1f7;color:var(--mut)")+'">改版：'+esc(rv[1])+'</span>';}
+  row+=(u.by?'<span class="muted" style="font-size:11px">— '+esc(u.by)+(u.at?' '+dts(u.at):'')+'</span>':'<span class="muted" style="font-size:11px">尚未填</span>')+'</div>';
+  var tr=usageTrend(t);if(tr)row+='<div style="margin-top:3px;font-size:11.5px;color:var(--ink2)">📊 人數變化：'+tr+'</div>';
+  if(ed)row+='<div style="margin-top:5px"><input placeholder="改版／使用情形備註（選填）" value="'+esc(u.note||"")+'" onchange="saveUsage(\''+sid(p.id)+'\',\'note\',this.value)" style="width:100%;font-size:12px"></div>';
+  else if(u.note)row+='<div style="margin-top:4px;font-size:12px;color:var(--ink2)">📝 '+esc(u.note)+'</div>';
+  return row+'</div>';}).join('');
+ return h+'</div></div>';}
+
 function mmdd(k){var p=String(k).split("-");return p.length>=3?(+p[1])+"/"+(+p[2]):k;}
 function trajLine(t){var h=(t&&t.progHist)||{};var wk=weekKey();var cur=effProg(t);var keys=Object.keys(h).sort();var pts=keys.map(function(k){return mmdd(k)+" "+h[k]+"%";});if(!keys.length||keys[keys.length-1]!==wk)pts.push(mmdd(wk)+" "+cur+"%（本週）");if(pts.length<=1)return "";var last=pts.length,d=null;if(keys.length){var prev=h[keys[keys.length-1]===wk?keys[keys.length-2]:keys[keys.length-1]];if(prev!=null)d=cur-prev;}return '<span class="muted">'+pts.slice(-6).join(" → ")+'</span>'+(d!=null&&d!==0?' <b style="color:'+(d>0?"var(--teal)":"var(--warn)")+'">'+(d>0?"▲+"+d:"▼"+d)+'%</b>':'');}
 
@@ -838,7 +864,7 @@ function execDash(extra){
  var otherLive=other.filter(function(p){return !isStop(p.id);});other.forEach(function(p){if(isStop(p.id))stopped.push(p.id);});
  if(otherLive.length)h+='<div class="stcard"><div class="stcard-h" style="border-left:4px solid #b0b7c5"><span style="color:#6b7280">◽ 未分組</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+otherLive.length+' 案</span></div><div class="stcard-b">'+otherLive.map(function(p){return execRow(p,TRACK[p.id]||{});}).join('')+'</div></div>';
  if(stopped.length)h+='<div class="stcard" style="background:#f7f8fa"><div class="stcard-h" style="border-left:4px solid #8a93a8"><span style="color:#6b7280">⚪ 已終止／暫停（不列入追蹤）</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+stopped.length+' 案</span></div><div class="stcard-b">'+stopped.map(function(id){var p=PROJECTS.filter(function(x){return x.id===id;})[0];return execRow(p,TRACK[id]||{});}).join('')+'</div></div>';
- h+='<div style="margin-top:4px;font-size:12px;color:var(--mut)">🔴＝最高優先　⚠＝有狀況。階段小標為已設定的發展階段。</div>';
+ h+='<div style="margin-top:4px;font-size:12px;color:var(--mut)">🔴＝最高優先　⚠＝有狀況。🟢 已上線追蹤請見「上線追蹤」分頁。</div>';
  return h;}
 var editDash=false;
 function dashView(){snapshotWeek();if(me&&me.role==="exec")return execDash("");if(editDash)return mgrDash();return execDash('<div style="margin:0 0 12px"><button class="btn sm" onclick="editDash=true;renderAB()">✏️ 編輯階段／負責人</button> <span class="muted" style="font-size:11.5px">切到可編輯版</span></div>');}
