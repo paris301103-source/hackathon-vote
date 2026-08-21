@@ -812,13 +812,26 @@ function mmdd(k){var p=String(k).split("-");return p.length>=3?(+p[1])+"/"+(+p[2
 function trajLine(t){var h=(t&&t.progHist)||{};var wk=weekKey();var cur=effProg(t);var keys=Object.keys(h).sort();var pts=keys.map(function(k){return mmdd(k)+" "+h[k]+"%";});if(!keys.length||keys[keys.length-1]!==wk)pts.push(mmdd(wk)+" "+cur+"%（本週）");if(pts.length<=1)return "";var last=pts.length,d=null;if(keys.length){var prev=h[keys[keys.length-1]===wk?keys[keys.length-2]:keys[keys.length-1]];if(prev!=null)d=cur-prev;}return '<span class="muted">'+pts.slice(-6).join(" → ")+'</span>'+(d!=null&&d!==0?' <b style="color:'+(d>0?"var(--teal)":"var(--warn)")+'">'+(d>0?"▲+"+d:"▼"+d)+'%</b>':'');}
 
 function snapshotWeek(){if(!db)return;var wk=weekKey();PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(["stop","hold"].indexOf((t.decision)||"go")>=0)return;var cur=effProg(t);var h=t.progHist||{};if(h[wk]!==cur){var nh={};nh[wk]=cur;try{db.collection("track").doc(p.id).set({progHist:nh},{merge:true});}catch(e){}}});}
+function setLastWeek(pid,v){if(!db)return;var lw=weekKey(Date.now()-7*86400000);var t=TRACK[pid]||{};var h=Object.assign({},t.progHist||{});if(v===""||v==null){delete h[lw];}else{h[lw]=Math.max(0,Math.min(100,parseInt(v,10)||0));}try{db.collection("track").doc(pid).set({progHist:h},{merge:true});t.progHist=h;TRACK[pid]=t;}catch(e){}}
+function baselineForm(){var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};var lw=weekKey(Date.now()-7*86400000);
+ var arr=PROJECTS.filter(function(p){return !arc(TRACK[p.id]||{});});
+ return '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--brand)">✏️ 補填上週進度基準（一次性，填了今天就能比較；之後自動記錄）</summary><div style="margin-top:6px">'+arr.map(function(p){var t=TRACK[p.id]||{};var lv=(t.progHist||{})[lw];return '<div style="display:flex;align-items:center;gap:8px;padding:2px 0;font-size:12px"><span style="flex:0 0 150px;min-width:110px">'+esc(p.n)+'</span><span class="muted">本週 '+effProg(t)+'%　上週 </span><input type="number" min="0" max="100" value="'+(lv!=null?esc(String(lv)):"")+'" onchange="setLastWeek(\''+sid(p.id)+'\',this.value)" style="width:64px;font-size:12px">%</div>';}).join('')+'</div></details>';}
 function prevSnap(t){var h=(t&&t.progHist)||{};var wk=weekKey();var ks=Object.keys(h).filter(function(k){return k<wk;}).sort();return ks.length?{week:ks[ks.length-1],val:h[ks[ks.length-1]]}:null;}
-function weekDiffSection(){var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};var diffs=[],fresh=0;
- PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;var cur=effProg(t);var ps=prevSnap(t);if(!ps){fresh++;return;}var d=cur-ps.val;if(d!==0)diffs.push({p:p,cur:cur,prev:ps.val,d:d});});
- diffs.sort(function(a,b){return b.d-a.d;});
- if(!diffs.length)return '<div class="muted" style="font-size:12px">本週與上週相比暫無進度變化'+(fresh?'（'+fresh+' 案本週起才開始記錄快照，下週起可比較）':'')+'</div>';
- return diffs.map(function(x){var up=x.d>0;var col=up?"var(--teal)":"var(--warn)";return '<div style="display:flex;align-items:center;gap:8px;padding:2px 0;font-size:12.5px;flex-wrap:wrap"><b class="dc-n" style="flex:0 0 150px;min-width:110px;cursor:pointer" onclick="openProj(\''+sid(x.p.id)+'\')">'+esc(x.p.n)+'</b><span class="muted">'+x.prev+'% → '+x.cur+'%</span><span class="pillst" style="background:'+col+'18;color:'+col+';font-weight:700">'+(up?'▲ +'+x.d:'▼ '+x.d)+'%</span></div>';}).join('')+(fresh?'<div class="muted" style="font-size:11.5px;margin-top:3px">另有 '+fresh+' 案本週起開始記錄快照</div>':'');}
-
+function weekDiffSection(){var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};var ups=[],downs=[],fresh=0;
+ PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;var cur=effProg(t);var ps=prevSnap(t);if(!ps){fresh++;return;}var d=cur-ps.val;if(d>0)ups.push({p:p,d:d,cur:cur,prev:ps.val});else if(d<0)downs.push({p:p,d:d,cur:cur,prev:ps.val});});
+ ups.sort(function(a,b){return b.d-a.d;});downs.sort(function(a,b){return a.d-b.d;});
+ var nm=function(x){return '<b class="dc-n" style="cursor:pointer" onclick="openProj(\''+sid(x.p.id)+'\')">'+esc(x.p.n)+'</b>（'+x.prev+'%→'+x.cur+'%，<span style="color:'+(x.d>0?"var(--teal)":"var(--warn)")+'">'+(x.d>0?"+"+x.d:x.d)+'%</span>）';};
+ if(!ups.length&&!downs.length){return '<div style="font-size:12.5px;color:var(--ink2);line-height:1.7">本週各案進度與上週持平，沒有明顯變化。'+(fresh?'（'+fresh+' 案本週起才開始記錄，下週起可比較）':'')+((typeof editDash!=="undefined"&&editDash)?baselineForm():'')+'</div>';}
+ var t1="本週共 <b>"+(ups.length+downs.length)+"</b> 案有進度變化——";
+ var parts=[];
+ if(ups.length)parts.push("<span style=\"color:var(--teal)\">"+ups.length+" 案前進</span>");
+ if(downs.length)parts.push("<span style=\"color:var(--warn)\">"+downs.length+" 案倒退</span>");
+ var t2=parts.join("、")+"。";
+ var t3="";
+ if(ups.length){var top=ups.slice(0,3).map(nm).join("、");t3+="<div style=\"margin-top:5px\">📈 進展最多："+top+(ups.length>3?" 等":"")+"。</div>";}
+ if(downs.length){var dn=downs.slice(0,3).map(nm).join("、");t3+="<div style=\"margin-top:5px\">📉 需注意（較上週下滑）："+dn+"。</div>";}
+ var t4=fresh?'<div style="margin-top:5px;font-size:11.5px;color:var(--mut)">另有 '+fresh+' 案本週起開始記錄快照，下週起可比較。</div>':'';
+ return '<div style="font-size:12.5px;color:var(--ink2);line-height:1.7">'+t1+t2+t3+t4+((typeof editDash!=="undefined"&&editDash)?baselineForm():'')+'</div>';}
 function progText(t){if(!t||!(t.today||"").trim())return"";var rp=reportParts(t.today);var b=(rp&&rp.body?rp.body:t.today).replace(/\s+/g," ").trim();return b.length>90?b.slice(0,90)+"…":b;}
 
 function kpiToggle(k){kpiView=(kpiView===k)?"":k;renderAB();}
@@ -851,7 +864,7 @@ function execDash(extra){
  var active=0,imp=0,sump=0,arc=0;
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(isArc(t)){arc++;return;}active++;if(t.flag==="top")imp++;sump+=effProg(t);});
  var stat=function(n,l,c,key){return '<div class="stat"'+(key?' style="cursor:pointer" onclick="kpiToggle(\''+key+'\')"':'')+'><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
- var h='<div class="banner">📊 <b>決策儀表板</b>　依大項目分組，卡片內為該組專案與進度。</div>'+(extra||'')+recentJudge();
+ var h='<div class="banner">📊 <b>決策儀表板</b>　依大項目分組，卡片內為該組專案與進度。</div>'+(extra||'');
  h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550","active")+stat(imp,"🔴 重要案","#e0455f","imp")+stat(arc,"⏹ 已終止／暫停","#8a93a8","arc")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886","prog")+'</div>'+kpiPanel()+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">點上方數字可展開清單。⏹ <b>已終止／暫停</b>不列入追蹤。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段可複選。</div>';
  h+=weekPanel();
  var seen={},stopped=[];var isStop=function(id){return isArc(TRACK[id]||{});};
@@ -893,7 +906,7 @@ function mgrDash(){
  var active=0,imp=0,sump=0,arc=0;
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(isArc(t)){arc++;return;}active++;if(t.flag==="top")imp++;sump+=effProg(t);});
  var stat=function(n,l,c,key){return '<div class="stat"'+(key?' style="cursor:pointer" onclick="kpiToggle(\''+key+'\')"':'')+'><div class="n" style="color:'+c+'">'+n+'</div><div class="l">'+l+'</div></div>';};
- var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button><button class="btn gh sm" onclick="clearAllStages()">🧹 清除全部階段（重設）</button></div>'+recentJudge();
+ var h='<div class="banner">📊 <b>決策儀表板・編輯模式</b>　依大項目分組；改階段/負責人後按 💾。</div>'+'<div style="margin:0 0 12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn gh sm" onclick="editDash=false;renderAB()">✓ 完成，回乾淨檢視</button><button class="btn sm" onclick="applyAiStages()">🤖 一鍵套用 AI 建議階段（僅填未設的）</button><button class="btn gh sm" onclick="clearAllStages()">🧹 清除全部階段（重設）</button></div>';
  h+='<div class="stats" style="margin-bottom:16px">'+stat(active,"追蹤中","#2b3550")+stat(imp,"🔴 重要案","#e0455f")+stat(arc,"⏹ 已終止／暫停","#8a93a8")+stat(Math.round(sump/(active||1))+"%","平均進度","#12b886")+'</div>'+'<div style="margin:-6px 0 14px;font-size:11.5px;color:var(--mut)">⏹ <b>已終止／暫停</b>＝已叫停結案或標記擱置。　行末 ⚠＝停滯／資安未過／高風險／逾期／待裁決。階段點一下切換、可複選（例：同時商轉＋內部使用）。</div>';
  h+=weekPanel();
  var seen={},stopped=[];var isStop=function(id){return isArc(TRACK[id]||{});};
