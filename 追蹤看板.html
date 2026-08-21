@@ -848,8 +848,10 @@ function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["s
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;
   if(t.flag==="top")imp.push(p);
   (t.notes||[]).forEach(function(n){if(n.at&&n.at>=wk)upd.push({p:p,txt:esc(n.text),by:esc(n.by||"")});});
-  (t.props||[]).forEach(function(r){if(r.decAt&&r.decAt>=wk)upd.push({p:p,txt:"裁決「"+esc(r.type==="other"?"其他建議":decMeta(r.type)[1])+"」"+(r.result==="approve"?"核准":r.result==="reject"?"駁回":"已讀"),by:esc(r.decBy||"")});});
   ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(f.at&&f.at>=wk&&!f.done)upd.push({p:p,txt:"稽核發現："+esc(f.text),by:esc(f.by||"")});});
+  (t.tasks||[]).forEach(function(tk){if(tk.at&&tk.at>=wk)upd.push({p:p,txt:"指派任務："+esc(tk.text)+(tk.assignee?"（給 "+esc(pn(tk.assignee))+"）":""),by:esc(tk.by||"")});if(tk.done&&tk.doneAt&&tk.doneAt>=wk)upd.push({p:p,txt:"完成任務："+esc(tk.text),by:esc(tk.doneBy||"")});});
+  (t.goals||[]).forEach(function(g){(g.subs||[]).forEach(function(sb){if(sb.replyAt&&sb.replyAt>=wk&&(sb.reply||"").trim())upd.push({p:p,txt:"回覆「"+esc(sb.text)+"」："+esc(sb.reply),by:esc(sb.replyBy||"")});});});
+  var uu=(t.usage||{});if(uu.at&&uu.at>=wk)upd.push({p:p,txt:"上線追蹤更新："+(uu.users!=null&&uu.users!==""?"使用 "+esc(String(uu.users))+" 人":"")+(uu.revise==="yes"?"・需改版":uu.revise==="no"?"・不需改版":""),by:esc(uu.by||"")});
   var nodes=overdueNodes(t);if(nodes.length)dly.push({p:p,nodes:nodes});
   ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});});
  aud.sort(function(a,b){var r={"高":0,"中":1,"低":2};return (r[a.f.risk]==null?3:r[a.f.risk])-(r[b.f.risk]==null?3:r[b.f.risk]);});
