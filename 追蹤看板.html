@@ -869,12 +869,8 @@ function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["s
  var wkDate=(function(){var d=new Date(Date.now()-7*86400000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;active++;sump+=effProg(t);
   if(t.flag==="top")imp.push(p);
-  if(t.reportedDate&&t.reportedDate>=wkDate&&(t.today||"").trim())upd.push({p:p,txt:"📋 回報："+esc(progText(t)||t.today),by:esc(t.updatedBy||""),day:t.reportedDate});
+  if(t.reportedDate&&t.reportedDate>=wkDate&&(t.today||"").trim())upd.push({p:p,txt:esc(progText(t)||t.today),by:esc(t.updatedBy||""),day:t.reportedDate});
   (t.notes||[]).forEach(function(n){if(n.at&&n.at>=wk)upd.push({p:p,txt:esc(n.text),by:esc(n.by||"")});});
-  ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(f.at&&f.at>=wk&&!f.done)upd.push({p:p,txt:"稽核發現："+esc(f.text),by:esc(f.by||"")});});
-  (t.tasks||[]).forEach(function(tk){if(tk.at&&tk.at>=wk)upd.push({p:p,txt:"指派任務："+esc(tk.text)+(tk.assignee?"（給 "+esc(pn(tk.assignee))+"）":""),by:esc(tk.by||"")});if(tk.done&&tk.doneAt&&tk.doneAt>=wk)upd.push({p:p,txt:"完成任務："+esc(tk.text),by:esc(tk.doneBy||"")});});
-  (t.goals||[]).forEach(function(g){(g.subs||[]).forEach(function(sb){if(sb.replyAt&&sb.replyAt>=wk&&(sb.reply||"").trim())upd.push({p:p,txt:"回覆「"+esc(sb.text)+"」："+esc(sb.reply),by:esc(sb.replyBy||"")});});});
-  var uu=(t.usage||{});if(uu.at&&uu.at>=wk)upd.push({p:p,txt:"上線追蹤更新："+(uu.users!=null&&uu.users!==""?"使用 "+esc(String(uu.users))+" 人":"")+(uu.revise==="yes"?"・需改版":uu.revise==="no"?"・不需改版":""),by:esc(uu.by||"")});
   var nodes=overdueNodes(t);if(nodes.length)dly.push({p:p,nodes:nodes});
   ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});});
  aud.sort(function(a,b){var r={"高":0,"中":1,"低":2};return (r[a.f.risk]==null?3:r[a.f.risk])-(r[b.f.risk]==null?3:r[b.f.risk]);});
@@ -892,7 +888,7 @@ function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["s
  h+=aud.length?'<div class="wk-row" style="border:0"><span style="color:var(--ink2)">共 <b style="color:var(--warn)">'+aud.length+'</b> 項未結案'+(aud[0].f.risk==="高"?'（含高風險）':'')+'，最需注意：<span class="nm" style="display:inline" onclick="openProj(\''+sid(aud[0].p.id)+'\')">'+esc(aud[0].p.n)+'</span>「'+esc(aud[0].f.text)+'」。</span></div>':'<div class="wk-none">目前沒有未結案的稽核事項 👍</div>';
  h+='</div>';
  var updH=upd.length?upd.slice(0,12).map(function(u){return '<div class="wk-row"><span class="nm" onclick="openProj(\''+sid(u.p.id)+'\')">'+esc(u.p.n)+'</span><span style="color:var(--ink2)">'+u.txt+(u.by?' <span class="muted">— '+u.by+'</span>':'')+'</span></div>';}).join('')+(upd.length>12?'<div class="wk-none">…另有 '+(upd.length-12)+' 筆</div>':''):'<div class="wk-none">本週尚無新增紀錄</div>';
- h+='<details style="margin-top:16px"><summary style="cursor:pointer;font-size:12.5px;color:var(--brand)">本週所有新增／更新（'+upd.length+' 筆）與進度變化</summary><div style="margin-top:8px">'+weekDiffSection()+'<div style="margin-top:8px">'+updH+'</div></div></details>';
+ h+='<details style="margin-top:16px"><summary style="cursor:pointer;font-size:12.5px;color:var(--brand)">本週進度更新（'+upd.length+' 案）與進度變化</summary><div style="margin-top:8px">'+weekDiffSection()+'<div style="margin-top:8px">'+updH+'</div></div></details>';
  return h+'</div></div>';}
 function execDash(extra){
  var isArc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
