@@ -866,8 +866,10 @@ function kpiPanel(){if(!kpiView)return"";var arc=function(t){return ["stop","hol
  return '<div class="stcard" style="border:1px solid '+col+'55;background:'+col+'08;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+lbl+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span> <a onclick="kpiView=\'\';renderAB()" style="cursor:pointer;color:var(--mut);font-weight:400;font-size:12px;float:right">✕ 收起</a></div><div class="stcard-b">'+rows+'</div></div>';}
 function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
  var imp=[],upd=[],dly=[],aud=[],active=0,sump=0;
+ var wkDate=(function(){var d=new Date(Date.now()-7*86400000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;active++;sump+=effProg(t);
   if(t.flag==="top")imp.push(p);
+  if(t.reportedDate&&t.reportedDate>=wkDate&&(t.today||"").trim())upd.push({p:p,txt:"📋 回報："+esc(progText(t)||t.today),by:esc(t.updatedBy||""),day:t.reportedDate});
   (t.notes||[]).forEach(function(n){if(n.at&&n.at>=wk)upd.push({p:p,txt:esc(n.text),by:esc(n.by||"")});});
   ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(f.at&&f.at>=wk&&!f.done)upd.push({p:p,txt:"稽核發現："+esc(f.text),by:esc(f.by||"")});});
   (t.tasks||[]).forEach(function(tk){if(tk.at&&tk.at>=wk)upd.push({p:p,txt:"指派任務："+esc(tk.text)+(tk.assignee?"（給 "+esc(pn(tk.assignee))+"）":""),by:esc(tk.by||"")});if(tk.done&&tk.doneAt&&tk.doneAt>=wk)upd.push({p:p,txt:"完成任務："+esc(tk.text),by:esc(tk.doneBy||"")});});
