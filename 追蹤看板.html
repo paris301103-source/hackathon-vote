@@ -868,13 +868,14 @@ function kpiPanel(){if(!kpiView)return"";var arc=function(t){return ["stop","hol
  else if(kpiView==="prog"){lbl="追蹤中・依進度由低到高";col="#12b886";arr=PROJECTS.filter(function(p){return !arc(TRACK[p.id]||{});}).sort(function(a,b){return effProg(TRACK[a.id]||{})-effProg(TRACK[b.id]||{});});}
  var rows=arr.map(function(p){var t=TRACK[p.id]||{};var pt=progText(t);return execRow(p,t)+(pt?'<div style="margin:0 0 6px 150px;font-size:12px;color:var(--ink2)">📋 目前進度：'+esc(pt)+'</div>':'<div style="margin:0 0 6px 150px;font-size:12px;color:var(--mut)">📋 目前進度：尚無回報</div>');}).join('')||'<div class="muted" style="font-size:12.5px;padding:6px 0">無</div>';
  return '<div class="stcard" style="border:1px solid '+col+'55;background:'+col+'08;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+lbl+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span> <a onclick="kpiView=\'\';renderAB()" style="cursor:pointer;color:var(--mut);font-weight:400;font-size:12px;float:right">✕ 收起</a></div><div class="stcard-b">'+rows+'</div></div>';}
+function setWeekHi(pid,v){if(!db)return;var t=TRACK[pid]||{};try{if(v===null){db.collection("track").doc(pid).set({weekHi:firebase.firestore.FieldValue.delete()},{merge:true});delete t.weekHi;}else{db.collection("track").doc(pid).set({weekHi:v},{merge:true});t.weekHi=v;}TRACK[pid]=t;}catch(e){}renderAB();}
 function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
  var imp=[],dly=[],aud=[],active=0,sump=0,stalled=[],prog=[];
  var wkDate=(function(){var d=new Date(Date.now()-7*86400000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
  var MILE=["完成","完畢","交付","交由","上線","部署","佈署","導入","開始使用","正式","測試","驗收","發布","落地","開放","移轉","串接完成","可以使用","啟用","應用於","上架"];
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;active++;sump+=effProg(t);
   if(t.flag==="top")imp.push(p);
-  if(t.reportedDate&&t.reportedDate>=wkDate&&(t.today||"").trim()){var rt=progText(t)||t.today;if(MILE.some(function(k){return rt.indexOf(k)>=0;}))prog.push({p:p,txt:esc(rt),by:esc(t.updatedBy||"")});}
+  var rtRaw=(t.reportedDate&&t.reportedDate>=wkDate)?(progText(t)||t.today||""):"";var auto=!!rtRaw&&MILE.some(function(k){return rtRaw.indexOf(k)>=0;});var hi=(t.weekHi===true)?true:(t.weekHi===false)?false:auto;if(hi)prog.push({p:p,txt:esc(rtRaw||"（手動標記為本週亮點）"),by:esc(t.updatedBy||""),manual:(t.weekHi===true)});
   var nodes=overdueNodes(t);if(nodes.length)dly.push({p:p,nodes:nodes});
   ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});
   var sd=staleDays(t);if(sd!=null&&sd>=14)stalled.push({p:p,sd:sd});});
@@ -886,8 +887,8 @@ function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["s
  h+='<div class="wk-mx"><div class="wk-mc"><div class="n" style="color:var(--navy)">'+active+'</div><div class="l">追蹤中</div></div><div class="wk-mc"><div class="n" style="color:var(--teal)">'+avg+'%</div><div class="l">平均進度</div></div><div class="wk-mc"><div class="n" style="color:'+(dly.length?'var(--warn)':'var(--mut)')+'">'+dly.length+'</div><div class="l">逾期待處理</div></div></div>';
  // 重要案 卡片
  h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#e0455f"></span>重要案（'+imp.length+'）</div>';
- h+=imp.length?imp.map(function(p){var t=TRACK[p.id]||{};var pt=progText(t);var prog=effProg(t);var od=overdueGoals(t)>0;
-   return '<div class="wk-card"><div class="wk-ch"><span class="nm" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</span>'+(od?'<span class="pillst" style="background:#e0455f14;color:var(--warn)">逾期</span>':'')+'<span class="pct">'+prog+'%</span></div><div class="wk-pb"><i style="width:'+prog+'%'+(od?';background:var(--warn)':'')+'"></i></div><div class="wk-cs">'+(pt?esc(pt):'<span style="color:var(--mut)">本週尚無回報</span>')+'</div></div>';}).join(''):'<div class="wk-none2">目前沒有標記最高優先的案子</div>';
+ h+=imp.length?imp.map(function(p){var t=TRACK[p.id]||{};var thisWk=(t.reportedDate&&t.reportedDate>=wkDate);var pt=thisWk?progText(t):"";var prog=effProg(t);var od=overdueGoals(t)>0;
+   return '<div class="wk-card"><div class="wk-ch"><span class="nm" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</span>'+(od?'<span class="pillst" style="background:#e0455f14;color:var(--warn)">逾期</span>':'')+'<span class="pct">'+prog+'%</span></div><div class="wk-pb"><i style="width:'+prog+'%'+(od?';background:var(--warn)':'')+'"></i></div><div class="wk-cs">'+(pt?esc(pt):'<span style="color:var(--mut)">本週尚無回報'+(t.reportedDate?'（最後更新 '+esc(t.reportedDate)+'）':'')+'</span>')+'</div></div>';}).join(''):'<div class="wk-none2">目前沒有標記最高優先的案子</div>';
  h+='</div>';
  // 要提醒（逾期）
  h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#e8a33d"></span>要提醒老闆的（逾期／卡住）</div>';
@@ -902,7 +903,8 @@ function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["s
  h+='</div>';
  // 進度變化
  h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#12b886"></span>本週明顯進展</div>';
- h+=prog.length?prog.map(function(u){return '<div class="wk-card" style="border-color:#bfe6d5"><div class="wk-ch"><span class="nm" onclick="openProj(\''+sid(u.p.id)+'\')">'+esc(u.p.n)+'</span></div><div class="wk-cs">'+u.txt+(u.by?' <span class="muted">— '+u.by+'</span>':'')+'</div></div>';}).join(''):'<div class="wk-none2">本週日報中沒有偵測到明顯的里程碑進展</div>';
+ h+=prog.length?prog.map(function(u){return '<div class="wk-card" style="border-color:#bfe6d5"><div class="wk-ch"><span class="nm" onclick="openProj(\''+sid(u.p.id)+'\')">'+esc(u.p.n)+'</span>'+(u.manual?'<span class="pillst" style="background:#12b88614;color:var(--teal)">手動</span>':'')+(typeof editDash!=="undefined"&&editDash?' <a onclick="setWeekHi(\''+sid(u.p.id)+'\',false)" style="cursor:pointer;color:var(--warn);font-size:11.5px">移除</a>':'')+'</div><div class="wk-cs">'+u.txt+(u.by?' <span class="muted">— '+u.by+'</span>':'')+'</div></div>';}).join(''):'<div class="wk-none2">本週日報中沒有偵測到明顯的里程碑進展</div>';
+ if(typeof editDash!=="undefined"&&editDash){var addable=PROJECTS.filter(function(p){var t=TRACK[p.id]||{};if(arc(t))return false;var isIn=prog.some(function(u){return u.p.id===p.id;});return !isIn;});h+='<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--brand)">✏️ 手動加入本週亮點</summary><div style="margin-top:6px">'+addable.map(function(p){return '<div style="display:flex;align-items:center;gap:8px;padding:2px 0;font-size:12.5px"><span style="flex:1">'+esc(p.n)+'</span><a onclick="setWeekHi(\''+sid(p.id)+'\',true)" style="cursor:pointer;color:var(--teal)">＋ 加入亮點</a></div>';}).join('')+'</div></details>';}
  h+='</div>';
  h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#4457c9"></span>進度%變化（週對週）</div><div class="wk-flat">'+weekDiffSection()+'</div></div>';
  return h+'</div></div>';}
