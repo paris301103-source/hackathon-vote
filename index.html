@@ -106,27 +106,31 @@ th{color:var(--mut);font-size:11.5px;font-weight:800;background:var(--soft)}tr:h
 .mr-stgs{display:inline-flex;gap:3px;flex-wrap:wrap}
 .stgchip{font-size:11px;padding:3px 7px;border-radius:14px;border:1px solid var(--line);background:#f4f6fa;color:var(--mut);cursor:pointer;white-space:nowrap}
 .stgchip.on{font-weight:700}
-.wk{background:#fff;border:1px solid var(--line);border-radius:14px;padding:0;margin-bottom:16px;overflow:hidden}
-.wk-hd{background:#4457c90a;padding:13px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
-.wk-hd b{font-size:14.5px;color:var(--navy)}
-.wk-hd .wk-sub{font-size:12px;color:var(--mut);font-weight:400}
-.wk-bd{padding:6px 18px 16px}
-.wk-sec{margin-top:16px}
-.wk-lb{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;letter-spacing:.3px;padding:3px 10px;border-radius:20px;margin-bottom:9px}
-.wk-sum{font-size:13.5px;color:var(--ink2);line-height:1.7;margin-top:14px;background:var(--soft);border-radius:10px;padding:11px 14px}
-.wk-sum b{color:var(--navy)}
-.wk-imp{padding:9px 0;border-bottom:1px solid var(--line)}
-.wk-imp:last-child{border-bottom:0}
-.wk-imp-h{display:flex;align-items:center;gap:10px}
-.wk-imp-h .nm{font-weight:700;font-size:13.5px;flex:1;cursor:pointer;color:var(--navy)}
-.wk-imp-h .pct{font-size:13px;font-weight:800;color:var(--teal)}
-.wk-obar{height:6px;background:#eef0f5;border-radius:20px;overflow:hidden;margin:6px 0 5px}
-.wk-obar i{display:block;height:100%;background:var(--teal);border-radius:20px}
-.wk-st{font-size:12.5px;color:var(--ink2);line-height:1.55}
-.wk-row{display:flex;gap:8px;padding:5px 0;font-size:12.5px;line-height:1.55;border-bottom:1px solid var(--line)}
-.wk-row:last-child{border-bottom:0}
-.wk-row .nm{font-weight:700;color:var(--navy);cursor:pointer;white-space:nowrap}
-.wk-none{font-size:12.5px;color:var(--mut);padding:4px 0}
+.wk{background:#fff;border:1px solid var(--line);border-radius:16px;padding:0;margin-bottom:16px;overflow:hidden}
+.wk-hd{background:linear-gradient(0deg,#fff,#f6f7fd);padding:15px 20px;border-bottom:1px solid var(--line)}
+.wk-hd .t{font-size:15px;font-weight:800;color:var(--navy);letter-spacing:.3px}
+.wk-hd .s{font-size:12px;color:var(--mut);margin-top:2px}
+.wk-bd{padding:16px 20px 18px}
+.wk-mx{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}
+.wk-mc{background:var(--soft);border-radius:12px;padding:12px 14px;text-align:center}
+.wk-mc .n{font-size:24px;font-weight:800;line-height:1}
+.wk-mc .l{font-size:11.5px;color:var(--mut);margin-top:5px}
+.wk-sec{margin-top:18px}
+.wk-lb{font-size:13px;font-weight:800;color:var(--navy);display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.wk-lb .dot{width:8px;height:8px;border-radius:50%}
+.wk-card{border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:8px;transition:.12s}
+.wk-card:hover{border-color:#c7cede;background:#fbfcfe}
+.wk-ch{display:flex;align-items:center;gap:9px;margin-bottom:7px}
+.wk-ch .nm{font-weight:800;font-size:14px;color:var(--navy);cursor:pointer;flex:1}
+.wk-ch .pct{font-size:15px;font-weight:800;color:var(--teal)}
+.wk-pb{height:7px;background:#eef0f5;border-radius:20px;overflow:hidden}
+.wk-pb i{display:block;height:100%;background:var(--teal);border-radius:20px}
+.wk-cs{font-size:12.5px;color:var(--ink2);line-height:1.55;margin-top:8px}
+.wk-alert{display:flex;gap:10px;align-items:flex-start;background:#fff6f7;border:1px solid #f3d4d9;border-radius:11px;padding:10px 13px;margin-bottom:7px}
+.wk-alert .nm{font-weight:800;color:var(--navy);cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.wk-alert .tx{font-size:12.5px;color:#9a3546;line-height:1.5}
+.wk-flat{font-size:12.5px;color:var(--ink2);line-height:1.6;background:var(--soft);border-radius:11px;padding:11px 14px}
+.wk-none2{font-size:12.5px;color:var(--mut);padding:8px 2px}
 </style></head>
 <body><div id="app" class="wrap"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -842,7 +846,7 @@ function weekDiffSection(){var arc=function(t){return ["stop","hold"].indexOf((t
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;var cur=effProg(t);var ps=prevSnap(t);if(!ps){fresh++;return;}var d=cur-ps.val;if(d>0)ups.push({p:p,d:d,cur:cur,prev:ps.val});else if(d<0)downs.push({p:p,d:d,cur:cur,prev:ps.val});});
  ups.sort(function(a,b){return b.d-a.d;});downs.sort(function(a,b){return a.d-b.d;});
  var nm=function(x){return '<b class="dc-n" style="cursor:pointer" onclick="openProj(\''+sid(x.p.id)+'\')">'+esc(x.p.n)+'</b>（'+x.prev+'%→'+x.cur+'%，<span style="color:'+(x.d>0?"var(--teal)":"var(--warn)")+'">'+(x.d>0?"+"+x.d:x.d)+'%</span>）';};
- if(!ups.length&&!downs.length){return '<div style="font-size:12.5px;color:var(--ink2);line-height:1.7">本週各案進度與上週持平，沒有明顯變化。'+(fresh?'（'+fresh+' 案本週起才開始記錄，下週起可比較）':'')+((typeof editDash!=="undefined"&&editDash)?baselineForm():'')+'</div>';}
+ if(!ups.length&&!downs.length){return '<div style="font-size:12.5px;color:var(--ink2);line-height:1.7">'+(fresh?'📊 進度百分比的「週對週漲跌」正在建立基準（'+fresh+' 案本週起記錄），下週起就能看到每案 +/- 幾 %。（本週的實際進展請看下方清單）':'進度百分比與上週持平，沒有漲跌。')+((typeof editDash!=="undefined"&&editDash)?baselineForm():'')+'</div>';}
  var t1="本週共 <b>"+(ups.length+downs.length)+"</b> 案有進度變化——";
  var parts=[];
  if(ups.length)parts.push("<span style=\"color:var(--teal)\">"+ups.length+" 案前進</span>");
@@ -865,30 +869,36 @@ function kpiPanel(){if(!kpiView)return"";var arc=function(t){return ["stop","hol
  var rows=arr.map(function(p){var t=TRACK[p.id]||{};var pt=progText(t);return execRow(p,t)+(pt?'<div style="margin:0 0 6px 150px;font-size:12px;color:var(--ink2)">📋 目前進度：'+esc(pt)+'</div>':'<div style="margin:0 0 6px 150px;font-size:12px;color:var(--mut)">📋 目前進度：尚無回報</div>');}).join('')||'<div class="muted" style="font-size:12.5px;padding:6px 0">無</div>';
  return '<div class="stcard" style="border:1px solid '+col+'55;background:'+col+'08;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+lbl+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span> <a onclick="kpiView=\'\';renderAB()" style="cursor:pointer;color:var(--mut);font-weight:400;font-size:12px;float:right">✕ 收起</a></div><div class="stcard-b">'+rows+'</div></div>';}
 function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
- var imp=[],upd=[],dly=[],aud=[],active=0,sump=0;
- var wkDate=(function(){var d=new Date(Date.now()-7*86400000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
+ var imp=[],dly=[],aud=[],active=0,sump=0,stalled=[];
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;active++;sump+=effProg(t);
   if(t.flag==="top")imp.push(p);
-  if(t.reportedDate&&t.reportedDate>=wkDate&&(t.today||"").trim())upd.push({p:p,txt:esc(progText(t)||t.today),by:esc(t.updatedBy||""),day:t.reportedDate});
-  (t.notes||[]).forEach(function(n){if(n.at&&n.at>=wk)upd.push({p:p,txt:esc(n.text),by:esc(n.by||"")});});
   var nodes=overdueNodes(t);if(nodes.length)dly.push({p:p,nodes:nodes});
-  ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});});
+  ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});
+  var sd=staleDays(t);if(sd!=null&&sd>=14)stalled.push({p:p,sd:sd});});
  aud.sort(function(a,b){var r={"高":0,"中":1,"低":2};return (r[a.f.risk]==null?3:r[a.f.risk])-(r[b.f.risk]==null?3:r[b.f.risk]);});
+ stalled.sort(function(a,b){return b.sd-a.sd;});
  var avg=Math.round(sump/(active||1));
- var h='<div class="wk"><div class="wk-hd">📌 <b>本週報告重點</b> <span class="wk-sub">・照著念就好</span></div><div class="wk-bd">';
- h+='<div class="wk-sum">目前 <b>'+active+'</b> 案追蹤中，平均進度 <b>'+avg+'%</b>。'+(dly.length?'其中 <b style="color:var(--warn)">'+dly.length+' 案逾期</b>需要處理；':'進度大致正常；')+(aud.length?'稽核尚有 <b style="color:#7c53d6">'+aud.length+'</b> 項未結案。':'稽核無未結案事項。')+'</div>';
- h+='<div class="wk-sec"><span class="wk-lb" style="background:#e0455f14;color:var(--warn)">🔴 重要案（'+imp.length+'）</span>';
+ var h='<div class="wk"><div class="wk-hd"><div class="t">📌 本週報告重點</div><div class="s">主管速覽・照著念就好</div></div><div class="wk-bd">';
+ // 三個數字卡
+ h+='<div class="wk-mx"><div class="wk-mc"><div class="n" style="color:var(--navy)">'+active+'</div><div class="l">追蹤中</div></div><div class="wk-mc"><div class="n" style="color:var(--teal)">'+avg+'%</div><div class="l">平均進度</div></div><div class="wk-mc"><div class="n" style="color:'+(dly.length?'var(--warn)':'var(--mut)')+'">'+dly.length+'</div><div class="l">逾期待處理</div></div></div>';
+ // 重要案 卡片
+ h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#e0455f"></span>重要案（'+imp.length+'）</div>';
  h+=imp.length?imp.map(function(p){var t=TRACK[p.id]||{};var pt=progText(t);var prog=effProg(t);var od=overdueGoals(t)>0;
-   return '<div class="wk-imp"><div class="wk-imp-h"><span class="nm" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</span>'+(od?'<span class="pillst" style="background:#e0455f14;color:var(--warn)">逾期</span>':'')+'<span class="pct">'+prog+'%</span></div><div class="wk-obar"><i style="width:'+prog+'%'+(od?';background:var(--warn)':'')+'"></i></div><div class="wk-st">'+(pt?esc(pt):'<span style="color:var(--mut)">本週尚無回報</span>')+'</div></div>';}).join(''):'<div class="wk-none">目前沒有標記最高優先的案子</div>';
+   return '<div class="wk-card"><div class="wk-ch"><span class="nm" onclick="openProj(\''+sid(p.id)+'\')">'+esc(p.n)+'</span>'+(od?'<span class="pillst" style="background:#e0455f14;color:var(--warn)">逾期</span>':'')+'<span class="pct">'+prog+'%</span></div><div class="wk-pb"><i style="width:'+prog+'%'+(od?';background:var(--warn)':'')+'"></i></div><div class="wk-cs">'+(pt?esc(pt):'<span style="color:var(--mut)">本週尚無回報</span>')+'</div></div>';}).join(''):'<div class="wk-none2">目前沒有標記最高優先的案子</div>';
  h+='</div>';
- h+='<div class="wk-sec"><span class="wk-lb" style="background:#e8a33d1a;color:#b9770f">⏰ 要提醒老闆的</span>';
- h+=dly.length?dly.map(function(d){return '<div class="wk-row"><span class="nm" onclick="openProj(\''+sid(d.p.id)+'\')">'+esc(d.p.n)+'</span><span style="color:var(--ink2)">'+d.nodes.map(function(n){return '「'+esc(n.name)+'」'+(n.note?'（'+esc(n.note)+'）':'')+' 逾期 '+esc(n.due);}).join('；')+'</span></div>';}).join(''):'<div class="wk-none">目前沒有逾期項目 👍</div>';
+ // 要提醒（逾期）
+ h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#e8a33d"></span>要提醒老闆的（逾期／卡住）</div>';
+ h+=dly.length?dly.map(function(d){return '<div class="wk-alert"><span class="nm" onclick="openProj(\''+sid(d.p.id)+'\')">'+esc(d.p.n)+'</span><span class="tx">'+d.nodes.map(function(n){return '「'+esc(n.name)+'」'+(n.note?'（'+esc(n.note)+'）':'')+' 逾期 '+esc(n.due);}).join('；')+'</span></div>';}).join(''):'<div class="wk-none2">目前沒有逾期項目 👍</div>';
  h+='</div>';
- h+='<div class="wk-sec"><span class="wk-lb" style="background:#7c53d61a;color:#7c53d6">🔍 稽核</span>';
- h+=aud.length?'<div class="wk-row" style="border:0"><span style="color:var(--ink2)">共 <b style="color:var(--warn)">'+aud.length+'</b> 項未結案'+(aud[0].f.risk==="高"?'（含高風險）':'')+'，最需注意：<span class="nm" style="display:inline" onclick="openProj(\''+sid(aud[0].p.id)+'\')">'+esc(aud[0].p.n)+'</span>「'+esc(aud[0].f.text)+'」。</span></div>':'<div class="wk-none">目前沒有未結案的稽核事項 👍</div>';
+ // 停滯
+ if(stalled.length){h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#6b7686"></span>停滯超過兩週</div>';
+  h+=stalled.map(function(x){return '<div class="wk-alert" style="background:#f5f6f8;border-color:var(--line)"><span class="nm" onclick="openProj(\''+sid(x.p.id)+'\')">'+esc(x.p.n)+'</span><span class="tx" style="color:var(--mut)">已 '+x.sd+' 天未回報</span></div>';}).join('')+'</div>';}
+ // 稽核
+ h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#7c53d6"></span>稽核</div>';
+ h+=aud.length?'<div class="wk-flat">共 <b style="color:var(--warn)">'+aud.length+'</b> 項未結案'+(aud[0].f.risk==="高"?'（含高風險）':'')+'，最需注意：<b class="dc-n" style="cursor:pointer" onclick="openProj(\''+sid(aud[0].p.id)+'\')">'+esc(aud[0].p.n)+'</b>「'+esc(aud[0].f.text)+'」。</div>':'<div class="wk-none2">目前沒有未結案的稽核事項 👍</div>';
  h+='</div>';
- var updH=upd.length?upd.slice(0,12).map(function(u){return '<div class="wk-row"><span class="nm" onclick="openProj(\''+sid(u.p.id)+'\')">'+esc(u.p.n)+'</span><span style="color:var(--ink2)">'+u.txt+(u.by?' <span class="muted">— '+u.by+'</span>':'')+'</span></div>';}).join('')+(upd.length>12?'<div class="wk-none">…另有 '+(upd.length-12)+' 筆</div>':''):'<div class="wk-none">本週尚無新增紀錄</div>';
- h+='<details style="margin-top:16px"><summary style="cursor:pointer;font-size:12.5px;color:var(--brand)">本週進度更新（'+upd.length+' 案）與進度變化</summary><div style="margin-top:8px">'+weekDiffSection()+'<div style="margin-top:8px">'+updH+'</div></div></details>';
+ // 進度變化
+ h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#4457c9"></span>本週進度變化</div><div class="wk-flat">'+weekDiffSection()+'</div></div>';
  return h+'</div></div>';}
 function execDash(extra){
  var isArc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
