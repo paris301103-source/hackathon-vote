@@ -869,9 +869,12 @@ function kpiPanel(){if(!kpiView)return"";var arc=function(t){return ["stop","hol
  var rows=arr.map(function(p){var t=TRACK[p.id]||{};var pt=progText(t);return execRow(p,t)+(pt?'<div style="margin:0 0 6px 150px;font-size:12px;color:var(--ink2)">📋 目前進度：'+esc(pt)+'</div>':'<div style="margin:0 0 6px 150px;font-size:12px;color:var(--mut)">📋 目前進度：尚無回報</div>');}).join('')||'<div class="muted" style="font-size:12.5px;padding:6px 0">無</div>';
  return '<div class="stcard" style="border:1px solid '+col+'55;background:'+col+'08;margin-bottom:16px"><div class="stcard-h" style="border-left:4px solid '+col+'"><span style="color:'+col+'">'+lbl+'</span> <span class="muted" style="font-weight:400;font-size:12.5px">'+arr.length+' 案</span> <a onclick="kpiView=\'\';renderAB()" style="cursor:pointer;color:var(--mut);font-weight:400;font-size:12px;float:right">✕ 收起</a></div><div class="stcard-b">'+rows+'</div></div>';}
 function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
- var imp=[],dly=[],aud=[],active=0,sump=0,stalled=[];
+ var imp=[],dly=[],aud=[],active=0,sump=0,stalled=[],prog=[];
+ var wkDate=(function(){var d=new Date(Date.now()-7*86400000);return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");})();
+ var MILE=["完成","完畢","交付","交由","上線","部署","佈署","導入","開始使用","正式","測試","驗收","發布","落地","開放","移轉","串接完成","可以使用","啟用","應用於","上架"];
  PROJECTS.forEach(function(p){var t=TRACK[p.id]||{};if(arc(t))return;active++;sump+=effProg(t);
   if(t.flag==="top")imp.push(p);
+  if(t.reportedDate&&t.reportedDate>=wkDate&&(t.today||"").trim()){var rt=progText(t)||t.today;if(MILE.some(function(k){return rt.indexOf(k)>=0;}))prog.push({p:p,txt:esc(rt),by:esc(t.updatedBy||"")});}
   var nodes=overdueNodes(t);if(nodes.length)dly.push({p:p,nodes:nodes});
   ((t.audit&&t.audit.findings)||[]).forEach(function(f){if(!f.done)aud.push({p:p,f:f});});
   var sd=staleDays(t);if(sd!=null&&sd>=14)stalled.push({p:p,sd:sd});});
@@ -898,7 +901,10 @@ function weekPanel(){var wk=Date.now()-7*86400000;var arc=function(t){return ["s
  h+=aud.length?'<div class="wk-flat">共 <b style="color:var(--warn)">'+aud.length+'</b> 項未結案'+(aud[0].f.risk==="高"?'（含高風險）':'')+'，最需注意：<b class="dc-n" style="cursor:pointer" onclick="openProj(\''+sid(aud[0].p.id)+'\')">'+esc(aud[0].p.n)+'</b>「'+esc(aud[0].f.text)+'」。</div>':'<div class="wk-none2">目前沒有未結案的稽核事項 👍</div>';
  h+='</div>';
  // 進度變化
- h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#4457c9"></span>本週進度變化</div><div class="wk-flat">'+weekDiffSection()+'</div></div>';
+ h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#12b886"></span>本週明顯進展</div>';
+ h+=prog.length?prog.map(function(u){return '<div class="wk-card" style="border-color:#bfe6d5"><div class="wk-ch"><span class="nm" onclick="openProj(\''+sid(u.p.id)+'\')">'+esc(u.p.n)+'</span></div><div class="wk-cs">'+u.txt+(u.by?' <span class="muted">— '+u.by+'</span>':'')+'</div></div>';}).join(''):'<div class="wk-none2">本週日報中沒有偵測到明顯的里程碑進展</div>';
+ h+='</div>';
+ h+='<div class="wk-sec"><div class="wk-lb"><span class="dot" style="background:#4457c9"></span>進度%變化（週對週）</div><div class="wk-flat">'+weekDiffSection()+'</div></div>';
  return h+'</div></div>';}
 function execDash(extra){
  var isArc=function(t){return ["stop","hold"].indexOf((t&&t.decision)||"go")>=0;};
